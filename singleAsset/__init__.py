@@ -1,3 +1,5 @@
+# type: ignore # my linter is Pyright/Pylance and it's flaggin correct otree code as errors, so I'm ignoring it
+
 from otree.api import *
 import time
 import random

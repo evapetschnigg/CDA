@@ -27,9 +27,9 @@ SESSION_CONFIGS = [
         app_sequence=['singleAsset'],
         num_demo_participants=4,
         market_time=210,
-        randomise_types=True,
-        short_selling=True,
-        margin_buying=True,
+        randomise_types=True, # KeyError : 'roleID' shows up if this is set to False
+        short_selling=False,
+        margin_buying=False,
         ),
     dict(
         name='nAssets',
