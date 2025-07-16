@@ -3,6 +3,7 @@
 from otree.api import *
 import time
 import random
+import json 
 from operator import itemgetter
 
 doc = """Continuous double auction market"""
@@ -18,8 +19,10 @@ class C(BaseConstants):
     min_payment = cu(4)
     FV_MIN = 30
     FV_MAX = 85
-    num_assets_MIN = 20
-    num_assets_MAX = 35
+    num_assets_MIN = 10
+    num_assets_MAX = 10
+    cash_MIN = 100
+    cash_MAX = 100
     decimals = 2
     marketTime = 210  # needed to initialize variables but exchanged by session_config
 
@@ -189,10 +192,16 @@ class Player(BasePlayer):
     cancelledVolume = models.IntegerField(initial=0, min=0)
     cashOffered = models.FloatField(initial=0, min=0, decimal=C.decimals)
     assetsOffered = models.IntegerField(initial=0, min=0)
-    tradingProfit = models.FloatField(initial=0)
-    wealthChange = models.FloatField(initial=0)
+    tradingProfit = models.FloatField(initial=0) # this does not make too much sense with the utility from goods anymore --> change to abosolute utility change
+    wealthChange = models.FloatField(initial=0) # change this to relative utility change
     finalPayoff = models.CurrencyField(initial=0)
     selectedRound = models.IntegerField(initial=1)
+    goodA_qty = models.IntegerField(initial=0)
+    goodB_qty = models.IntegerField(initial=0)
+    goodA_utility_table = models.StringField()
+    goodB_utility_table = models.StringField()
+    goods_utility = models.FloatField(initial=0)
+    overall_utility = models.FloatField(initial=0)
 
 
 def asset_endowment(player: Player):
@@ -228,7 +237,7 @@ def cash_endowment(player: Player):
     # this code is run at the first WaitToStart page, within the initiate_player() function, when all participants arrived
     # this function returns a participant's initial cash endowment
     group = player.group
-    return float(round(random.uniform(a=C.num_assets_MIN, b=C.num_assets_MAX) * group.assetValue, C.decimals))  ## the multiplication with the asset value garanties a cash to asset ratio of 1 in the market
+    return float(round(random.uniform(a=C.cash_MIN, b=C.cash_MAX), C.decimals))  
 
 
 def cash_long_limit(player: Player):
@@ -265,7 +274,10 @@ def initiate_player(player: Player):
         player.assetsHolding = initial_assets
         player.allowShort = short_allowed(player=player)
         player.capShort = asset_short_limit(player=player)
-
+        player.goodA_qty = 0
+        player.goodB_qty = 0
+        player.goodA_utility_table = '[26,17,13,10,9,7,6,5]'
+        player.goodB_utility_table = '[37,28,23,20,17,14,12,10]'
 
 def set_player(player: Player):
     # this code is run at the first WaitToStart page when all participants arrived.
@@ -1034,6 +1046,13 @@ class Market(Page):
             return 1
         else:
             return group.marketStartTime + group.marketTime - time.time()
+
+    @staticmethod
+    def vars_for_template(player: Player):
+        return dict(
+            goodA_utility_table=json.loads(player.goodA_utility_table),
+            goodB_utility_table=json.loads(player.goodB_utility_table),
+        )
 
 
 class ResultsWaitPage(WaitPage):

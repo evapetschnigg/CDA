@@ -50,8 +50,49 @@ Continuous double auction market
         <td id="capLong">{{ player.capLong }}</td>
         {{ else }} {{ endif }}
     </tr>
+    <tr>
+        <th>Good A holding</th>
+        <td id="goodA_qty">{{ player.goodA_qty }}</td>
+    </tr>
+    <tr>
+        <th>Good B holding</th>
+        <td id="goodB_qty">{{ player.goodB_qty }}</td>
+    </tr>
+    <tr>
+        <th>Utility from goods</th>
+        <td id="goods_utility">{{ player.goods_utility }}</td>
+    </tr>
+    <tr>
+        <th>Overall utility (goods + money)</th>
+        <td id="overall_utility">{{ player.overall_utility }}</td>
+    </tr>
         {{ else }} {{ endif }}
     </table>
+    </div>
+</div>
+<!-- Utility tables for Good A and Good B -->
+<div class="utility-tables row" style="margin-bottom: 20px;">
+    <div class="col-sm div_box">
+        <h4>Marginal Utility: Good A</h4>
+        <table class="table_box">
+            <thead><tr><th>Unit</th><th>Utility</th></tr></thead>
+            <tbody>
+                {% for u in goodA_utility_table %}
+                <tr><td>{{ forloop.counter }}</td><td>{{ u }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="col-sm div_box">
+        <h4>Marginal Utility: Good B</h4>
+        <table class="table_box">
+            <thead><tr><th>Unit</th><th>Utility</th></tr></thead>
+            <tbody>
+                {% for u in goodB_utility_table %}
+                <tr><td>{{ forloop.counter }}</td><td>{{ u }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
 
