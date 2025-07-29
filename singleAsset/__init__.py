@@ -304,10 +304,8 @@ def live_method(player: Player, data):
     elif key == 'market_order':
         transaction(player, data)
     elif key == 'buy_good':
-        result = buy_good(player, data)
-        if result.get('error'):
-            print("Returning error to frontend:", result)
-            return {player.id_in_group: result}
+        buy_good(player, data)  # Just call it, don't return early
+        # Remove the error check and early return - let it fall through
     offers = Limit.filter(group=group)
     transactions = Transaction.filter(group=group)
     if transactions:
@@ -945,7 +943,28 @@ def buy_good(player: Player, data):
     try:
         qty = int(qty_raw)
     except (ValueError, TypeError):
-        return dict(error="Invalid quantity.")
+        # Create a news message using the same pattern as asset market
+        News.create(
+            player=player,
+            playerID=player.id_in_group,
+            group=player.group,
+            Period=player.group.round_number,
+            msg='Order rejected: invalid quantity.',
+            msgTime=round(float(time.time() - player.group.marketStartTime), C.decimals)
+        )
+        return dict()
+
+    # Add validation for invalid quantities
+    if qty <= 0:
+        News.create(
+            player=player,
+            playerID=player.id_in_group,
+            group=player.group,
+            Period=player.group.round_number,
+            msg='Order rejected: quantity must be positive.',
+            msgTime=round(float(time.time() - player.group.marketStartTime), C.decimals)
+        )
+        return dict()
 
     # Prices and asset costs
     if good == 'A':
@@ -955,13 +974,29 @@ def buy_good(player: Player, data):
         price = 10
         asset_cost = 3
     else:
-        return dict(error="Invalid good.")
+        News.create(
+            player=player,
+            playerID=player.id_in_group,
+            group=player.group,
+            Period=player.group.round_number,
+            msg='Order rejected: invalid good.',
+            msgTime=round(float(time.time() - player.group.marketStartTime), C.decimals)
+        )
+        return dict()
 
     # Check if player can afford
     total_price = price * qty
     total_assets = asset_cost * qty
     if player.cashHolding < total_price or player.assetsHolding < total_assets:
-        return dict(error="Insufficient funds or assets.")
+        News.create(
+            player=player,
+            playerID=player.id_in_group,
+            group=player.group,
+            Period=player.group.round_number,
+            msg='Order rejected: insufficient funds or assets.',
+            msgTime=round(float(time.time() - player.group.marketStartTime), C.decimals)
+        )
+        return dict()
 
     # Update player holdings (only if they can afford it)
     if good == 'A':
@@ -989,8 +1024,7 @@ def buy_good(player: Player, data):
         cashHolding=player.cashHolding,
         assetsHolding=player.assetsHolding,
         goods_utility=player.goods_utility,
-        overall_utility=player.overall_utility,
-        error=""  # No error on success
+        overall_utility=player.overall_utility
     )
 
 class News(ExtraModel):

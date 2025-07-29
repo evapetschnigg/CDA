@@ -6,34 +6,15 @@
 
 
     function liveRecv(data) {
-        console.log('=== VERSION 2.0 - UPDATED WITH ERROR CHECK ===');
-        console.log('=== liveRecv START ===');
         console.log('liveRecv data:', data);
-        
-        // Try a different error check
-        if (data && data.hasOwnProperty('error') && data.error && data.error.length > 0) {
-            console.log('ERROR DETECTED - showing alert');
-            alert(data.error);
-            console.log('ERROR DETECTED - returning');
-            return;
-        }
-        
-        console.log('No error detected, continuing...');
         
         // sanitise
         if (data === undefined) {
-            console.log('data is undefined, returning');
-            return;
+            return
         }
-        
-        console.log('About to destructure...');
         
         // javascript destructuring assignment
         let {bids, asks, trades, cashHolding, assetsHolding, highcharts_series, news} = data;
-        
-        console.log('Destructuring complete');
-        console.log('bids:', bids);
-        console.log('asks:', asks);
 
         elCashHolding.html(cu(cashHolding))
         elAssetsHolding.html(assetsHolding)
@@ -70,7 +51,6 @@
         redrawChart(highcharts_series)
 
         // Goods market updates
-
         if (data.goodA_qty !== undefined) {
             $('#goodA_qty').text(data.goodA_qty);
         }
@@ -95,10 +75,8 @@
     function buyGood(good) {
         let qty = good === 'A' ? $('#buyA_qty').val() : $('#buyB_qty').val();
         qty = parseInt(qty, 10);
-        if (isNaN(qty) || qty <= 0) {
-            alert("Please enter a valid quantity.");
-            return;
-        }
+        
+        // Remove the frontend validation - let the backend handle all errors
         liveSend({
             operationType: 'buy_good',
             good: good,
