@@ -6,12 +6,34 @@
 
 
     function liveRecv(data) {
+        console.log('=== VERSION 2.0 - UPDATED WITH ERROR CHECK ===');
+        console.log('=== liveRecv START ===');
+        console.log('liveRecv data:', data);
+        
+        // Try a different error check
+        if (data && data.hasOwnProperty('error') && data.error && data.error.length > 0) {
+            console.log('ERROR DETECTED - showing alert');
+            alert(data.error);
+            console.log('ERROR DETECTED - returning');
+            return;
+        }
+        
+        console.log('No error detected, continuing...');
+        
         // sanitise
         if (data === undefined) {
-            return
+            console.log('data is undefined, returning');
+            return;
         }
+        
+        console.log('About to destructure...');
+        
         // javascript destructuring assignment
         let {bids, asks, trades, cashHolding, assetsHolding, highcharts_series, news} = data;
+        
+        console.log('Destructuring complete');
+        console.log('bids:', bids);
+        console.log('asks:', asks);
 
         elCashHolding.html(cu(cashHolding))
         elAssetsHolding.html(assetsHolding)
@@ -45,12 +67,49 @@
 
         // Updates width in Bids and Asks tables between columns
         updateTableWidth()
-
         redrawChart(highcharts_series)
+
+        // Goods market updates
+
+        if (data.goodA_qty !== undefined) {
+            $('#goodA_qty').text(data.goodA_qty);
+        }
+        if (data.goodB_qty !== undefined) {
+            $('#goodB_qty').text(data.goodB_qty);
+        }
+        if (data.goods_utility !== undefined) {
+            $('#goods_utility').text(data.goods_utility);
+        }
+        if (data.overall_utility !== undefined) {
+            $('#overall_utility').text(data.overall_utility);
+        }
+        if (data.cashHolding !== undefined) {
+            $('#cashHolding').text(data.cashHolding);
+        }
+        if (data.assetsHolding !== undefined) {
+            $('#assetsHolding').text(data.assetsHolding);
+        }
     }
 
+    //this part is for the goods market
+    function buyGood(good) {
+        let qty = good === 'A' ? $('#buyA_qty').val() : $('#buyB_qty').val();
+        qty = parseInt(qty, 10);
+        if (isNaN(qty) || qty <= 0) {
+            alert("Please enter a valid quantity.");
+            return;
+        }
+        liveSend({
+            operationType: 'buy_good',
+            good: good,
+            quantity: qty
+        });
+    }
+        
+    $('#buyA_btn').on('click', function() { buyGood('A'); });
+    $('#buyB_btn').on('click', function() { buyGood('B'); });
 
-    // when a limit order is placed, they are first checked in the respective function and then send to the server where they are again checked
+    // asset market: when a limit order is placed, they are first checked in the respective function and then send to the server where they are again checked
     function sendOffer(is_bid) {
         let errorField = (is_bid == 0) ? $('#errorAskOffer') : $('#errorBidOffer')
         let limitPrice = (is_bid == 0) ? $('#limitAskPrice').val() : $('#limitBidPrice').val()

@@ -303,6 +303,11 @@ def live_method(player: Player, data):
         cancel_limit(player, data)
     elif key == 'market_order':
         transaction(player, data)
+    elif key == 'buy_good':
+        result = buy_good(player, data)
+        if result.get('error'):
+            print("Returning error to frontend:", result)
+            return {player.id_in_group: result}
     offers = Limit.filter(group=group)
     transactions = Transaction.filter(group=group)
     if transactions:
@@ -354,6 +359,10 @@ def live_method(player: Player, data):
             trades=sorted([[t.price, t.transactionVolume, t.transactionTime, t.sellerID] for t in transactions if (t.makerID == p.id_in_group or t.takerID == p.id_in_group)], reverse = True, key=itemgetter(2)),
             cashHolding=p.cashHolding,
             assetsHolding=p.assetsHolding,
+            goodA_qty=p.goodA_qty,
+            goodB_qty=p.goodB_qty,
+            goods_utility=p.goods_utility,
+            overall_utility=p.overall_utility,
             highcharts_series=highcharts_series,
             news=sorted([[m.msg, m.msgTime, m.playerID] for m in msgs if m.playerID == p.id_in_group], reverse=True, key=itemgetter(1))
         )
@@ -930,6 +939,59 @@ def transaction(player: Player, data):
         bestBidAfter=best_bid_after,
     )
 
+def buy_good(player: Player, data):
+    good = data.get('good')
+    qty_raw = data.get('quantity', 0)
+    try:
+        qty = int(qty_raw)
+    except (ValueError, TypeError):
+        return dict(error="Invalid quantity.")
+
+    # Prices and asset costs
+    if good == 'A':
+        price = 5
+        asset_cost = 1
+    elif good == 'B':
+        price = 10
+        asset_cost = 3
+    else:
+        return dict(error="Invalid good.")
+
+    # Check if player can afford
+    total_price = price * qty
+    total_assets = asset_cost * qty
+    if player.cashHolding < total_price or player.assetsHolding < total_assets:
+        return dict(error="Insufficient funds or assets.")
+
+    # Update player holdings (only if they can afford it)
+    if good == 'A':
+        player.goodA_qty += qty
+    else:
+        player.goodB_qty += qty
+    player.cashHolding -= total_price
+    player.assetsHolding -= total_assets
+
+    # Calculate utility from goods
+    total_utility = 0
+    for i in range(player.goodA_qty):
+        if i < len(json.loads(player.goodA_utility_table)):
+            total_utility += json.loads(player.goodA_utility_table)[i]
+    for i in range(player.goodB_qty):
+        if i < len(json.loads(player.goodB_utility_table)):
+            total_utility += json.loads(player.goodB_utility_table)[i]
+    player.goods_utility = total_utility
+    player.overall_utility = total_utility + player.cashHolding
+
+    # Return success with updated values
+    return dict(
+        goodA_qty=player.goodA_qty,
+        goodB_qty=player.goodB_qty,
+        cashHolding=player.cashHolding,
+        assetsHolding=player.assetsHolding,
+        goods_utility=player.goods_utility,
+        overall_utility=player.overall_utility,
+        error=""  # No error on success
+    )
 
 class News(ExtraModel):
     player = models.Link(Player)
@@ -1053,7 +1115,6 @@ class Market(Page):
             goodA_utility_table=json.loads(player.goodA_utility_table),
             goodB_utility_table=json.loads(player.goodB_utility_table),
         )
-
 
 class ResultsWaitPage(WaitPage):
     @staticmethod
