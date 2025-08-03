@@ -4,9 +4,10 @@
     let elTradesTable = $('#tradesTable')
     let elAssetsHolding = $('#assetsHolding')
 
+    let lastGoodsTrade = null;
+
 
     function liveRecv(data) {
-        console.log('liveRecv data:', data);
         
         // sanitise
         if (data === undefined) {
@@ -22,8 +23,16 @@
         // value describes the offerID and data-value the makerID
         elBidsTableBody.html(bids.map(e => `<tr id='offerID${e[2]}' value=${e[2]} data-value=${e[3]} data-custom="1"><td value=${e[1]}>${e[1]} for </td><td value=${e[0]}>${cu(e[0])}</td></tr>`).join(''))
         elAsksTableBody.html(asks.map(e => `<tr id='offerID${e[2]}' value=${e[2]} data-value=${e[3]} data-custom="0"><td value=${e[1]}>${e[1]} for </td><td value=${e[0]}>${cu(e[0])}</td></tr>`).join(''))
-        elTradesTable.html(trades.map(e => `<tr><td>${trade_desc(e[3])}&nbsp;</td><td> ${ e[1] } for&nbsp;</td><td> ${ cu(e[0]) } </td></tr>`).join(''))
+        elTradesTable.html(trades.map(e => `<tr><td><span class="asset-icon"></span>${trade_desc(e[3])}&nbsp;</td><td> ${ e[1] } asset${e[1] === 1 ? '' : 's'} for&nbsp;</td><td> EUR ${ cu(e[0]) } </td></tr>`).join(''))
         elNewsTable.html(news.map(e => `<tr><td>${e[0]}</td></tr>`).join(''))
+
+        // Add goods trade to trades table if present
+        if (data.goods_trade_good && data.goods_trade_qty) {
+            let tradeMessage = `You bought ${data.goods_trade_qty} unit${data.goods_trade_qty === 1 ? '' : 's'} of Good ${data.goods_trade_good}`;
+            let currentTrades = elTradesTable.html();
+            let newTradeRow = `<tr><td><span class="goods-icon"></span>${tradeMessage}</td><td></td><td></td></tr>`;
+            elTradesTable.html(newTradeRow + currentTrades);
+        }
 
         // Select others' Bids and Asks after this update
         $('#bidsTable tbody tr, #asksTable tbody tr').addClass('btn-outline-primary')
@@ -75,6 +84,9 @@
     function buyGood(good) {
         let qty = good === 'A' ? $('#buyA_qty').val() : $('#buyB_qty').val();
         qty = parseInt(qty, 10);
+        
+        // Store the trade info
+        lastGoodsTrade = { good: good, qty: qty };
         
         // Remove the frontend validation - let the backend handle all errors
         liveSend({
@@ -133,4 +145,11 @@
         liveSend({'operationType': 'market_order', 'offerID': offerID, 'isBid': is_bid, 'transactionPrice': transactionPrice, 'transactionVolume': transactionVolume})
         $('#bidsTable tbody tr, #asksTable tbody tr').removeClass('btn-primary btn-outline-primary btn-danger btn-outline-danger')
 
+    }
+
+    function addGoodsTrade(good, qty, price) {
+        let tradeMessage = `You bought ${qty} units of Good ${good}`;
+        let currentTrades = elTradesTable.html();
+        let newTradeRow = `<tr><td>${tradeMessage}</td><td></td><td></td></tr>`;
+        elTradesTable.html(newTradeRow + currentTrades);
     }

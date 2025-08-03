@@ -278,6 +278,8 @@ def initiate_player(player: Player):
         player.goodB_qty = 0
         player.goodA_utility_table = '[26,17,13,10,9,7,6,5]'
         player.goodB_utility_table = '[37,28,23,20,17,14,12,10]'
+        player.goods_utility = 0
+        player.overall_utility = player.cashHolding
 
 def set_player(player: Player):
     # this code is run at the first WaitToStart page when all participants arrived.
@@ -304,8 +306,7 @@ def live_method(player: Player, data):
     elif key == 'market_order':
         transaction(player, data)
     elif key == 'buy_good':
-        buy_good(player, data)  # Just call it, don't return early
-        # Remove the error check and early return - let it fall through
+        result = buy_good(player, data)  # Get the result from buy_good
     offers = Limit.filter(group=group)
     transactions = Transaction.filter(group=group)
     if transactions:
@@ -362,7 +363,11 @@ def live_method(player: Player, data):
             goods_utility=p.goods_utility,
             overall_utility=p.overall_utility,
             highcharts_series=highcharts_series,
-            news=sorted([[m.msg, m.msgTime, m.playerID] for m in msgs if m.playerID == p.id_in_group], reverse=True, key=itemgetter(1))
+            news=sorted([[m.msg, m.msgTime, m.playerID] for m in msgs if m.playerID == p.id_in_group], reverse=True, key=itemgetter(1)),
+            # Add goods trade info if this player just made a purchase
+            goods_trade_good=result.get('goods_trade_good') if key == 'buy_good' and p.id_in_group == player.id_in_group else None,
+            goods_trade_qty=result.get('goods_trade_qty') if key == 'buy_good' and p.id_in_group == player.id_in_group else None,
+            goods_trade_price=result.get('goods_trade_price') if key == 'buy_good' and p.id_in_group == player.id_in_group else None
         )
         for p in players
     }
@@ -943,7 +948,6 @@ def buy_good(player: Player, data):
     try:
         qty = int(qty_raw)
     except (ValueError, TypeError):
-        # Create a news message using the same pattern as asset market
         News.create(
             player=player,
             playerID=player.id_in_group,
@@ -1024,7 +1028,10 @@ def buy_good(player: Player, data):
         cashHolding=player.cashHolding,
         assetsHolding=player.assetsHolding,
         goods_utility=player.goods_utility,
-        overall_utility=player.overall_utility
+        overall_utility=player.overall_utility,
+        goods_trade_good=good,
+        goods_trade_qty=qty,
+        goods_trade_price=price
     )
 
 class News(ExtraModel):
