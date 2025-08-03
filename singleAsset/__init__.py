@@ -874,6 +874,8 @@ def transaction(player: Player, data):
     limit_entry.remainingVolume -= transaction_volume
     buyer.cashHolding -= transaction_volume * price
     seller.cashHolding += transaction_volume * price
+    buyer.overall_utility = buyer.goods_utility + buyer.cashHolding
+    seller.overall_utility = seller.goods_utility + seller.cashHolding
     buyer.transactions += 1
     buyer.transactedVolume += transaction_volume
     buyer.assetsHolding += transaction_volume
