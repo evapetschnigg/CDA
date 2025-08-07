@@ -78,6 +78,8 @@ Market Place
         <h3>Goods Market</h3>
         <!-- Utility tables for Good A and Good B -->
         <div class="utility-tables row" style="margin-bottom: 20px;">
+            {% if not session.config.use_constant_marginal_utility %}
+            <!-- Show utility tables only if not using constant marginal utility -->
             <div class="col-sm div_box">
                 <h4>Marginal Utility: Good A</h4>
                 <table class="table_box">
@@ -100,6 +102,15 @@ Market Place
                     </tbody>
                 </table>
             </div>
+            {% else %}
+            <!-- Show constant marginal utility information -->
+            <div class="col-sm div_box">
+                <h4>Utility Information</h4>
+                <p><strong>Good A:</strong> {{ session.config.good_a_marginal_utility }} utility per unit</p>
+                <p><strong>Good B:</strong> {{ session.config.good_b_marginal_utility }} utility per unit</p>
+                <p><em>Constant marginal utility: Each additional unit provides the same utility.</em></p>
+            </div>
+            {% endif %}
         </div>
         <!-- Goods purchase UI -->
         <div class="goods-purchase row" style="margin-bottom: 20px;">

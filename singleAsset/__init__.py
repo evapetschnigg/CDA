@@ -278,8 +278,8 @@ def initiate_player(player: Player):
         player.goodB_qty = 0
         player.goodA_utility_table = '[26,17,13,10,9,7,6,5]'
         player.goodB_utility_table = '[37,28,23,20,17,14,12,10]'
-        player.goods_utility = 0
-        player.overall_utility = player.cashHolding
+        player.goods_utility = calculate_goods_utility(player)
+        player.overall_utility = player.goods_utility + player.cashHolding
 
 def set_player(player: Player):
     # this code is run at the first WaitToStart page when all participants arrived.
@@ -288,6 +288,32 @@ def set_player(player: Player):
     if player.isParticipating:
         player.isObserver = player.participant.vars['isObserver']
 
+def calculate_goods_utility(player: Player):
+    """
+    Calculate total utility from goods based on session configuration.
+    """
+    total_utility = 0
+    
+    # Get configuration from session
+    use_constant = player.session.config.get('use_constant_marginal_utility', True)
+    
+    if use_constant:
+        # Use constant marginal utility
+        goodA_marginal_utility = player.session.config.get('good_a_marginal_utility', 12)
+        goodB_marginal_utility = player.session.config.get('good_b_marginal_utility', 20)
+        
+        total_utility += player.goodA_qty * goodA_marginal_utility
+        total_utility += player.goodB_qty * goodB_marginal_utility
+    else:
+        # Use utility tables
+        for i in range(player.goodA_qty):
+            if i < len(json.loads(player.goodA_utility_table)):
+                total_utility += json.loads(player.goodA_utility_table)[i]
+        for i in range(player.goodB_qty):
+            if i < len(json.loads(player.goodB_utility_table)):
+                total_utility += json.loads(player.goodB_utility_table)[i]
+    
+    return total_utility
 
 def live_method(player: Player, data):
     # this code is run at the market page whenever a participants updates the page or a new order is created.
@@ -874,8 +900,8 @@ def transaction(player: Player, data):
     limit_entry.remainingVolume -= transaction_volume
     buyer.cashHolding -= transaction_volume * price
     seller.cashHolding += transaction_volume * price
-    buyer.overall_utility = buyer.goods_utility + buyer.cashHolding
-    seller.overall_utility = seller.goods_utility + seller.cashHolding
+    buyer.overall_utility = calculate_goods_utility(buyer) + buyer.cashHolding
+    seller.overall_utility = calculate_goods_utility(seller) + seller.cashHolding
     buyer.transactions += 1
     buyer.transactedVolume += transaction_volume
     buyer.assetsHolding += transaction_volume
@@ -1012,16 +1038,9 @@ def buy_good(player: Player, data):
     player.cashHolding -= total_price
     player.assetsHolding -= total_assets
 
-    # Calculate utility from goods
-    total_utility = 0
-    for i in range(player.goodA_qty):
-        if i < len(json.loads(player.goodA_utility_table)):
-            total_utility += json.loads(player.goodA_utility_table)[i]
-    for i in range(player.goodB_qty):
-        if i < len(json.loads(player.goodB_utility_table)):
-            total_utility += json.loads(player.goodB_utility_table)[i]
-    player.goods_utility = total_utility
-    player.overall_utility = total_utility + player.cashHolding
+    # Calculate utility from goods using the function
+    player.goods_utility = calculate_goods_utility(player)
+    player.overall_utility = player.goods_utility + player.cashHolding
 
     # Return success with updated values
     return dict(
@@ -1155,8 +1174,8 @@ class Market(Page):
     @staticmethod
     def vars_for_template(player: Player):
         return dict(
-            goodA_utility_table=json.loads(player.goodA_utility_table),
-            goodB_utility_table=json.loads(player.goodB_utility_table),
+            goodA_utility_table=json.loads(player.goodA_utility_table) if not player.session.config.get('use_constant_marginal_utility', True) else [],
+            goodB_utility_table=json.loads(player.goodB_utility_table) if not player.session.config.get('use_constant_marginal_utility', True) else [],
         )
 
 class ResultsWaitPage(WaitPage):

@@ -21,16 +21,21 @@ SESSION_CONFIGS = [
         short_selling=True,
         margin_buying=True,
     ),
-    dict(
+
+        dict(
         name='singleAsset',
-        display_name='Single asset: Continuous double auction',
+        display_name='PCT',
         app_sequence=['singleAsset'],
         num_demo_participants=4,
         market_time=210,
         randomise_types=True, # KeyError : 'roleID' shows up if this is set to False
         short_selling=False,
         margin_buying=False,
+        use_constant_marginal_utility=True,  # Set to False for utility tables
+        good_a_marginal_utility=12,
+        good_b_marginal_utility=20,
         ),
+
     dict(
         name='nAssets',
         display_name='n assets: Continuous double auction',
