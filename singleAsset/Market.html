@@ -56,16 +56,19 @@ Market Place
 
 {{ block content }}
 
+
+
 <style>
-/* Smaller fonts and compact layout */
-h3 { font-size: 1.3rem; margin-bottom: 15px; }
-h4 { font-size: 1.1rem; margin-bottom: 10px; }
-h5 { font-size: 1rem; margin-bottom: 8px; }
-p { font-size: 0.9rem; margin-bottom: 4px; }
-.div_box { padding: 12px; margin-bottom: 15px; }
+/* Larger fonts and more compact layout */
+h1 { font-size: 1.4rem; margin-bottom: 3px; }
+h3 { font-size: 1.3rem; margin-bottom: 4px; }
+h4 { font-size: 1.1rem; margin-bottom: 3px; }
+h5 { font-size: 1rem; margin-bottom: 2px; }
+p { font-size: 0.9rem; margin-bottom: 1px; }
+.div_box { padding: 4px; margin-bottom: 6px; }
 .table_box { font-size: 0.85rem; }
-.btn { font-size: 0.9rem; padding: 6px 12px; }
-input { font-size: 0.9rem; }
+.btn { font-size: 1rem; padding: 4px 10px; }
+input { font-size: 1rem; }
 
 
 /* Additional layout fixes */
@@ -77,6 +80,15 @@ input { font-size: 0.9rem; }
 
 /* Override the problematic CSS from style.css */
 .div_box { text-align: left !important; height: auto; overflow: visible; }
+
+/* Standardize all button sizes */
+.btn {
+    width: 120px !important;
+    height: 36px !important;
+    font-size: 0.9rem !important;
+    padding: 6px 12px !important;
+    margin: 5px !important;
+}
 /* Fix for nested rows in asset market */
 .market_interface_container .row { display: block; }
 .market_interface_container .col-md-6 { display: inline-block; width: 48%; vertical-align: top; }
@@ -97,13 +109,73 @@ input { font-size: 0.9rem; }
 .news_container { margin-bottom: 10px; }
 .news_container h4 { margin-bottom: 8px; }
 
+/* Make endowment info box more compact */
+#endowmentTable th, #endowmentTable td {
+    padding: 1px 4px !important;
+    font-size: 0.9rem !important;
+}
+
+/* Reduce spacing in main containers */
+.endowment-container { margin-bottom: 8px !important; }
+.endowment-div { padding: 4px !important; }
+
+/* Reduce spacing between market sections */
+.market_interface_container .div_box { 
+    padding: 3px !important; 
+    margin-bottom: 4px !important; 
+}
+
+/* Make goods market more compact */
+.goods-market-container .div_box { 
+    padding: 3px !important; 
+    margin-bottom: 4px !important; 
+}
+
+/* Add more space after Goods Market heading */
+h3 { margin-bottom: 24px !important; }
+
+/* Reduce spacing in main table layout */
+table[style*="border-spacing: 15px"] { 
+    border-spacing: 8px !important; 
+}
+
+/* Make market containers more compact */
+div[style*="background-color: #f8f9fa"] { 
+    padding: 10px !important; 
+}
+
+/* Reduce spacing between goods sections */
+hr { margin: 12px 0 !important; }
+
+/* Make buttons more compact */
+.btn { 
+    margin: 3px !important; 
+    padding: 4px 8px !important; 
+}
+
+/* Style the existing oTree timeout to be compact and in top right */
+.otree-timer {
+    position: fixed !important;
+    top: 20px !important;
+    right: 20px !important;
+    background-color: #f8f9fa !important;
+    border: 1px solid #dee2e6 !important;
+    border-radius: 5px !important;
+    padding: 8px 12px !important;
+    font-size: 0.9rem !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+    z-index: 1000 !important;
+    min-width: 120px !important;
+    text-align: center !important;
+    margin: 0 !important;
+}
 </style>
 <noscript>
     <div id="jsError">ERROR: this page runs only with javascript enabled</div>
 </noscript>
 
-<div id="endowmentDiv" class="endowment-container row" style="margin-bottom: 35px">
-    <div class="endowment-div col-sm div_box">
+<div id="endowmentDiv" class="endowment-container row" style="margin-bottom: 12px">
+    <div class="endowment-div col-sm div_box" style="padding: 8px;">
     <table id="endowmentTable">
     <tr style="display: none;">
         <th>Your role</th>
@@ -157,10 +229,10 @@ input { font-size: 0.9rem; }
     <tr>
         <!-- Goods Market (left, 1/3 width) -->
         <td style="width: 33.33%; vertical-align: top;">
-            <h3>Goods Market</h3>
-            
-            <!-- Good A Box -->
-            <div class="div_box" style="margin-bottom: 15px;">
+            <div style="background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 5px; padding: 15px; margin-bottom: 0;">
+                <h3>Goods Market</h3>
+                
+                <!-- Good A Section -->
                 <h4>Good A</h4>
                 <div style="text-align: left; padding-left: 15px;">
                     <p style="margin-bottom: 5px;"><strong>Monetary cost:</strong> 5</p>
@@ -179,10 +251,10 @@ input { font-size: 0.9rem; }
                     </p>
                 </div>
                 <button type="button" id="buyA_btn" class="btn btn-success" style="margin-top: 10px;">Buy Good A</button>
-            </div>
-            
-            <!-- Good B Box -->
-            <div class="div_box" style="margin-bottom: 15px;">
+                
+                <hr style="margin: 20px 0;">
+                
+                <!-- Good B Section -->
                 <h4>Good B</h4>
                 <div style="text-align: left; padding-left: 15px;">
                     <p style="margin-bottom: 5px;"><strong>Monetary cost:</strong> 10</p>
@@ -203,10 +275,14 @@ input { font-size: 0.9rem; }
                 <button type="button" id="buyB_btn" class="btn btn-success" style="margin-top: 10px;">Buy Good B</button>
             </div>
         </td>
-        <!-- Asset Market (center, 1/3 width) -->
-        <td style="width: 33.33%; vertical-align: top;">
-            <h3>Asset Market</h3>
-            <div class="market_interface_container div_box">
+        <!-- Asset Market + Trade History Container (center + right, 2/3 width) -->
+        <td colspan="2" style="width: 66.66%; vertical-align: top;">
+            <div style="background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 5px; padding: 15px; margin-bottom: 0;">
+                <h3>Asset Market</h3>
+                <table style="width: 100%; border-collapse: separate; border-spacing: 20px;">
+                    <tr>
+                        <td style="width: 50%; vertical-align: top;">
+                            <div class="market_interface_container">
                     <div class="row">
                         <div class="col-12">
                             <h4>Make Offers</h4>
@@ -216,7 +292,7 @@ input { font-size: 0.9rem; }
                             <input type="number" class="form-control small-numbers" inputmode="numeric" id="limitBidPrice" min="0" style="width: 120px; margin-bottom: 10px;">
                             <input type="number" class="form-control small-numbers" inputmode="numeric" id="limitBidVolume" min="1" value="1" style="display: none;">
 
-                            <button type="button" onclick="sendOffer(is_bid=1)" id="bidOffer" class="otree-btn-next btn btn-primary">Place bid offer</button>
+                            <button type="button" onclick="sendOffer(is_bid=1)" id="bidOffer" class="otree-btn-next btn btn-primary">Place bid</button>
                             <div class="otree-form-errors alert alert-danger" id="errorBidOffer" style="display: none; text-align: left; margin-top: 35px">
                                 <p>Please provide all necessary information to place a bid offer</p>
                                 <ol>
@@ -231,7 +307,7 @@ input { font-size: 0.9rem; }
                             <input type="number" class="form-control small-numbers" inputmode="numeric" id="limitAskPrice" min="0" style="width: 120px; margin-bottom: 10px;">
                             <input type="number" class="form-control small-numbers" inputmode="numeric" id="limitAskVolume" min="1" value="1" style="display: none;">
 
-                            <button type="button" onclick="sendOffer(is_bid=0)" id="SendOffer" class="otree-btn-next btn btn-primary">Place ask offer</button>
+                            <button type="button" onclick="sendOffer(is_bid=0)" id="SendOffer" class="otree-btn-next btn btn-primary">Place ask</button>
                             <div class="otree-form-errors alert alert-danger" id="errorAskOffer" style="display: none; text-align: left; margin-top: 35px">
                                 <p>Please provide all necessary information to place an ask offer</p>
                                 <ol>
@@ -254,7 +330,7 @@ input { font-size: 0.9rem; }
                         <input type="number" class="form-control small-numbers" inputmode="numeric" id="transactionBidVolume" min="1" style="display: inline-block; width: 80px; margin-bottom: 10px;">
                         <table id="bidsTable" class="table_box"><thead><tr><th>Volume</th><th>Price</th></tr></thead><tbody></tbody></table>
                         <button type="button" onclick="sendAcc(is_bid=1)" id="bidAccept" class="otree-btn-next btn btn-primary">Sell an asset</button>
-                        <button type="button" onclick="cancelLimit(is_bid=1)" id="cancelBidLimit" class="btn btn-outline-danger">Cancel own offer</button>
+                        <button type="button" onclick="cancelLimit(is_bid=1)" id="cancelBidLimit" class="btn btn-outline-danger">Cancel offer</button>
                         
                         <div class="otree-form-errors alert alert-danger" id="errorBidMarket" style="display: none; text-align: left; margin-top: 35px;">
                             <p>Please provide all necessary information to accept a bid offer</p>
@@ -276,7 +352,7 @@ input { font-size: 0.9rem; }
                         <input type="number" class="form-control small-numbers" inputmode="numeric" id="transactionAskVolume" min="1" style="display: inline-block; width: 80px; margin-bottom: 10px;">
                         <table id="asksTable" class="table_box"><thead><tr><th>Volume</th><th>Price</th></tr></thead><tbody></tbody></table>
                         <button type="button" onclick="sendAcc(is_bid=0)" id="askAccept" class="otree-btn-next btn btn-primary">Buy an asset</button>
-                        <button type="button" onclick="cancelLimit(is_bid=0)" id="cancelAskLimit" class="btn btn-outline-danger">Cancel own offer</button>
+                        <button type="button" onclick="cancelLimit(is_bid=0)" id="cancelAskLimit" class="btn btn-outline-danger">Cancel offer</button>
                         <div class="otree-form-errors alert alert-danger" id="errorAskMarket" style="display: none; text-align: left; margin-top: 35px">
                             <p>Please provide all necessary information to accept an ask offer</p>
                             <ol>
@@ -293,18 +369,17 @@ input { font-size: 0.9rem; }
                         </div>
                     </div>
                 </div>
+                    </td>
+                    
+                    <!-- Trade History Graph (right side) -->
+                    <td style="width: 50%; vertical-align: top;">
+                        <div id="highchart" style="height: 300px; min-height: 300px;">
+                        </div>
+                    </td>
+                </tr>
+                </table>
             </div>
-        </div>
-    </div>
-    
-        </div>
-    </td>
-    <!-- Trade History (right, 1/3 width) -->
-    <td style="width: 33.33%; vertical-align: top;">
-        <h3>Trade History</h3>
-        <div id="highchart" class="div_box" style="height: 300px; min-height: 300px;">
-        </div>
-    </td>
+        </td>
 </tr>
 </table>
 
