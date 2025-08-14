@@ -6,10 +6,48 @@
         <script src="{{ static 'highcharts/highcharts.js' }}"></script>
         <script src="{{ static 'highcharts/highcharts_accessibility.js' }}"></script>
         <script src="{{ static 'chart.js' }}"></script>
+        <script>
+            $(document).ready(function() {
+                // Set all volume fields to 1 and ensure they're hidden
+                $('#limitBidVolume, #limitAskVolume, #transactionBidVolume, #transactionAskVolume')
+                    .val(1)
+                    .hide();
+                
+                // Set goods quantity fields to 1 and hide them
+                $('#buyA_qty, #buyB_qty')
+                    .val(1)
+                    .hide();
+            });
+        </script>
 {{ endblock }}
 
 {{ block global_styles }}
         <link rel="stylesheet" href="{{ static 'style.css' }}">
+        <style>
+            /* Hide volume input fields */
+            #limitBidVolume, #limitAskVolume, #transactionBidVolume, #transactionAskVolume {
+                display: none !important;
+            }
+            
+            /* Hide goods quantity input fields */
+            #buyA_qty, #buyB_qty {
+                display: none !important;
+            }
+            
+            /* Hide volume labels */
+            table tr th:contains("Volume"), 
+            table tr th:contains("volume") {
+                display: none !important;
+            }
+            
+            /* Hide the entire volume row in tables */
+            table tr:has(th:contains("Volume")),
+            table tr:has(th:contains("volume")) {
+                display: none !important;
+            }
+            
+
+        </style>
 {{ endblock }}
 
 {{ block title }}
@@ -17,6 +55,49 @@ Market Place
 {{ endblock }}
 
 {{ block content }}
+
+<style>
+/* Smaller fonts and compact layout */
+h3 { font-size: 1.3rem; margin-bottom: 15px; }
+h4 { font-size: 1.1rem; margin-bottom: 10px; }
+h5 { font-size: 1rem; margin-bottom: 8px; }
+p { font-size: 0.9rem; margin-bottom: 4px; }
+.div_box { padding: 12px; margin-bottom: 15px; }
+.table_box { font-size: 0.85rem; }
+.btn { font-size: 0.9rem; padding: 6px 12px; }
+input { font-size: 0.9rem; }
+
+
+/* Additional layout fixes */
+
+/* Bootstrap grid layout fixes */
+.row { display: flex !important; }
+.col-md-4 { flex: 0 0 33.333333% !important; max-width: 33.333333% !important; }
+.col-md-4:not(:last-child) { margin-right: 15px; }
+
+/* Override the problematic CSS from style.css */
+.div_box { text-align: left !important; height: auto; overflow: visible; }
+/* Fix for nested rows in asset market */
+.market_interface_container .row { display: block; }
+.market_interface_container .col-md-6 { display: inline-block; width: 48%; vertical-align: top; }
+.market_bid, .market_ask { display: inline-block; width: 48%; vertical-align: top; }
+/* Ensure all content is visible */
+.market_interface_container { display: block; }
+.market_interface_container .row { display: block; }
+.market_interface_container .col-md-6 { display: inline-block; width: 48%; }
+.market_bid, .market_ask { display: inline-block; width: 48%; }
+/* Debug: make sure everything is visible */
+.market_interface_container, .market_interface_container * { visibility: visible !important; }
+
+/* Make Trade History more compact */
+.trades_container { margin-bottom: 8px; }
+.trades_container h4 { margin-bottom: 5px; }
+
+/* Make Messages section compact */
+.news_container { margin-bottom: 10px; }
+.news_container h4 { margin-bottom: 8px; }
+
+</style>
 <noscript>
     <div id="jsError">ERROR: this page runs only with javascript enabled</div>
 </noscript>
@@ -24,7 +105,7 @@ Market Place
 <div id="endowmentDiv" class="endowment-container row" style="margin-bottom: 35px">
     <div class="endowment-div col-sm div_box">
     <table id="endowmentTable">
-    <tr>
+    <tr style="display: none;">
         <th>Your role</th>
         <td id="traderRole">
             {{ if player.isObserver }} Inactive observer {{ else }} Trader {{ endif }}
@@ -59,12 +140,12 @@ Market Place
         <th>Good B holding</th>
         <td id="goodB_qty">{{ player.goodB_qty }}</td>
     </tr>
-    <tr>
-        <th>Utility from goods</th>
+    <tr style="display: none;">
+        <th>Satisfaction points from goods</th>
         <td id="goods_utility">{{ player.goods_utility }}</td>
     </tr>
     <tr>
-        <th>Overall utility (goods + money)</th>
+        <th>Satisfaction points (goods + money)</th>
         <td id="overall_utility">{{ player.overall_utility }}</td>
     </tr>
         {{ else }} {{ endif }}
@@ -72,110 +153,109 @@ Market Place
     </div>
 </div>
 
-<div class="row no-gutters" style="margin-bottom: 20px;">
-    <!-- Goods Market (left, 1/3 width) -->
-    <div class="col-md-4" style="margin-right: 30px;">
-        <h3>Goods Market</h3>
-        <!-- Utility tables for Good A and Good B -->
-        <div class="utility-tables row" style="margin-bottom: 20px;">
-            {% if not session.config.use_constant_marginal_utility %}
-            <!-- Show utility tables only if not using constant marginal utility -->
-            <div class="col-sm div_box">
-                <h4>Marginal Utility: Good A</h4>
-                <table class="table_box">
-                    <thead><tr><th>Unit</th><th>Utility</th></tr></thead>
-                    <tbody>
-                        {% for u in goodA_utility_table %}
-                        <tr><td>{{ forloop.counter }}</td><td>{{ u }}</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            <div class="col-sm div_box">
-                <h4>Marginal Utility: Good B</h4>
-                <table class="table_box">
-                    <thead><tr><th>Unit</th><th>Utility</th></tr></thead>
-                    <tbody>
-                        {% for u in goodB_utility_table %}
-                        <tr><td>{{ forloop.counter }}</td><td>{{ u }}</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            {% else %}
-            <!-- Show constant marginal utility information -->
-            <div class="col-sm div_box">
-                <h4>Utility Information</h4>
-                <p><strong>Good A:</strong> {{ session.config.good_a_marginal_utility }} utility per unit</p>
-                <p><strong>Good B:</strong> {{ session.config.good_b_marginal_utility }} utility per unit</p>
-                <p><em>Constant marginal utility: Each additional unit provides the same utility.</em></p>
-            </div>
-            {% endif %}
-        </div>
-        <!-- Goods purchase UI -->
-        <div class="goods-purchase row" style="margin-bottom: 20px;">
-            <div class="col-sm div_box">
-                <h5>Buy Good A</h5>
-                <p>Price: 5 | Asset cost: 1</p>
-                <input type="number" id="buyA_qty" min="1" value="1" class="form-control small-numbers" style="width: 80px; display: inline-block;">
-                <button type="button" id="buyA_btn" class="btn btn-success">Buy Good A</button>
-            </div>
-            <div class="col-sm div_box">
-                <h5>Buy Good B</h5>
-                <p>Price: 10 | Asset cost: 3</p>
-                <input type="number" id="buyB_qty" min="1" value="1" class="form-control small-numbers" style="width: 80px; display: inline-block;">
-                <button type="button" id="buyB_btn" class="btn btn-success">Buy Good B</button>
-            </div>
-        </div>
-    </div>
-    <!-- Asset Market (right, 2/3 width) -->
-    <div class="col-md-8">
-        <h3>Asset Market</h3>
-        <div class="row">
-            <!-- Buy/Sell Interface (left half of asset market) -->
-            <div class="col-md-6">
-                <div class="limit_container row">
-                    <div class="limit_bid col-sm div_box">
-                        <h4>Make bid offer</h4>
-                        <table style="margin: auto">
-                            <tr><th>Price (buy at)</th><td><input type="number" class="form-control small-numbers" inputmode="numeric" id="limitBidPrice" min="0"></td></tr>
-                            <tr><th>Volume</th><td><input type="number" class="form-control small-numbers" inputmode="numeric" id="limitBidVolume" min="1"></td></tr>
-                        </table>
-                        <button type="button" onclick="sendOffer(is_bid=1)" id="bidOffer" class="otree-btn-next btn btn-primary">Place bid offer</button>
-                        <div class="otree-form-errors alert alert-danger" id="errorBidOffer" style="display: none; text-align: left; margin-top: 35px">
-                            <p>Please provide all necessary information to place a bid offer</p>
-                            <ol>
-                                <li>Provide the desired volume (a positive valued integer).</li>
-                                <li>Provide the desired price you offer to pay (a positive valued real number).</li>
-                            </ol>
-                            <button type="button" id="sendBidError" class="btn btn-outline-danger">I understood</button>
-                        </div>
-                    </div>
-                    <div class="limit_ask col-sm div_box">
-                        <h4>Make ask offer</h4>
-                        <table style="margin: auto">
-                            <tr><th>Price (sell at)</th><td><input type="number" class="form-control small-numbers" inputmode="numeric" id="limitAskPrice" min="0"></td></tr>
-                            <tr><th>Volume</th><td><input type="number" class="form-control small-numbers" inputmode="numeric" id="limitAskVolume" min="1"></td></tr>
-                        </table>
-                        <button type="button" onclick="sendOffer(is_bid=0)" id="SendOffer" class="otree-btn-next btn btn-primary">Place ask offer</button>
-                        <div class="otree-form-errors alert alert-danger" id="errorAskOffer" style="display: none; text-align: left; margin-top: 35px">
-                            <p>Please provide all necessary information to place an ask offer</p>
-                            <ol>
-                                <li>Provide the desired volume (a positive valued integer).</li>
-                                <li>Provide the desired price you seek to receive (a positive valued real number).</li>
-                            </ol>
-                            <button type="button" id="sendAskError" class="btn btn-outline-danger">I understood</button>
-                        </div>
-                    </div>
+<table style="width: 100%; margin-bottom: 15px; border-collapse: separate; border-spacing: 15px;">
+    <tr>
+        <!-- Goods Market (left, 1/3 width) -->
+        <td style="width: 33.33%; vertical-align: top;">
+            <h3>Goods Market</h3>
+            
+            <!-- Good A Box -->
+            <div class="div_box" style="margin-bottom: 15px;">
+                <h4>Good A</h4>
+                <div style="text-align: left; padding-left: 15px;">
+                    <p style="margin-bottom: 5px;"><strong>Monetary cost:</strong> 5</p>
+                    <p style="margin-bottom: 5px;"><strong>Asset cost:</strong> 1</p>
+                    <p style="margin-bottom: 5px;"><strong>Satisfaction points:</strong> 
+                        {% if session.config.use_constant_marginal_utility %}
+                            {{ session.config.good_a_marginal_utility }}
+                        {% else %}
+                            <br><table class="table_box" style="font-size: 12px; margin-top: 5px;">
+                                <tr><th>Units</th><th>Utility</th></tr>
+                                {% for unit, utility in player.goodA_utility_table %}
+                                    <tr><td>{{ unit }}</td><td>{{ utility }}</td></tr>
+                                {% endfor %}
+                            </table>
+                        {% endif %}
+                    </p>
                 </div>
+                <button type="button" id="buyA_btn" class="btn btn-success" style="margin-top: 10px;">Buy Good A</button>
+            </div>
+            
+            <!-- Good B Box -->
+            <div class="div_box" style="margin-bottom: 15px;">
+                <h4>Good B</h4>
+                <div style="text-align: left; padding-left: 15px;">
+                    <p style="margin-bottom: 5px;"><strong>Monetary cost:</strong> 10</p>
+                    <p style="margin-bottom: 5px;"><strong>Asset cost:</strong> 3</p>
+                    <p style="margin-bottom: 5px;"><strong>Satisfaction points:</strong> 
+                        {% if session.config.use_constant_marginal_utility %}
+                            {{ session.config.good_b_marginal_utility }}
+                        {% else %}
+                            <br><table class="table_box" style="font-size: 12px; margin-top: 5px;">
+                                <tr><th>Units</th><th>Utility</th></tr>
+                                {% for unit, utility in player.goodB_utility_table %}
+                                    <tr><td>{{ unit }}</td><td>{{ utility }}</td></tr>
+                                {% endfor %}
+                            </table>
+                        {% endif %}
+                    </p>
+                </div>
+                <button type="button" id="buyB_btn" class="btn btn-success" style="margin-top: 10px;">Buy Good B</button>
+            </div>
+        </td>
+        <!-- Asset Market (center, 1/3 width) -->
+        <td style="width: 33.33%; vertical-align: top;">
+            <h3>Asset Market</h3>
+            <div class="market_interface_container div_box">
+                    <div class="row">
+                        <div class="col-12">
+                            <h4>Make Offers</h4>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>I offer to buy at this price:</strong></p>
+                            <input type="number" class="form-control small-numbers" inputmode="numeric" id="limitBidPrice" min="0" style="width: 120px; margin-bottom: 10px;">
+                            <input type="number" class="form-control small-numbers" inputmode="numeric" id="limitBidVolume" min="1" value="1" style="display: none;">
+
+                            <button type="button" onclick="sendOffer(is_bid=1)" id="bidOffer" class="otree-btn-next btn btn-primary">Place bid offer</button>
+                            <div class="otree-form-errors alert alert-danger" id="errorBidOffer" style="display: none; text-align: left; margin-top: 35px">
+                                <p>Please provide all necessary information to place a bid offer</p>
+                                <ol>
+                                    <li>Provide the desired volume (a positive valued integer).</li>
+                                    <li>Provide the desired price you offer to pay (a positive valued real number).</li>
+                                </ol>
+                                <button type="button" id="sendBidError" class="btn btn-outline-danger">I understood</button>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>I offer to sell at this price:</strong></p>
+                            <input type="number" class="form-control small-numbers" inputmode="numeric" id="limitAskPrice" min="0" style="width: 120px; margin-bottom: 10px;">
+                            <input type="number" class="form-control small-numbers" inputmode="numeric" id="limitAskVolume" min="1" value="1" style="display: none;">
+
+                            <button type="button" onclick="sendOffer(is_bid=0)" id="SendOffer" class="otree-btn-next btn btn-primary">Place ask offer</button>
+                            <div class="otree-form-errors alert alert-danger" id="errorAskOffer" style="display: none; text-align: left; margin-top: 35px">
+                                <p>Please provide all necessary information to place an ask offer</p>
+                                <ol>
+                                    <li>Provide the desired volume (a positive valued integer).</li>
+                                    <li>Provide the desired price you seek to receive (a positive valued real number).</li>
+                                </ol>
+                                <button type="button" id="sendAskError" class="btn btn-outline-danger">I understood</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr style="margin: 20px 0;">
                 <div class="market_table row">
-                    <div class="market_bid col-sm div_box">
-                        <h4>Bids</h4>
-                        <p style="text-align: center">Please, select the limit order and specify the volume you would like to sell here</p>
-                        <input type="number" class="form-control small-numbers" inputmode="numeric" id="transactionBidVolume" min="1" style="display: inline-block;">
-                        <button type="button" onclick="sendAcc(is_bid=1)" id="bidAccept" class="otree-btn-next btn btn-primary">Accept sale</button>
+                    <div class="col-12">
+                        <h4>Accept Offers</h4>
+                        <!--<p style="text-align: center">Please, select the offer you wish to accept</p>-->
+                    </div>
+                    <div class="market_bid col-sm">
+                        <h5>Bid Offers</h5>
+                        <input type="number" class="form-control small-numbers" inputmode="numeric" id="transactionBidVolume" min="1" style="display: inline-block; width: 80px; margin-bottom: 10px;">
                         <table id="bidsTable" class="table_box"><thead><tr><th>Volume</th><th>Price</th></tr></thead><tbody></tbody></table>
-                        <button type="button" onclick="cancelLimit(is_bid=1)" id="cancelBidLimit" class="btn btn-outline-danger">Withdraw own limit order</button>
+                        <button type="button" onclick="sendAcc(is_bid=1)" id="bidAccept" class="otree-btn-next btn btn-primary">Sell an asset</button>
+                        <button type="button" onclick="cancelLimit(is_bid=1)" id="cancelBidLimit" class="btn btn-outline-danger">Cancel own offer</button>
+                        
                         <div class="otree-form-errors alert alert-danger" id="errorBidMarket" style="display: none; text-align: left; margin-top: 35px;">
                             <p>Please provide all necessary information to accept a bid offer</p>
                             <ol>
@@ -191,13 +271,12 @@ Market Place
                             <button type="button" id="cancelBidError" class="btn btn-outline-danger">I understood</button>
                         </div>
                     </div>
-                    <div class="market_ask col-sm div_box">
-                        <h4>Asks</h4>
-                        <p style="text-align: center">Please, select the limit order and specify the volume you would like to purchase here</p>
-                        <input type="number" class="form-control small-numbers" inputmode="numeric" id="transactionAskVolume" min="1" style="display: inline-block">
-                        <button type="button" onclick="sendAcc(is_bid=0)" id="askAccept" class="otree-btn-next btn btn-primary">Accept purchase</button>
+                    <div class="market_ask col-sm">
+                        <h5>Ask Offers</h5>
+                        <input type="number" class="form-control small-numbers" inputmode="numeric" id="transactionAskVolume" min="1" style="display: inline-block; width: 80px; margin-bottom: 10px;">
                         <table id="asksTable" class="table_box"><thead><tr><th>Volume</th><th>Price</th></tr></thead><tbody></tbody></table>
-                        <button type="button" onclick="cancelLimit(is_bid=0)" id="cancelAskLimit" class="btn btn-outline-danger">Withdraw own limit order</button>
+                        <button type="button" onclick="sendAcc(is_bid=0)" id="askAccept" class="otree-btn-next btn btn-primary">Buy an asset</button>
+                        <button type="button" onclick="cancelLimit(is_bid=0)" id="cancelAskLimit" class="btn btn-outline-danger">Cancel own offer</button>
                         <div class="otree-form-errors alert alert-danger" id="errorAskMarket" style="display: none; text-align: left; margin-top: 35px">
                             <p>Please provide all necessary information to accept an ask offer</p>
                             <ol>
@@ -215,18 +294,46 @@ Market Place
                     </div>
                 </div>
             </div>
-            <!-- Trade history, trades, and messages (right half of asset market) -->
-            <div class="col-md-6">
-                <div id="highchart" class="div_box"></div>
-                <div class="trades_container div_box alert-success">
-                    <h4>Market Activity</h4>
-                    <table id="tradesTable" class="table_box"></table>
-                </div>
-                <div class="news_container div_box alert-warning">
-                    <h4>Messages</h4>
-                    <table id="newsTable" class="table_box"></table>
-                </div>
-            </div>
+        </div>
+    </div>
+    
+        </div>
+    </td>
+    <!-- Trade History (right, 1/3 width) -->
+    <td style="width: 33.33%; vertical-align: top;">
+        <h3>Trade History</h3>
+        <div id="highchart" class="div_box" style="height: 300px; min-height: 300px;">
+        </div>
+    </td>
+</tr>
+</table>
+
+
+<!-- Market Activity at bottom spanning all three columns -->
+<div class="row" style="margin-top: 10px;">
+    <div class="col-12">
+        <div class="trades_container div_box alert-success" style="padding: 8px; margin-bottom: 10px;">
+            <h4 style="margin-bottom: 5px;">Market Activity</h4>
+            <table id="tradesTable" class="table_box">
+                <thead>
+                    <tr>
+                        <th>Transaction</th>
+                        <th>Price</th>
+                        <th>Time</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Messages at bottom spanning all three columns -->
+<div class="row" style="margin-top: 10px;">
+    <div class="col-12">
+        <div class="news_container div_box alert-warning" style="padding: 8px; margin-bottom: 10px;">
+            <h4 style="margin-bottom: 5px;">Messages</h4>
+            <table id="newsTable" class="table_box"></table>
         </div>
     </div>
 </div>

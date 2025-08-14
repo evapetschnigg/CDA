@@ -82,8 +82,11 @@
 
     //this part is for the goods market
     function buyGood(good) {
-        let qty = good === 'A' ? $('#buyA_qty').val() : $('#buyB_qty').val();
-        qty = parseInt(qty, 10);
+        // when the qty input fields are used, uncomment the following 2 lines and make qty=1 the comment
+        // let qty = good === 'A' ? $('#buyA_qty').val() : $('#buyB_qty').val();
+        //qty = parseInt(qty, 10);
+
+        let qty = 1;
         
         // Store the trade info
         lastGoodsTrade = { good: good, qty: qty };
@@ -104,6 +107,12 @@
         let errorField = (is_bid == 0) ? $('#errorAskOffer') : $('#errorBidOffer')
         let limitPrice = (is_bid == 0) ? $('#limitAskPrice').val() : $('#limitBidPrice').val()
         let limitVolume = (is_bid == 0) ? $('#limitAskVolume').val() : $('#limitBidVolume').val()
+        
+        // Default to quantity 1 if volume is empty (since inputs are hidden)
+        if (!limitVolume || limitVolume === '') {
+            limitVolume = 1;
+        }
+        
         if (limitPrice == undefined || limitPrice <= 0 ) {
             errorField.css("display", "inline-block")
             return // If you care about misspecified orders in your data, you may uncomment the return, it will be pushed back by the server
@@ -134,6 +143,12 @@
             return
         }
         let transactionVolume = (is_bid == 0)? $('#transactionAskVolume').val() : $('#transactionBidVolume').val()
+        
+        // Default to quantity 1 if volume is empty (since inputs are hidden)
+        if (!transactionVolume || transactionVolume === '') {
+            transactionVolume = 1;
+        }
+        
         if (! checkVolume(errorField, transactionVolume)){
             return
         }
