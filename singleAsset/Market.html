@@ -293,14 +293,6 @@ hr { margin: 12px 0 !important; }
                             <input type="number" class="form-control small-numbers" inputmode="numeric" id="limitBidVolume" min="1" value="1" style="display: none;">
 
                             <button type="button" onclick="sendOffer(is_bid=1)" id="bidOffer" class="otree-btn-next btn btn-primary">Place bid</button>
-                            <div class="otree-form-errors alert alert-danger" id="errorBidOffer" style="display: none; text-align: left; margin-top: 35px">
-                                <p>Please provide all necessary information to place a bid offer</p>
-                                <ol>
-                                    <li>Provide the desired volume (a positive valued integer).</li>
-                                    <li>Provide the desired price you offer to pay (a positive valued real number).</li>
-                                </ol>
-                                <button type="button" id="sendBidError" class="btn btn-outline-danger">I understood</button>
-                            </div>
                         </div>
                         <div class="col-md-6">
                             <p><strong>I offer to sell at this price:</strong></p>
@@ -308,14 +300,6 @@ hr { margin: 12px 0 !important; }
                             <input type="number" class="form-control small-numbers" inputmode="numeric" id="limitAskVolume" min="1" value="1" style="display: none;">
 
                             <button type="button" onclick="sendOffer(is_bid=0)" id="SendOffer" class="otree-btn-next btn btn-primary">Place ask</button>
-                            <div class="otree-form-errors alert alert-danger" id="errorAskOffer" style="display: none; text-align: left; margin-top: 35px">
-                                <p>Please provide all necessary information to place an ask offer</p>
-                                <ol>
-                                    <li>Provide the desired volume (a positive valued integer).</li>
-                                    <li>Provide the desired price you seek to receive (a positive valued real number).</li>
-                                </ol>
-                                <button type="button" id="sendAskError" class="btn btn-outline-danger">I understood</button>
-                            </div>
                         </div>
                     </div>
                     
@@ -330,22 +314,7 @@ hr { margin: 12px 0 !important; }
                         <input type="number" class="form-control small-numbers" inputmode="numeric" id="transactionBidVolume" min="1" style="display: inline-block; width: 80px; margin-bottom: 10px;">
                         <table id="bidsTable" class="table_box"><thead><tr><th>Volume</th><th>Price</th></tr></thead><tbody></tbody></table>
                         <button type="button" onclick="sendAcc(is_bid=1)" id="bidAccept" class="otree-btn-next btn btn-primary">Sell an asset</button>
-                        <button type="button" onclick="cancelLimit(is_bid=1)" id="cancelBidLimit" class="btn btn-outline-danger">Cancel offer</button>
-                        
-                        <div class="otree-form-errors alert alert-danger" id="errorBidMarket" style="display: none; text-align: left; margin-top: 35px;">
-                            <p>Please provide all necessary information to accept a bid offer</p>
-                            <ol>
-                                <li>Select the offer you wish to accept</li>
-                                <li>The demanded offer shall not be one you placed but blue-framed instead.</li>
-                                <li>The demanded offer shall be one with the best available price (placed at the top of the table).</li>
-                                <li>Provide the desired volume you wish to take (a positive valued integer).</li>
-                            </ol>
-                            <button type="button" id="accBidError" class="btn btn-outline-danger">I understood</button>
-                        </div>
-                        <div class="otree-form-errors alert alert-danger" id="errorBidCancel" style="display: none; text-align: left; margin-top: 35px;">
-                            <p>If you wish to withdraw one of your own (red-framed) bid offers, please select it first.</p>
-                            <button type="button" id="cancelBidError" class="btn btn-outline-danger">I understood</button>
-                        </div>
+                        <button type="button" onclick="cancelLimit(is_bid=1)" id="cancelBidLimit" class="btn btn-outline-danger">Cancel offer</button>                      
                     </div>
                     <div class="market_ask col-sm">
                         <h5>Ask Offers</h5>
@@ -353,20 +322,6 @@ hr { margin: 12px 0 !important; }
                         <table id="asksTable" class="table_box"><thead><tr><th>Volume</th><th>Price</th></tr></thead><tbody></tbody></table>
                         <button type="button" onclick="sendAcc(is_bid=0)" id="askAccept" class="otree-btn-next btn btn-primary">Buy an asset</button>
                         <button type="button" onclick="cancelLimit(is_bid=0)" id="cancelAskLimit" class="btn btn-outline-danger">Cancel offer</button>
-                        <div class="otree-form-errors alert alert-danger" id="errorAskMarket" style="display: none; text-align: left; margin-top: 35px">
-                            <p>Please provide all necessary information to accept an ask offer</p>
-                            <ol>
-                                <li>Select the offer you wish to accept</li>
-                                <li>The demanded offer shall not be one you placed but blue-framed instead.</li>
-                                <li>The demanded offer shall be one with the best available price (placed at the top of the table).</li>
-                                <li>Provide the desired volume you wish to take (a positive valued integer).</li>
-                            </ol>
-                            <button type="button" id="accAskError" class="btn btn-outline-danger">I understood</button>
-                        </div>
-                        <div class="otree-form-errors alert alert-danger" id="errorAskCancel" style="display: none; text-align: left; margin-top: 35px;">
-                            <p>If you wish to withdraw one of your own (red-framed) ask offers, please select it first.</p>
-                            <button type="button" id="cancelAskError" class="btn btn-outline-danger">I understood</button>
-                        </div>
                     </div>
                 </div>
                     </td>

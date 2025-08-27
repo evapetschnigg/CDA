@@ -548,7 +548,7 @@ def limit_order(player: Player, data):
             playerID=maker_id,
             group=group,
             Period=period,
-            msg='Order rejected: there is a limit order with the same or a more interesting price available in the order book.',
+            msg='Order rejected: there is a limit order with the same or a more interesting price available.',
             msgTime=round(float(time.time() - player.group.marketStartTime), C.decimals)
         )
         return
@@ -654,10 +654,10 @@ def cancel_limit(player: Player, data):
     if maker_id != player.id_in_group:
         News.create(
             player=player,
-            playerID=maker_id,
+            playerID=player.id_in_group,
             group=group,
             Period=period,
-            msg='Order rejected: you can withdraw your own orders only.',
+            msg='Order rejected: you can withdraw your own offers only.',
             msgTime=round(float(time.time() - player.group.marketStartTime), C.decimals)
         )
         return
@@ -846,7 +846,7 @@ def transaction(player: Player, data):
             playerID=taker_id,
             group=group,
             Period=period,
-            msg='Order rejected: own limit orders cannot be transacted.',
+            msg='Order rejected: own offers cannot be transacted.',
             msgTime=round(float(time.time() - player.group.marketStartTime), C.decimals)
         )
         return

@@ -102,9 +102,8 @@
     $('#buyA_btn').on('click', function() { buyGood('A'); });
     $('#buyB_btn').on('click', function() { buyGood('B'); });
 
-    // asset market: when a limit order is placed, they are first checked in the respective function and then send to the server where they are again checked
+    // asset market: when a limit order is placed, send to server for validation
     function sendOffer(is_bid) {
-        let errorField = (is_bid == 0) ? $('#errorAskOffer') : $('#errorBidOffer')
         let limitPrice = (is_bid == 0) ? $('#limitAskPrice').val() : $('#limitBidPrice').val()
         let limitVolume = (is_bid == 0) ? $('#limitAskVolume').val() : $('#limitBidVolume').val()
         
@@ -113,35 +112,21 @@
             limitVolume = 1;
         }
         
-        if (limitPrice == undefined || limitPrice <= 0 ) {
-            errorField.css("display", "inline-block")
-            return // If you care about misspecified orders in your data, you may uncomment the return, it will be pushed back by the server
-        }
-        if (! checkVolume(errorField, limitVolume)) {
-            return
-        }
+        // Send to server - let backend handle all validation
         liveSend({'operationType': 'limit_order', 'isBid': is_bid, 'limitPrice': limitPrice, 'limitVolume': limitVolume})
     }
 
 
     function sendAcc(is_bid) {
-        let errorField = (is_bid == 0)? $('#errorAskMarket') : $('#errorBidMarket')
         let prevSelected = $('#offerID' + selID)
         let makerIDSelected = prevSelected.attr('data-value')
-        if (! checkSelection(errorField, is_bid, prevSelected)) {
-            return
+        
+        if (!prevSelected.length) {
+            return // No selection made
         }
-        if (makerIDSelected == my_id ) {
-            errorField.css("display", "inline-block")
-            return false // If you care about misspecified orders in your data, you may uncomment the return
-        }
+        
         let offerID = selID
         let transactionPrice = prevSelected.children('td').eq(1).attr('value')
-        let BestPrice = prevSelected.parents('tbody').children('tr').eq(0).children('td').eq(1).attr('value') // selects the first row entry's price
-        if (transactionPrice != BestPrice) { // checks whether the best available offer is requested
-            errorField.css("display", "inline-block")
-            return
-        }
         let transactionVolume = (is_bid == 0)? $('#transactionAskVolume').val() : $('#transactionBidVolume').val()
         
         // Default to quantity 1 if volume is empty (since inputs are hidden)
@@ -149,17 +134,9 @@
             transactionVolume = 1;
         }
         
-        if (! checkVolume(errorField, transactionVolume)){
-            return
-        }
-        res = [ offerID, transactionPrice, transactionVolume ]
-        if (res === undefined) {
-            errorField.css("display", "inline-block")
-            return
-        }
+        // Send to server - let backend handle all validation
         liveSend({'operationType': 'market_order', 'offerID': offerID, 'isBid': is_bid, 'transactionPrice': transactionPrice, 'transactionVolume': transactionVolume})
         $('#bidsTable tbody tr, #asksTable tbody tr').removeClass('btn-primary btn-outline-primary btn-danger btn-outline-danger')
-
     }
 
     function addGoodsTrade(good, qty, price) {
