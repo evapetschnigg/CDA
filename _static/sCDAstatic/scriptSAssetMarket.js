@@ -24,7 +24,14 @@
         elBidsTableBody.html(bids.map(e => `<tr id='offerID${e[2]}' value=${e[2]} data-value=${e[3]} data-custom="1"><td value=${e[1]}>${e[1]} for </td><td value=${e[0]}>${cu(e[0])}</td></tr>`).join(''))
         elAsksTableBody.html(asks.map(e => `<tr id='offerID${e[2]}' value=${e[2]} data-value=${e[3]} data-custom="0"><td value=${e[1]}>${e[1]} for </td><td value=${e[0]}>${cu(e[0])}</td></tr>`).join(''))
         elTradesTable.html(trades.map(e => `<tr><td><span class="asset-icon"></span>${trade_desc(e[3])}&nbsp;</td><td> ${ e[1] } asset${e[1] === 1 ? '' : 's'} for&nbsp;</td><td> EUR ${ cu(e[0]) } </td></tr>`).join(''))
-        elNewsTable.html(news.map(e => `<tr><td>${e[0]}</td></tr>`).join(''))
+        // Display only the newest alert in Alerts box
+        if (news && news.length > 0) {
+            // Show only the most recent news message (first in the array)
+            let mostRecentNews = news[0];
+            elNewsTable.html(`<tr><td>${mostRecentNews[0]}</td></tr>`);
+        } else {
+            elNewsTable.html('<tr><td>No alerts</td></tr>');
+        }
 
         // Add goods trade to trades table if present
         if (data.goods_trade_good && data.goods_trade_qty) {

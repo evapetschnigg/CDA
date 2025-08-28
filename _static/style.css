@@ -56,3 +56,21 @@
     color: red;
     margin-bottom: 30px;
 }
+
+/* Ensure left alignment for Market Activity and Alerts boxes */
+#tradesTable, #newsTable {
+    text-align: left;
+}
+
+#tradesTable td, #newsTable td {
+    text-align: left;
+}
+
+.trades_container, .news_container {
+    text-align: left;
+}
+
+/* Remove extra bottom margin for Alerts box table */
+#newsTable {
+    margin-bottom: 0 !important;
+}
