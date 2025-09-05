@@ -493,7 +493,7 @@ def limit_order(player: Player, data):
             playerID=maker_id,
             group=group,
             Period=period,
-            msg='Order rejected: you are an observer who cannot place a limit order.',
+            msg='Cannot proceed: you are an observer who cannot place a bid/ask.',
             msgTime=round(float(time.time() - player.group.marketStartTime), C.decimals)
         )
         return
@@ -503,7 +503,7 @@ def limit_order(player: Player, data):
             playerID=maker_id,
             group=group,
             Period=period,
-            msg='Order rejected: misspecified price, volume or asset.',
+            msg='Cannot proceed: misspecified price, volume or asset.',
             msgTime=round(float(time.time() - player.group.marketStartTime), C.decimals)
         )
         return
@@ -516,7 +516,7 @@ def limit_order(player: Player, data):
             playerID=maker_id,
             group=group,
             Period=period,
-            msg='Order rejected: misspecified price or volume.',
+            msg='Cannot proceed: misspecified price or volume.',
             msgTime=round(float(time.time() - player.group.marketStartTime), C.decimals)
         )
         return
@@ -526,7 +526,7 @@ def limit_order(player: Player, data):
             playerID=maker_id,
             group=group,
             Period=period,
-            msg='Order rejected: insufficient cash available.',
+            msg='Cannot proceed: insufficient cash available.',
             msgTime=round(float(time.time() - player.group.marketStartTime), C.decimals)
         )
         return
@@ -538,7 +538,7 @@ def limit_order(player: Player, data):
             playerID=maker_id,
             group=group,
             Period=period,
-            msg='Order rejected: insufficient assets available.',
+            msg='Cannot proceed: insufficient assets available.',
             msgTime=round(float(time.time() - player.group.marketStartTime), C.decimals)
         )
         return
@@ -548,7 +548,7 @@ def limit_order(player: Player, data):
             playerID=maker_id,
             group=group,
             Period=period,
-            msg='Order rejected: there is a limit order with the same or a more interesting price available.',
+            msg='Cannot proceed: there is a buy/sell offer with the same or a more interesting price available.',
             msgTime=round(float(time.time() - player.group.marketStartTime), C.decimals)
         )
         return
@@ -647,7 +647,7 @@ def cancel_limit(player: Player, data):
             playerID=maker_id,
             group=group,
             Period=period,
-            msg='Order rejected: you are an observer who cannot withdraw a limit order.',
+            msg='Cannot proceed: you are an observer who cannot withdraw a bid/ask.',
             msgTime=round(float(time.time() - player.group.marketStartTime), C.decimals)
         )
         return
@@ -657,7 +657,7 @@ def cancel_limit(player: Player, data):
             playerID=player.id_in_group,
             group=group,
             Period=period,
-            msg='Order rejected: you can withdraw your own offers only.',
+            msg='Cannot proceed: you can withdraw your own buy/sell offers only.',
             msgTime=round(float(time.time() - player.group.marketStartTime), C.decimals)
         )
         return
@@ -665,7 +665,7 @@ def cancel_limit(player: Player, data):
     # we need to update Limit table entry
     offers = [o for o in Limit.filter(group=group) if o.offerID == offer_id]
     if not offers or len(offers) != 1:
-        print('Error: too few or too many limits found while withdrawing.')
+        print('Error: too few or too many buy/sell offers found while withdrawing.')
         return
     offers[0].isActive = False
     is_bid = offers[0].isBid
@@ -788,7 +788,7 @@ def transaction(player: Player, data):
             playerID=taker_id,
             group=group,
             Period=period,
-            msg='Order rejected: you are an observer who cannot accept a market order.',
+            msg='Cannot proceed: you are an observer who cannot accept a bid/ask.',
             msgTime=round(float(time.time() - player.group.marketStartTime), C.decimals)
         )
         return
@@ -808,7 +808,7 @@ def transaction(player: Player, data):
             playerID=taker_id,
             group=group,
             Period=period,
-            msg='Order rejected: misspecified volume.',
+            msg='Cannot proceed: misspecified volume.',
             msgTime=round(float(time.time() - player.group.marketStartTime), C.decimals)
         )
         return
@@ -824,7 +824,7 @@ def transaction(player: Player, data):
             playerID=taker_id,
             group=group,
             Period=period,
-            msg='Order rejected: insufficient cash available.',
+            msg='Cannot proceed: insufficient cash available.',
             msgTime=round(float(time.time() - player.group.marketStartTime), C.decimals)
         )
         return
@@ -836,7 +836,7 @@ def transaction(player: Player, data):
             playerID=taker_id,
             group=group,
             Period=period,
-            msg='Order rejected: insufficient assets available.',
+            msg='Cannot proceed: insufficient assets available.',
             msgTime=round(float(time.time() - player.group.marketStartTime), C.decimals)
         )
         return
@@ -846,7 +846,7 @@ def transaction(player: Player, data):
             playerID=taker_id,
             group=group,
             Period=period,
-            msg='Order rejected: own offers cannot be transacted.',
+            msg='Cannot proceed: own buy/selloffers cannot be transacted.',
             msgTime=round(float(time.time() - player.group.marketStartTime), C.decimals)
         )
         return
@@ -856,7 +856,7 @@ def transaction(player: Player, data):
             playerID=taker_id,
             group=group,
             Period=period,
-            msg='Order rejected: there is a better offer available.',
+            msg='Cannot proceed: there is a better buy/sell offer available.',
             msgTime=round(float(time.time() - player.group.marketStartTime), C.decimals)
         )
         return
@@ -981,7 +981,7 @@ def buy_good(player: Player, data):
             playerID=player.id_in_group,
             group=player.group,
             Period=player.group.round_number,
-            msg='Order rejected: invalid quantity.',
+            msg='Cannot proceed: invalid quantity.',
             msgTime=round(float(time.time() - player.group.marketStartTime), C.decimals)
         )
         return dict()
@@ -993,7 +993,7 @@ def buy_good(player: Player, data):
             playerID=player.id_in_group,
             group=player.group,
             Period=player.group.round_number,
-            msg='Order rejected: quantity must be positive.',
+            msg='Cannot proceed: quantity must be positive.',
             msgTime=round(float(time.time() - player.group.marketStartTime), C.decimals)
         )
         return dict()
@@ -1011,7 +1011,7 @@ def buy_good(player: Player, data):
             playerID=player.id_in_group,
             group=player.group,
             Period=player.group.round_number,
-            msg='Order rejected: invalid good.',
+            msg='Cannot proceed: invalid good.',
             msgTime=round(float(time.time() - player.group.marketStartTime), C.decimals)
         )
         return dict()
@@ -1025,7 +1025,7 @@ def buy_good(player: Player, data):
             playerID=player.id_in_group,
             group=player.group,
             Period=player.group.round_number,
-            msg='Order rejected: insufficient funds or assets.',
+            msg='Cannot proceed: insufficient funds or assets.',
             msgTime=round(float(time.time() - player.group.marketStartTime), C.decimals)
         )
         return dict()

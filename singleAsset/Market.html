@@ -175,7 +175,7 @@ hr { margin: 12px 0 !important; }
 </noscript>
 
 <div id="endowmentDiv" class="endowment-container row" style="margin-bottom: 12px">
-    <div class="endowment-div col-sm div_box" style="padding: 8px;">
+    <div class="endowment-div col-sm div_box" style="padding: 8px; flex: 0 0 60%; display: flex; align-items: center;">
     <table id="endowmentTable">
     <tr style="display: none;">
         <th>Your role</th>
@@ -212,16 +212,21 @@ hr { margin: 12px 0 !important; }
         <th>Good B holding</th>
         <td id="goodB_qty">{{ player.goodB_qty }}</td>
     </tr>
-    <tr style="display: none;">
+    <tr>
         <th>Satisfaction points from goods</th>
         <td id="goods_utility">{{ player.goods_utility }}</td>
     </tr>
-    <tr>
-        <th>Satisfaction points (goods + money)</th>
-        <td id="overall_utility">{{ player.overall_utility }}</td>
-    </tr>
         {{ else }} {{ endif }}
     </table>
+    </div>
+    
+    <!-- Total Satisfaction Points - Highlighted Box -->
+    <div class="col-sm" style="flex: 1; margin-left: 10px;">
+        <div class="div_box" style="background-color: #e8f5e8; border: 2px solid #28a745; padding: 12px; text-align: center;">
+            <h3 style="margin-bottom: 8px; color: #155724; font-size: 1.1rem;">Total Satisfaction Points</h3>
+            <div id="overall_utility" style="font-size: 2rem; font-weight: bold; color: #155724;">{{ player.overall_utility }}</div>
+            <p style="margin-top: 4px; font-size: 0.8rem; color: #6c757d;">from money and goods</p>
+        </div>
     </div>
 </div>
 
@@ -306,22 +311,22 @@ hr { margin: 12px 0 !important; }
                     <hr style="margin: 5px 0;">
                 <div class="market_table row">
                     <div class="col-12">
-                        <h4 style="margin-bottom: 2px;">Accept Offers</h4>
+                        <h4 style="margin-bottom: 2px;">Current Offers</h4>
                         <!--<p style="text-align: center">Please, select the offer you wish to accept</p>-->
                     </div>
                     <div class="market_bid col-sm">
-                        <h5>Bid Offers</h5>
+                        <h5>Buy Offers</h5>
                         <input type="number" class="form-control small-numbers" inputmode="numeric" id="transactionBidVolume" min="1" style="display: inline-block; width: 80px; margin-bottom: 10px;">
                         <table id="bidsTable" class="table_box"><thead><tr><th>Volume</th><th>Price</th></tr></thead><tbody></tbody></table>
-                        <button type="button" onclick="sendAcc(is_bid=1)" id="bidAccept" class="otree-btn-next btn btn-primary">Sell an asset</button>
-                        <button type="button" onclick="cancelLimit(is_bid=1)" id="cancelBidLimit" class="btn btn-outline-danger">Cancel offer</button>                      
+                        <button type="button" onclick="sendAcc(is_bid=1)" id="bidAccept" class="otree-btn-next btn btn-primary">Sell</button>
+                        <button type="button" onclick="cancelLimit(is_bid=1)" id="cancelBidLimit" class="btn btn-outline-danger">Cancel</button>                      
                     </div>
                     <div class="market_ask col-sm">
-                        <h5>Ask Offers</h5>
+                        <h5>Sell Offers</h5>
                         <input type="number" class="form-control small-numbers" inputmode="numeric" id="transactionAskVolume" min="1" style="display: inline-block; width: 80px; margin-bottom: 10px;">
                         <table id="asksTable" class="table_box"><thead><tr><th>Volume</th><th>Price</th></tr></thead><tbody></tbody></table>
-                        <button type="button" onclick="sendAcc(is_bid=0)" id="askAccept" class="otree-btn-next btn btn-primary">Buy an asset</button>
-                        <button type="button" onclick="cancelLimit(is_bid=0)" id="cancelAskLimit" class="btn btn-outline-danger">Cancel offer</button>
+                        <button type="button" onclick="sendAcc(is_bid=0)" id="askAccept" class="otree-btn-next btn btn-primary">Buy</button>
+                        <button type="button" onclick="cancelLimit(is_bid=0)" id="cancelAskLimit" class="btn btn-outline-danger">Cancel</button>
                     </div>
                 </div>
                     </td>
