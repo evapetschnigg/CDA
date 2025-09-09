@@ -235,96 +235,119 @@ hr { margin: 12px 0 !important; }
         <!-- Goods Market (left, 1/3 width) -->
         <td style="width: 33.33%; vertical-align: top;">
             <div style="background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 5px; padding: 6px; margin-bottom: 0;">
-                <h3 style="margin-bottom: 1px;">Goods Market</h3>
+                <h3 style="margin-top: -5px; margin-bottom: 8px; color: #495057; text-align: center;">Goods Market</h3>
                 
                 <!-- Good A Section -->
-                <h4 style="margin-bottom: 1px;">Good A</h4>
-                <div style="text-align: left; padding-left: 8px;">
-                    <p style="margin-bottom: 1px;"><strong>Monetary cost:</strong> 5</p>
-                    <p style="margin-bottom: 1px;"><strong>Asset cost:</strong> 1</p>
-                    <p style="margin-bottom: 1px;"><strong>Satisfaction points:</strong> 
-                        {% if session.config.use_constant_marginal_utility %}
-                            {{ session.config.good_a_marginal_utility }}
-                        {% else %}
-                            <br><table class="table_box" style="font-size: 12px; margin-top: 5px;">
-                                <tr><th>Units</th><th>Utility</th></tr>
-                                {% for unit, utility in player.goodA_utility_table %}
-                                    <tr><td>{{ unit }}</td><td>{{ utility }}</td></tr>
-                                {% endfor %}
-                            </table>
-                        {% endif %}
-                    </p>
+                <h4 style="margin-top: 12px; margin-bottom: 6px; text-align: center; border-bottom: 2px solid #6c757d; padding-bottom: 2px; background-color: #e9ecef; padding: 4px 8px; border-radius: 4px;">Good A</h4>
+                <div>
+                    <table style="width: 100%; font-size: 0.875rem;">
+                        <tr>
+                            <th style="text-align: left; font-weight: normal;">Monetary cost</th>
+                            <td style="text-align: right; font-weight: normal;">5</td>
+                        </tr>
+                        <tr>
+                            <th style="text-align: left; font-weight: normal;">Asset cost</th>
+                            <td style="text-align: right; font-weight: normal;">1</td>
+                        </tr>
+                        <tr>
+                            <th style="text-align: left; font-weight: normal;">Satisfaction points</th>
+                            <td style="text-align: right; font-weight: normal;">
+                                {% if session.config.use_constant_marginal_utility %}
+                                    {{ session.config.good_a_marginal_utility }}
+                                {% else %}
+                                    <br><table class="table_box" style="font-size: 12px; margin-top: 5px;">
+                                        <tr><th>Units</th><th>Utility</th></tr>
+                                        {% for unit, utility in player.goodA_utility_table %}
+                                            <tr><td>{{ unit }}</td><td>{{ utility }}</td></tr>
+                                        {% endfor %}
+                                    </table>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </table>
                 </div>
-                <button type="button" id="buyA_btn" class="btn btn-success" style="margin-top: 3px;">Buy Good A</button>
-                
-                <hr style="margin: 10px 0;">
+                <div style="text-align: center;">
+                    <button type="button" id="buyA_btn" class="btn btn-success" style="margin-top: 3px; margin-bottom: 40px;">Buy Good A</button>
+                </div>
                 
                 <!-- Good B Section -->
-                <h4 style="margin-bottom: 1px;">Good B</h4>
-                <div style="text-align: left; padding-left: 8px;">
-                    <p style="margin-bottom: 1px;"><strong>Monetary cost:</strong> 10</p>
-                    <p style="margin-bottom: 3px;"><strong>Asset cost:</strong> 3</p>
-                    <p style="margin-bottom: 1px;"><strong>Satisfaction points:</strong> 
-                        {% if session.config.use_constant_marginal_utility %}
-                            {{ session.config.good_b_marginal_utility }}
-                        {% else %}
-                            <br><table class="table_box" style="font-size: 12px; margin-top: 5px;">
-                                <tr><th>Units</th><th>Utility</th></tr>
-                                {% for unit, utility in player.goodB_utility_table %}
-                                    <tr><td>{{ unit }}</td><td>{{ utility }}</td></tr>
-                                {% endfor %}
-                            </table>
-                        {% endif %}
-                    </p>
+                <h4 style="margin-top: 44px; margin-bottom: 6px; text-align: center; border-bottom: 2px solid #6c757d; padding-bottom: 2px; background-color: #e9ecef; padding: 4px 8px; border-radius: 4px;">Good B</h4>
+                <div>
+                    <table style="width: 100%; font-size: 0.875rem;">
+                        <tr>
+                            <th style="text-align: left; font-weight: normal;">Monetary cost</th>
+                            <td style="text-align: right; font-weight: normal;">10</td>
+                        </tr>
+                        <tr>
+                            <th style="text-align: left; font-weight: normal;">Asset cost</th>
+                            <td style="text-align: right; font-weight: normal;">3</td>
+                        </tr>
+                        <tr>
+                            <th style="text-align: left; font-weight: normal;">Satisfaction points</th>
+                            <td style="text-align: right; font-weight: normal;">
+                                {% if session.config.use_constant_marginal_utility %}
+                                    {{ session.config.good_b_marginal_utility }}
+                                {% else %}
+                                    <br><table class="table_box" style="font-size: 12px; margin-top: 5px;">
+                                        <tr><th>Units</th><th>Utility</th></tr>
+                                        {% for unit, utility in player.goodB_utility_table %}
+                                            <tr><td>{{ unit }}</td><td>{{ utility }}</td></tr>
+                                        {% endfor %}
+                                    </table>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </table>
                 </div>
-                <button type="button" id="buyB_btn" class="btn btn-success" style="margin-top: 3px;">Buy Good B</button>
+                <div style="text-align: center;">
+                    <button type="button" id="buyB_btn" class="btn btn-success" style="margin-top: 3px;">Buy Good B</button>
+                </div>
             </div>
         </td>
         <!-- Asset Market + Trade History Container (center + right, 2/3 width) -->
         <td colspan="2" style="width: 66.66%; vertical-align: top;">
             <div style="background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 5px; padding: 6px; margin-bottom: 0;">
-                <h3 style="margin-bottom: 1px;">Asset Market</h3>
+                <h3 style="margin-top: -5px; margin-bottom: 8px; color: #495057; text-align: center;">Asset Market</h3>
                 <table style="width: 100%; border-collapse: separate; border-spacing: 6px;">
                     <tr>
                         <td style="width: 50%; vertical-align: top;">
                             <div class="market_interface_container">
                     <div class="row">
                         <div class="col-12">
-                            <h4 style="margin-bottom: 1px;">Make Offers</h4>
+                            <h4 style="margin-top: -2px; margin-bottom: 6px; text-align: center; border-bottom: 2px solid #6c757d; padding-bottom: 2px; background-color: #e9ecef; padding: 4px 8px; border-radius: 4px;">Make Offers</h4>
                         </div>
                         <div class="col-md-6">
-                            <p><strong>I offer to buy at this price:</strong></p>
+                            <p style="font-size: 0.875rem;">I offer to buy at this price:</p>
                             <input type="number" class="form-control small-numbers" inputmode="numeric" id="limitBidPrice" min="0" style="width: 120px; margin-bottom: 10px;">
                             <input type="number" class="form-control small-numbers" inputmode="numeric" id="limitBidVolume" min="1" value="1" style="display: none;">
 
-                            <button type="button" onclick="sendOffer(is_bid=1)" id="bidOffer" class="otree-btn-next btn btn-primary">Place bid</button>
+                            <button type="button" onclick="sendOffer(is_bid=1)" id="bidOffer" class="otree-btn-next btn btn-secondary">Place bid</button>
                         </div>
                         <div class="col-md-6">
-                            <p><strong>I offer to sell at this price:</strong></p>
+                            <p style="font-size: 0.875rem;">I offer to sell at this price:</p>
                             <input type="number" class="form-control small-numbers" inputmode="numeric" id="limitAskPrice" min="0" style="width: 120px; margin-bottom: 10px;">
                             <input type="number" class="form-control small-numbers" inputmode="numeric" id="limitAskVolume" min="1" value="1" style="display: none;">
 
-                            <button type="button" onclick="sendOffer(is_bid=0)" id="SendOffer" class="otree-btn-next btn btn-primary">Place ask</button>
+                            <button type="button" onclick="sendOffer(is_bid=0)" id="SendOffer" class="otree-btn-next btn btn-secondary">Place ask</button>
                         </div>
                     </div>
                     
-                    <hr style="margin: 5px 0;">
-                <div class="market_table row">
+                <div class="market_table row" style="margin-top: 20px;">
                     <div class="col-12">
-                        <h4 style="margin-bottom: 2px;">Current Offers</h4>
+                            <h4 style="margin-top: -2px; margin-bottom: 6px; text-align: center; border-bottom: 2px solid #6c757d; padding-bottom: 2px; background-color: #e9ecef; padding: 4px 8px; border-radius: 4px;">Current Offers</h4>
                         <!--<p style="text-align: center">Please, select the offer you wish to accept</p>-->
                     </div>
                     <div class="market_bid col-sm">
-                        <h5>Buy Offers</h5>
+                        <h5 style="text-align: center; border-bottom: 1px solid #6c757d; padding-bottom: 2px; background-color: #f8f9fa; padding: 4px; border-radius: 2px; margin-bottom: 6px;">Bids</h5>
                         <input type="number" class="form-control small-numbers" inputmode="numeric" id="transactionBidVolume" min="1" style="display: inline-block; width: 80px; margin-bottom: 10px;">
-                        <table id="bidsTable" class="table_box"><thead><tr><th>Volume</th><th>Price</th></tr></thead><tbody></tbody></table>
+                        <table id="bidsTable" class="table_box" style="font-size: 0.875rem;"><thead><tr><th style="font-weight: normal;">Volume</th><th style="font-weight: normal;">Price</th></tr></thead><tbody></tbody></table>
                         <button type="button" onclick="sendAcc(is_bid=1)" id="bidAccept" class="otree-btn-next btn btn-primary">Sell</button>
                         <button type="button" onclick="cancelLimit(is_bid=1)" id="cancelBidLimit" class="btn btn-outline-danger">Cancel</button>                      
                     </div>
                     <div class="market_ask col-sm">
-                        <h5>Sell Offers</h5>
+                        <h5 style="text-align: center; border-bottom: 1px solid #6c757d; padding-bottom: 2px; background-color: #f8f9fa; padding: 4px; border-radius: 2px; margin-bottom: 6px;">Asks</h5>
                         <input type="number" class="form-control small-numbers" inputmode="numeric" id="transactionAskVolume" min="1" style="display: inline-block; width: 80px; margin-bottom: 10px;">
-                        <table id="asksTable" class="table_box"><thead><tr><th>Volume</th><th>Price</th></tr></thead><tbody></tbody></table>
+                        <table id="asksTable" class="table_box" style="font-size: 0.875rem;"><thead><tr><th style="font-weight: normal;">Volume</th><th style="font-weight: normal;">Price</th></tr></thead><tbody></tbody></table>
                         <button type="button" onclick="sendAcc(is_bid=0)" id="askAccept" class="otree-btn-next btn btn-primary">Buy</button>
                         <button type="button" onclick="cancelLimit(is_bid=0)" id="cancelAskLimit" class="btn btn-outline-danger">Cancel</button>
                     </div>
