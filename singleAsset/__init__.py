@@ -91,6 +91,7 @@ def random_types(group: Group):
 def assign_types(group: Group):
     # this code is run at the first WaitToStart page, within the initiate_group() function, when all participants arrived
     # this function allocates traders' types at the beginning of the session or when randomised.
+    # when observers are set to 0, all participants are traders
     players = group.get_players()
     if group.randomisedTypes or Subsession.round_number == 1:
         ii = group.numParticipants  # number of traders without type yet

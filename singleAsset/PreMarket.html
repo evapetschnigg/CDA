@@ -1,5 +1,15 @@
 {{ block global_scripts }}
         <script src="{{ static 'script.js' }}"></script>
+        <script>
+            $(document).ready(function() {
+                // Format money display to show only number without currency sign
+                var cashElement = $('#cashHolding');
+                var cashValue = cashElement.text();
+                // Remove currency symbol and convert to integer
+                var cleanValue = Math.round(parseFloat(cashValue.replace(/[^\d.-]/g, '')));
+                cashElement.text(cleanValue);
+            });
+        </script>
 {{ endblock }}
 
 {{ block global_styles }}
@@ -7,7 +17,7 @@
 {{ endblock }}
 
 {{ block title }}
-Continuous double auction market - pre market information
+Pre Market Information
 {{ endblock }}
 
 {{ block content }}
@@ -15,12 +25,13 @@ Continuous double auction market - pre market information
     <div id="jsError">ERROR: this page runs only with javascript enabled</div>
 </noscript>
 
-<p>Soon, {{ if player.round_number <= C.num_trial_rounds }} trial round nr. {{ player.round_number }} {{ else }} round nr. {{ round }} {{ endif }} starts.</p>
+<p>Soon, {{ if player.round_number <= C.num_trial_rounds }} the trial round {{ else }} trading round {{ round }} {{ endif }} starts.</p>
+<p style="margin-top: 0px; margin-bottom: 2px;">In this round you are endowed with:</p>
 
-<div id="endowmentDiv" class="endowment-container row" style="margin-bottom: 35px">
+<div id="endowmentDiv" class="endowment-container row" style="margin-bottom: 10px">
     <div class="endowment-div col-sm div_box">
-    <table id="endowmentTable">
-    <tr>
+    <table id="endowmentTable" style="width: 100%;">
+    <tr style="display: none;">
         <th>Your role</th>
         <td id="traderRole">
             {{ if player.isObserver }} Inactive observer {{ else }} Trader {{ endif }}
@@ -28,8 +39,8 @@ Continuous double auction market - pre market information
     </tr>
         {{ if not player.isObserver }}
     <tr>
-        <th>Initial asset endowment</th>
-        <td id="assetsHolding">{{ player.assetsHolding }}</td>
+        <th style="width: 80%;">Assets</th>
+        <td id="assetsHolding" style="text-align: right; width: 20%;">{{ player.assetsHolding }}</td>
     </tr>
     <tr> {{ if player.allowShort }}
         <th>Your short selling limit</th>
@@ -39,8 +50,8 @@ Continuous double auction market - pre market information
         {{ else }} {{ endif }}
     </tr>
     <tr>
-        <th>Initial money endowment</th>
-        <td id="cashHolding">{{ player.cashHolding }}</td>
+        <th style="width: 80%;">Money</th>
+        <td id="cashHolding" style="text-align: right; width: 20%;">{{ player.cashHolding }}</td>
     </tr>
     <tr> {{ if player.allowLong }}
         <th>Your credit limit</th>
@@ -49,8 +60,64 @@ Continuous double auction market - pre market information
         </td>
         {{ else }} {{ endif }}
     </tr>
+  
     {{ else }} {{ endif }}
     </table>
+    </div>
+</div>
+
+<p style="margin-top: 2px; margin-bottom: 2px;">The available goods have the following characteristics:</p>
+
+<div style="margin-bottom: 20px;">
+    <div class="endowment-container row" style="margin-bottom: 0px;">
+        <div class="endowment-div col-sm div_box">
+            <p style="margin-bottom: 4px; text-align: left; font-size: 1rem; font-weight: bold;">Good A</p>
+            <table id="goodATable" style="width: 100%;">
+            <tr>
+                <th style="text-align: left; font-weight: normal; width: 80%;">Monetary cost</th>
+                <td style="text-align: right; width: 20%;"><strong>5</strong></td>
+            </tr>
+            <tr>
+                <th style="text-align: left; font-weight: normal; width: 80%;">Asset cost</th>
+                <td style="text-align: right; width: 20%;"><strong>1</strong></td>
+            </tr>
+            <tr>
+                <th style="text-align: left; font-weight: normal; width: 80%;">Satisfaction points</th>
+                <td style="text-align: right; width: 20%;"><strong>
+                    {% if session.config.use_constant_marginal_utility %}
+                        {{ session.config.good_a_marginal_utility }}
+                    {% else %}
+                        Variable
+                    {% endif %}
+                </strong></td>
+            </tr>
+            </table>
+        </div>
+    </div>
+    <div class="endowment-container row">
+        <div class="endowment-div col-sm div_box">
+            <p style="margin-bottom: 4px; text-align: left; font-size: 1rem; font-weight: bold;">Good B</p>
+            <table id="goodBTable" style="width: 100%;">
+            <tr>
+                <th style="text-align: left; font-weight: normal; width: 80%;">Monetary cost</th>
+                <td style="text-align: right; width: 20%;"><strong>10</strong></td>
+            </tr>
+            <tr>
+                <th style="text-align: left; font-weight: normal; width: 80%;">Asset cost</th>
+                <td style="text-align: right; width: 20%;"><strong>3</strong></td>
+            </tr>
+            <tr>
+                <th style="text-align: left; font-weight: normal; width: 80%;">Satisfaction points</th>
+                <td style="text-align: right; width: 20%;"><strong>
+                    {% if session.config.use_constant_marginal_utility %}
+                        {{ session.config.good_b_marginal_utility }}
+                    {% else %}
+                        Variable
+                    {% endif %}
+                </strong></td>
+            </tr>
+            </table>
+        </div>
     </div>
 </div>
 
