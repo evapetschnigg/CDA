@@ -1200,6 +1200,19 @@ class Results(Page):
 
     @staticmethod
     def vars_for_template(player: Player):
+        # Calculate initial utility for this round (cash + goods utility at start)
+        initial_goods_utility = 0  # At start of round, no goods are held
+        initial_utility = player.initialCash + initial_goods_utility
+        
+        # Calculate final utility (current overall_utility)
+        final_utility = player.overall_utility
+        
+        # Calculate utility change percentage
+        if initial_utility != 0:
+            utility_change_percent = ((final_utility - initial_utility) / initial_utility) * 100
+        else:
+            utility_change_percent = 0
+            
         return dict(
             assetValue=round(player.assetValue, C.decimals),
             initialEndowment=round(player.initialEndowment, C.decimals),
@@ -1207,6 +1220,9 @@ class Results(Page):
             tradingProfit=round(player.tradingProfit, C.decimals),
             wealthChange=round(player.wealthChange*100, C.decimals),
             payoff=cu(round(player.payoff, C.decimals)),
+            initialUtility=round(initial_utility, C.decimals),
+            finalUtility=round(final_utility, C.decimals),
+            utilityChangePercent=round(utility_change_percent, C.decimals),
         )
 
     @staticmethod
