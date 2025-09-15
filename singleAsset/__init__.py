@@ -203,6 +203,7 @@ class Player(BasePlayer):
     goodB_utility_table = models.StringField()
     goods_utility = models.FloatField(initial=0)
     overall_utility = models.FloatField(initial=0)
+    consent = models.BooleanField(choices=((True, 'I consent'), (False, 'I do not consent')), initial=False)
 
 
 def asset_endowment(player: Player):
@@ -1078,13 +1079,39 @@ class BidAsks(ExtraModel):
 
 
 # PAGES
+class Welcome(Page):
+    @staticmethod
+    def is_displayed(player: Player):
+        return player.round_number == 1
+
+class Privacy(Page):
+    form_model = 'player'
+    form_fields = ['consent']
+    
+    @staticmethod
+    def is_displayed(player: Player):
+        return player.round_number == 1
+    
+    @staticmethod
+    def before_next_page(player: Player, timeout_happened):
+        if not player.consent:
+            # End the experiment for non-consenting participants
+            player.participant.vars['consent_given'] = False
+        else:
+            player.participant.vars['consent_given'] = True
+
+class NoConsent(Page):
+    @staticmethod
+    def is_displayed(player: Player):
+        return player.round_number == 1 and not player.participant.vars.get('consent_given', True)
+
 class Instructions(Page):
     form_model = 'player'
     form_fields = ['isParticipating']
 
     @staticmethod
     def is_displayed(player: Player):
-        return player.round_number == 1
+        return player.round_number == 1 and player.participant.vars.get('consent_given', False)
 
     @staticmethod
     def vars_for_template(player: Player):
@@ -1247,4 +1274,4 @@ class FinalResults(Page):
         )
 
 
-page_sequence = [Instructions, WaitToStart, EndOfTrialRounds, PreMarket, WaitingMarket, Market, ResultsWaitPage, Results, FinalResults, ResultsWaitPage]
+page_sequence = [Welcome, Privacy, NoConsent, Instructions, WaitToStart, EndOfTrialRounds, PreMarket, WaitingMarket, Market, ResultsWaitPage, Results, FinalResults, ResultsWaitPage]
