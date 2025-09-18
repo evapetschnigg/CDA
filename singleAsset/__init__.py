@@ -204,6 +204,40 @@ class Player(BasePlayer):
     goods_utility = models.FloatField(initial=0)
     overall_utility = models.FloatField(initial=0)
     consent = models.BooleanField(choices=((True, 'I consent'), (False, 'I do not consent')), initial=False)
+    
+    # Comprehension check questions
+    comp_q1 = models.StringField(choices=[
+        ('a', 'a. My Total Score increases from 0 to 35'),
+        ('b', 'b. My Total Score increases from 50 to 85'),
+        ('c', 'c. My Total Score increases from 50 to 65')
+    ], widget=widgets.RadioSelect, label="")
+    
+    comp_q2 = models.StringField(choices=[
+        ('a', 'a. My Total Score decreases from 40 to 30'),
+        ('b', 'b. My Total Score decreases from 30 to 20'),
+        ('c', 'c. My Total Score does not change')
+    ], widget=widgets.RadioSelect, label="")
+    
+    comp_q3 = models.StringField(choices=[
+        ('a', 'a. Assets directly affect the Total Score'),
+        ('b', 'b. Assets do not directly affect the Total Score, but they can increase the money holdings when they are bought'),
+        ('c', 'c. Assets do not directly affect the Total Score, but they can increase the money holdings when sold and can increase satisfaction points from goods when used to purchase goods')
+    ], widget=widgets.RadioSelect, label="")
+    
+    comp_q4 = models.StringField(choices=[
+        ('a', 'a. Correct'),
+        ('b', 'b. Incorrect')
+    ], widget=widgets.RadioSelect, label="")
+    
+    comp_q5 = models.StringField(choices=[
+        ('a', 'a. My payout cannot drop below €15'),
+        ('b', 'b. I will receive the base payout even if I do not complete the survey at the end'),
+        ('c', 'c. My payout is determined by my performance in one randomly selected round')
+    ], widget=widgets.RadioSelect, label="")
+    
+    # Comprehension check performance tracking
+    comp_correct_count = models.IntegerField(initial=0)  # Number of correct answers (0-5)
+    comp_passed = models.BooleanField(initial=False)     # True if all 5 questions correct
 
 
 def asset_endowment(player: Player):
@@ -1120,6 +1154,122 @@ class Instructions(Page):
             numRounds=C.NUM_ROUNDS - C.num_trial_rounds,
         )
 
+class ComprehensionCheck(Page):
+    form_model = 'player'
+    form_fields = ['comp_q1', 'comp_q2', 'comp_q3', 'comp_q4', 'comp_q5']
+    
+    @staticmethod
+    def is_displayed(player: Player):
+        return player.round_number == 1 and player.participant.vars.get('consent_given', False)
+    
+    @staticmethod
+    def before_next_page(player: Player, timeout_happened):
+        # Define correct answers
+        correct_answers = {
+            'comp_q1': 'c',  # Question 1: c
+            'comp_q2': 'a',  # Question 2: a
+            'comp_q3': 'c',  # Question 3: c
+            'comp_q4': 'b',  # Question 4: b
+            'comp_q5': 'c'   # Question 5: c
+        }
+        
+        # Count correct answers
+        correct_count = 0
+        for field_name, correct_answer in correct_answers.items():
+            if getattr(player, field_name) == correct_answer:
+                correct_count += 1
+        
+        # Store results
+        player.comp_correct_count = correct_count
+        player.comp_passed = (correct_count == 5)  # Pass if all 5 correct
+        
+        # Store in participant vars for easy access across rounds
+        player.participant.vars['comp_correct_count'] = correct_count
+        player.participant.vars['comp_passed'] = player.comp_passed
+
+
+class ComprehensionFeedback(Page):
+    @staticmethod
+    def is_displayed(player: Player):
+        return player.round_number == 1 and player.participant.vars.get('consent_given', False)
+    
+    @staticmethod
+    def vars_for_template(player: Player):
+        # Define correct answers and question texts
+        questions_data = {
+            'comp_q1': {
+                'question': '1. You have 50 mu, 6 assets, and no goods. What happens to your Total Score if you buy Good B (cost: 20 mu and 1 asset, value: 35 satisfaction points)?',
+                'correct': 'c',
+                'correct_text': 'c. My Total Score increases from 50 to 65',
+                'options': {
+                    'a': 'a. My Total Score increases from 0 to 35',
+                    'b': 'b. My Total Score increases from 50 to 85',
+                    'c': 'c. My Total Score increases from 50 to 65'
+                }
+            },
+            'comp_q2': {
+                'question': '2. You have 30 mu, 5 assets, and 10 satisfaction points from goods. What happens to your Total Score if you buy an asset for 10 mu?',
+                'correct': 'a',
+                'correct_text': 'a. My Total Score decreases from 40 to 30',
+                'options': {
+                    'a': 'a. My Total Score decreases from 40 to 30',
+                    'b': 'b. My Total Score decreases from 30 to 20',
+                    'c': 'c. My Total Score does not change'
+                }
+            },
+            'comp_q3': {
+                'question': '3. Which of the following correctly describes the role of assets in this experiment?',
+                'correct': 'c',
+                'correct_text': 'c. Assets do not directly affect the Total Score, but they can increase the money holdings when sold and can increase satisfaction points from goods when used to purchase goods',
+                'options': {
+                    'a': 'a. Assets directly affect the Total Score',
+                    'b': 'b. Assets do not directly affect the Total Score, but they can increase the money holdings when they are bought',
+                    'c': 'c. Assets do not directly affect the Total Score, but they can increase the money holdings when sold and can increase satisfaction points from goods when used to purchase goods'
+                }
+            },
+            'comp_q4': {
+                'question': '4. Assets not used by the end of a round will be transferred to the next round.',
+                'correct': 'b',
+                'correct_text': 'b. Incorrect',
+                'options': {
+                    'a': 'a. Correct',
+                    'b': 'b. Incorrect'
+                }
+            },
+            'comp_q5': {
+                'question': '5. Which of the following correctly describes your payout for participating in this study?',
+                'correct': 'c',
+                'correct_text': 'c. My payout is determined by my performance in one randomly selected round',
+                'options': {
+                    'a': 'a. My payout cannot drop below €15',
+                    'b': 'b. I will receive the base payout even if I do not complete the survey at the end',
+                    'c': 'c. My payout is determined by my performance in one randomly selected round'
+                }
+            }
+        }
+        
+        # Prepare data for template
+        questions = []
+        for field_name, data in questions_data.items():
+            user_answer = getattr(player, field_name, '')
+            is_correct = user_answer == data['correct']
+            
+            questions.append({
+                'question': data['question'],
+                'user_answer': user_answer,
+                'user_answer_text': data['options'].get(user_answer, 'No answer'),
+                'correct_answer': data['correct'],
+                'correct_text': data['correct_text'],
+                'is_correct': is_correct
+            })
+        
+        return {
+            'questions': questions,
+            'correct_count': player.comp_correct_count,
+            'total_questions': 5,
+            'passed': player.comp_passed
+        }
+
 
 class WaitToStart(WaitPage):
     @staticmethod
@@ -1274,4 +1424,4 @@ class FinalResults(Page):
         )
 
 
-page_sequence = [Welcome, Privacy, NoConsent, Instructions, WaitToStart, EndOfTrialRounds, PreMarket, WaitingMarket, Market, ResultsWaitPage, Results, FinalResults, ResultsWaitPage]
+page_sequence = [Welcome, Privacy, NoConsent, Instructions, ComprehensionCheck, ComprehensionFeedback, WaitToStart, EndOfTrialRounds, PreMarket, WaitingMarket, Market, ResultsWaitPage, Results, FinalResults, ResultsWaitPage]

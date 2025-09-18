@@ -1,0 +1,39 @@
+{{ block title }}
+Comprehension Check
+{{ endblock }}
+
+{{ block content }}
+
+<p>Please answer the following questions. Recall that:</p>
+<div style="text-align: center; font-family: 'Times New Roman', serif; font-size: 16px; margin: 15px 0; padding: 15px; font-style: italic; background-color: #f0f4f8; border-left: 4px solid #5a7a8a; border-radius: 5px;">
+    <strong>Total Score = Money holdings + Satisfaction points from goods</strong>
+</div>
+
+<div style="margin-bottom: 30px;">
+    <h4 style="margin-bottom: 0px;">1. You have 50 mu, 6 assets, and no goods. What happens to your Total Score if you buy Good B (cost: 20 mu and 1 asset, value: 35 satisfaction points)?</h4>
+    <div style="margin-top: 0px;">{{ formfield 'comp_q1' }}</div>
+</div>
+
+<div style="margin-bottom: 30px;">
+    <h4 style="margin-bottom: 0px;">2. You have 30 mu, 5 assets, and 10 satisfaction points from goods. What happens to your Total Score if you buy an asset for 10 mu?</h4>
+    <div style="margin-top: 0px;">{{ formfield 'comp_q2' }}</div>
+</div>
+
+<div style="margin-bottom: 30px;">
+    <h4 style="margin-bottom: 0px;">3. Which of the following correctly describes the role of assets in this experiment?</h4>
+    <div style="margin-top: 0px;">{{ formfield 'comp_q3' }}</div>
+</div>
+
+<div style="margin-bottom: 30px;">
+    <h4 style="margin-bottom: 0px;">4. Assets not used by the end of a round will be transferred to the next round.</h4>
+    <div style="margin-top: 0px;">{{ formfield 'comp_q4' }}</div>
+</div>
+
+<div style="margin-bottom: 30px;">
+    <h4 style="margin-bottom: 0px;">5. Which of the following correctly describes your payout for participating in this study?</h4>
+    <div style="margin-top: 0px;">{{ formfield 'comp_q5' }}</div>
+</div>
+
+{{ next_button }}
+
+{{ endblock }}
