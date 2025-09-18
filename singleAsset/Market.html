@@ -212,7 +212,7 @@ hr { margin: 12px 0 !important; }
         <th>Good B holding</th>
         <td id="goodB_qty">{{ player.goodB_qty }}</td>
     </tr>
-    <tr style="display: none;">
+    <tr>
         <th>Satisfaction points from goods</th>
         <td id="goods_utility">{{ player.goods_utility }}</td>
     </tr>
@@ -220,12 +220,12 @@ hr { margin: 12px 0 !important; }
     </table>
     </div>
     
-    <!-- Total Satisfaction Points - Highlighted Box -->
+    <!-- Total Score - Highlighted Box -->
     <div class="col-sm" style="flex: 1; margin-left: 10px;">
         <div class="div_box" style="background-color: #e8f5e8; border: 2px solid #28a745; padding: 12px; text-align: center;">
-            <h3 style="margin-bottom: 8px; color: #155724; font-size: 1.1rem;">Total Satisfaction Points</h3>
+            <h3 style="margin-bottom: 8px; color: #155724; font-size: 1.1rem;">Total Score</h3>
             <div id="overall_utility" style="font-size: 2rem; font-weight: bold; color: #155724;">{{ player.overall_utility }}</div>
-            <p style="margin-top: 4px; font-size: 0.8rem; color: #6c757d;">from money and goods</p>
+            <p style="margin-top: 4px; font-size: 0.8rem; color: #6c757d;">Money holding + Satisfaction points from goods</p>
         </div>
     </div>
 </div>

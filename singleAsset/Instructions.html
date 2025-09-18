@@ -12,7 +12,7 @@ The purpose of the study is to investigate trading behavior in an <strong>experi
 <h3>Structure of the study</h3>
 <p>The study will proceed as follows:</p>
 <ol>
-  <li><strong>Instruction check:</strong> A short quiz to make sure the rules are understood.</li>
+  <li><strong>Comprehension check:</strong> A short quiz to make sure the rules are understood.</li>
   <li><strong>Trial round:</strong> One practice trading period.</li>
   <li><strong>Main part:</strong> 8 trading rounds, each lasting <strong>2.5 minutes</strong>.</li>
   <li><strong>Final part:</strong> A brief survey.</li>
@@ -26,7 +26,7 @@ The purpose of the study is to investigate trading behavior in an <strong>experi
 <ul>
   <li>The group of participants you interact with remains the same throughout the study.</li>
   <li>At the start of each round, you will receive a new endowment of <strong>money and assets</strong>. Endowments do <strong>not carry over</strong> between rounds.</li>
-  <li>Your goal in each round is to <strong>maximize your Total Satisfaction Points</strong> by trading assets with other participants and buying goods.</li>
+  <li>Your goal in each round is to <strong>maximize your Total Score</strong> by trading assets with other participants and buying goods.</li>
 </ul>
 
 <img src="{% static 'images/marketplace_screenshot.png' %}" alt="Screenshot of the Market Place interface" style="max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 5px; margin: 20px auto; display: block;">
@@ -34,7 +34,7 @@ The purpose of the study is to investigate trading behavior in an <strong>experi
 <h3>Endowment</h3>
 <p>
   Before each trading round begins, your <strong>assigned endowment of money and assets</strong> will be displayed. 
-  You will always start the round with 0 goods.
+  You will always start the round without any goods.
   Once the round starts, your holdings are shown in the white box on the market screen.
 </p>
 
@@ -42,7 +42,7 @@ The purpose of the study is to investigate trading behavior in an <strong>experi
 <ul>
   <li>You can buy two types of goods: <strong>Good A</strong> and <strong>Good B</strong>.</li>
   <li>Goods have fixed costs in money and assets and give you <strong>satisfaction points</strong>.</li>
-  <li>When you buy a good, the required money and assets are deducted, and the satisfaction points are added to your <strong>Total Satisfaction Points</strong>.</li>
+  <li>When you buy a good, the required money and assets are deducted, and the satisfaction points are added to your <strong>Total Score</strong>.</li>
   <li>You may buy as many goods as you want, as long as you have enough money and assets.</li>
   <li>Goods can only be <strong>bought</strong>, not sold.</li>
 </ul>
@@ -57,9 +57,9 @@ The purpose of the study is to investigate trading behavior in an <strong>experi
     </ul>
   </li>
   <li>All bids and asks are displayed in the lower half of the market.</li>
-  <li>To accept another participant’s bid or ask, select it and click <strong>Buy</strong> or <strong>Sell</strong>. Your asset and money holdings will be updated automatically.</li>
+  <li>To accept another participant’s bid or ask, select it and click <strong>Sell</strong> or <strong>Buy</strong>. Your asset and money holdings will be updated automatically.</li>
   <li>Your own posted offers appear in red. You cannot accept your own offers, but you may cancel them at any time by selecting them and clicking <strong>Cancel</strong>.</li>
-  <li>The <strong>trade history graph</strong> shows the timing and prices of assettrades made between participants in your group.</li>
+  <li>The <strong>trade history graph</strong> shows the timing and prices of asset trades made between participants in your group.</li>
 </ul>
 
 <img src="{% static 'images/assetmarket_screenshot.png' %}" alt="Screenshot of the Asset Market interface" style="width: 60%; height: auto; border: 1px solid #ddd; border-radius: 5px; margin: 20px auto; display: block;">
@@ -79,16 +79,16 @@ The purpose of the study is to investigate trading behavior in an <strong>experi
   If you attempt such an action, a message will appear in the Latest Alert box to inform you why the action is not allowed.
 </p>
 
-<h3>Total Satisfaction Points</h3>
+<h3>Total Score</h3>
 <p>
-  Your goal is to maximize your <strong>Total Satisfaction Points (Score)</strong>, as this will affect your payout.
+  Your goal is to maximize your <strong>Total Score</strong>, as this will affect your payout.
 </p>
 <div style="text-align: center; font-family: 'Times New Roman', serif; font-size: 18px; margin: 20px 0; padding: 20px; font-style: italic; background-color: #f0f4f8; border-left: 4px solid #5a7a8a; border-radius: 5px;">
-  <strong>Total Satisfaction Points = Money holding + Satisfaction Points from goods</strong>
+  <strong>Total Score = Money holding + Satisfaction points from goods</strong>
 </div>
 
 <p><em>Example:</em><br> Imagine you start a round with 10 assets, 100 monetary units (mu) and 0 goods.
-This gives you an initial <strong>100 Total Satisfaction Points</strong>. 
+This gives you an initial <strong>Total Score of 100</strong>. 
 </p>
 
 <p>You can increase your Score by buying goods or selling assets.</p>
@@ -107,11 +107,11 @@ your new Score is: 100 + 10 mu = <strong>110</strong>.</li>
 </p>
 <ol>
   <li>A base payout of <strong>€15</strong>.</li>
-  <li>A <strong>performance-based payout</strong> that depends on your percentage change in Total Satisfaction Points in <strongone randomly selected round.</li>
+  <li>A <strong>performance-based payout</strong> that depends on your Score Change in <strong>a randomly selected round</strong>.</li>
 </ol>
 
 <p>
-  The percentage change is defined as:
+  The Score Change is defined as:
 </p>
 
 <div style="text-align: center; font-family: 'Times New Roman', serif; font-size: 18px; margin: 20px 0; padding: 20px; font-style: italic; background-color: #f0f4f8; border-left: 4px solid #5a7a8a; border-radius: 5px;">
@@ -119,7 +119,7 @@ your new Score is: 100 + 10 mu = <strong>110</strong>.</li>
 </div>
 
 <p>
-  This percentage change in the randomly selected round <em>i</em> is then multiplied by 90 and added to your base payout of €15.
+  The Score Change in the randomly selected round <em>i</em> is then multiplied by 90 and added to your base payout of €15.
   Your payout cannot be negative, therefore the calculation is:
 </p>
 
@@ -129,8 +129,8 @@ your new Score is: 100 + 10 mu = <strong>110</strong>.</li>
 
 <p><em>Example:</em><br>
 Initial Score in round i = 100, Final Score in round i = 120<br>
-→ Score change = 20%.<br>
-Your Payout = €15 + (20% × 90) = €15 + €18 = <strong>€33</strong>.
+→ Score Change = 20%.<br>
+Payout = €15 + (20% × 90) = €15 + €18 = <strong>€33</strong>.
 </p>
 
 
