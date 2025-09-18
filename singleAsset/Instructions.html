@@ -4,9 +4,148 @@
 
 {{ block content }}
 
-{{ include '_templates/instructions.html' }}
+<h3>Aim of the study</h3>
+<p>
+The purpose of the study is to investigate trading behavior in an <strong>experimental asset market</strong>.
+</p>
 
-{{ include '_templates/instructionsEndowmentProfitMechanism.html' }}
+<h3>Structure of the study</h3>
+<p>The study will proceed as follows:</p>
+<ol>
+  <li><strong>Instruction check:</strong> A short quiz to make sure the rules are understood.</li>
+  <li><strong>Trial round:</strong> One practice trading period.</li>
+  <li><strong>Main part:</strong> 8 trading rounds, each lasting <strong>2.5 minutes</strong>.</li>
+  <li><strong>Final part:</strong> A brief survey.</li>
+</ol>
+<p>Overall, the study will take about <strong>30 minutes</strong> to complete.</p>
+
+<h3>The Market Place</h3>
+<p>
+  You will interact with other participants through a <strong>market screen</strong> (see screenshot below). The layout is the same in all rounds, including the trial.
+</p>
+<ul>
+  <li>The group of participants you interact with remains the same throughout the study.</li>
+  <li>At the start of each round, you will receive a new endowment of <strong>money and assets</strong>. Endowments do <strong>not carry over</strong> between rounds.</li>
+  <li>Your goal in each round is to <strong>maximize your Total Satisfaction Points</strong> by trading assets with other participants and buying goods.</li>
+</ul>
+
+<img src="{% static 'images/marketplace_screenshot.png' %}" alt="Screenshot of the Market Place interface" style="max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 5px; margin: 20px auto; display: block;">
+
+<h3>Endowment</h3>
+<p>
+  Before each trading round begins, your <strong>assigned endowment of money and assets</strong> will be displayed. 
+  You will always start the round with 0 goods.
+  Once the round starts, your holdings are shown in the white box on the market screen.
+</p>
+
+<h3>The Goods Market</h3>
+<ul>
+  <li>You can buy two types of goods: <strong>Good A</strong> and <strong>Good B</strong>.</li>
+  <li>Goods have fixed costs in money and assets and give you <strong>satisfaction points</strong>.</li>
+  <li>When you buy a good, the required money and assets are deducted, and the satisfaction points are added to your <strong>Total Satisfaction Points</strong>.</li>
+  <li>You may buy as many goods as you want, as long as you have enough money and assets.</li>
+  <li>Goods can only be <strong>bought</strong>, not sold.</li>
+</ul>
+
+<h3>The Asset Market</h3>
+<ul>
+  <li>The asset market is a <strong>double auction market</strong> where you trade assets with other participants.</li>
+  <li>In the top half of the asset market you may post:
+    <ul>
+      <li><strong>Bids (buy offers):</strong> enter the price at which you want to buy an asset.</li>
+      <li><strong>Asks (sell offers):</strong> enter the price at which you want to sell an asset.</li>
+    </ul>
+  </li>
+  <li>All bids and asks are displayed in the lower half of the market.</li>
+  <li>To accept another participant’s bid or ask, select it and click <strong>Buy</strong> or <strong>Sell</strong>. Your asset and money holdings will be updated automatically.</li>
+  <li>Your own posted offers appear in red. You cannot accept your own offers, but you may cancel them at any time by selecting them and clicking <strong>Cancel</strong>.</li>
+  <li>The <strong>trade history graph</strong> shows the timing and prices of assettrades made between participants in your group.</li>
+</ul>
+
+<img src="{% static 'images/assetmarket_screenshot.png' %}" alt="Screenshot of the Asset Market interface" style="width: 60%; height: auto; border: 1px solid #ddd; border-radius: 5px; margin: 20px auto; display: block;">
+
+<h3>Alerts</h3>
+<p>
+  The <strong>Latest Alert box</strong> at the bottom of the market screen informs you if you attempt an action that is not allowed. Examples include:
+</p>
+<ul>
+  <li>Buying or selling at a negative price.</li>
+  <li>Cancelling another participant’s bid or ask.</li>
+  <li>Accepting your own bid or ask.</li>
+  <li>Buying more than you can afford.</li>
+  <li>Trying to accept a worse offer when a better one is available.</li>
+</ul>
+<p>
+  If you attempt such an action, a message will appear in the Latest Alert box to inform you why the action is not allowed.
+</p>
+
+<h3>Total Satisfaction Points</h3>
+<p>
+  Your goal is to maximize your <strong>Total Satisfaction Points (Score)</strong>, as this will affect your payout.
+</p>
+<div style="text-align: center; font-family: 'Times New Roman', serif; font-size: 18px; margin: 20px 0; padding: 20px; font-style: italic; background-color: #f0f4f8; border-left: 4px solid #5a7a8a; border-radius: 5px;">
+  <strong>Total Satisfaction Points = Money holding + Satisfaction Points from goods</strong>
+</div>
+
+<p><em>Example:</em><br> Imagine you start a round with 10 assets, 100 monetary units (mu) and 0 goods.
+This gives you an initial <strong>100 Total Satisfaction Points</strong>. 
+</p>
+
+<p>You can increase your Score by buying goods or selling assets.</p>
+<ul>
+<li>If you buy Good A (cost: 5 mu and 1 asset, value: 12 satisfaction points),<br>
+your new Score is: 100 – 5 mu + 12 points = <strong>107</strong>.</li>
+<li>If you to sell one asset for 10 mu,<br>
+your new Score is: 100 + 10 mu = <strong>110</strong>.</li>
+</ul>
+
+<p><strong>Important:</strong> Assets themselves do not count toward your Score. However, they are valuable as you may trade them for a profit or use them to buy goods. Unused assets expire at the end of each round.</p>
+
+<h3>Your Payout</h3>
+<p>
+  Your payout for this study consists of two parts:
+</p>
+<ol>
+  <li>A base payout of <strong>€15</strong>.</li>
+  <li>A <strong>performance-based payout</strong> that depends on your percentage change in Total Satisfaction Points in <strongone randomly selected round.</li>
+</ol>
+
+<p>
+  The percentage change is defined as:
+</p>
+
+<div style="text-align: center; font-family: 'Times New Roman', serif; font-size: 18px; margin: 20px 0; padding: 20px; font-style: italic; background-color: #f0f4f8; border-left: 4px solid #5a7a8a; border-radius: 5px;">
+  <strong>Score Change (%) = (Final Score − Initial Score) / Initial Score</strong>
+</div>
+
+<p>
+  This percentage change in the randomly selected round <em>i</em> is then multiplied by 90 and added to your base payout of €15.
+  Your payout cannot be negative, therefore the calculation is:
+</p>
+
+<div style="text-align: center; font-family: 'Times New Roman', serif; font-size: 18px; margin: 20px 0; padding: 20px; font-style: italic; background-color: #f0f4f8; border-left: 4px solid #5a7a8a; border-radius: 5px;">
+  <strong>Payout = max(0; €15 + Score Change in round i × 90)</strong>
+</div>
+
+<p><em>Example:</em><br>
+Initial Score in round i = 100, Final Score in round i = 120<br>
+→ Score change = 20%.<br>
+Your Payout = €15 + (20% × 90) = €15 + €18 = <strong>€33</strong>.
+</p>
+
+
+<p>
+  The <strong>trial round is not payout-relevant</strong>. You will only receive your payout if you complete the full study, including the survey, in one sitting. Breaks in between are not possible.
+</p>
+
+<h3>Next Steps</h3>
+<p>
+  Please make sure you can work without interruptions for the next <strong>25 minutes</strong>.
+</p>
+<ul>
+  <li>You will first answer a few short questions about these instructions.</li>
+  <li>After that, you will complete one <strong>trial round</strong>, followed by the main part of the study.</li>
+</ul>
 
     <div id="continue">
       <button id="participationButton" name="isParticipating" value=1 class="btn btn-outline-info">I read and understand the instructions. Continue</button>
