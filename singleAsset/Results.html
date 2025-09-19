@@ -8,7 +8,15 @@ Results
 
 {{ block content }}
 
-<p>In this round, you have {% if utilityChangePercent >= 0 %}increased{% else %}decreased{% endif %} your score from <strong>{{ initialUtility }}</strong> to <strong>{{ finalUtility }}</strong>, corresponding to a percentage change of <strong class="{% if utilityChangePercent >= 0 %}text-success{% else %}text-danger{% endif %}">{% if utilityChangePercent >= 0 %}+{% endif %}{{ utilityChangePercent }}%</strong>.</p>
+<p>
+In this round, you have {% if utilityChangePercent >= 0 %}increased{% else %}decreased{% endif %} your Total Score from <strong>{{ initialUtility }}</strong> to <strong>{{ finalUtility }}</strong>, corresponding to a percentage change of <strong class="{% if utilityChangePercent >= 0 %}text-success{% else %}text-danger{% endif %}">{% if utilityChangePercent >= 0 %}+{% endif %}{{ utilityChangePercent }}%</strong>.<br>
+Your round payoff is <strong>{{ payoff }}</strong>.
+</p>
+
+<p>
+<b>Please note:</b> The round payoff shows what you would earn if this round were selected. 
+Only one round (excluding the trial) will be randomly chosen at the end of the study to determine your final payout.
+</p>
 
     {{ next_button }}
 {{ endblock }}

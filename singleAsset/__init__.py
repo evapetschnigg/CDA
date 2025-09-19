@@ -13,7 +13,7 @@ class C(BaseConstants):
     PLAYERS_PER_GROUP = None
     num_trial_rounds = 1
     NUM_ROUNDS = 3  ## incl. trial periods
-    base_payment = cu(25)
+    base_payment = cu(15)
     multiplier = 90
     min_payment_in_round = cu(0)
     min_payment = cu(4)
@@ -194,7 +194,7 @@ class Player(BasePlayer):
     cashOffered = models.FloatField(initial=0, min=0, decimal=C.decimals)
     assetsOffered = models.IntegerField(initial=0, min=0)
     tradingProfit = models.FloatField(initial=0) # this does not make too much sense with the utility from goods anymore --> change to abosolute utility change
-    wealthChange = models.FloatField(initial=0) # change this to relative utility change
+    wealthChange = models.FloatField(initial=0) # change this to relative utility change 
     finalPayoff = models.CurrencyField(initial=0)
     selectedRound = models.IntegerField(initial=1)
     goodA_qty = models.IntegerField(initial=0)
@@ -203,6 +203,7 @@ class Player(BasePlayer):
     goodB_utility_table = models.StringField()
     goods_utility = models.FloatField(initial=0)
     overall_utility = models.FloatField(initial=0)
+    utilityChangePercent = models.FloatField(initial=0) # utility change as percentage
     consent = models.BooleanField(choices=((True, 'I consent'), (False, 'I do not consent')), initial=False)
     
     # Comprehension check questions
@@ -437,30 +438,40 @@ def live_method(player: Player, data):
 
 def calc_period_profits(player: Player):
     # this code is run at the results wait page.
-    # this function assesses a participant's initial and final endowment and calculates the period income.
-    initial_endowment = player.initialCash + player.assetValue * player.initialAssets
-    end_endowment = player.cashHolding + player.assetValue * player.assetsHolding
-    player.initialEndowment = initial_endowment
-    player.endEndowment = end_endowment
-    player.tradingProfit = end_endowment - initial_endowment
-    if not player.isObserver and player.isParticipating and initial_endowment != 0:
-        player.wealthChange = (end_endowment - initial_endowment) / initial_endowment
+    # this function assesses a participant's initial and final utility and calculates the period income.
+    
+    # Calculate initial utility (cash at start, no goods)
+    initial_utility = player.initialCash
+    
+    # Calculate final utility (Total Score at end)
+    final_utility = player.overall_utility
+    
+    # Calculate utility change percentage
+    if not player.isObserver and player.isParticipating and initial_utility != 0:
+        player.utilityChangePercent = ((final_utility - initial_utility) / initial_utility) * 100
     else:
-        player.wealthChange = 0
-    player.payoff = max(C.base_payment + C.multiplier * player.wealthChange, C.min_payment_in_round)
+        player.utilityChangePercent = 0
+    
+    # Calculate payoff based on utility change
+    player.payoff = max(C.base_payment + C.multiplier * (player.utilityChangePercent / 100), C.min_payment_in_round)
 
 
 def calc_final_profit(player: Player):
     # this code is run at the final results page.
     # this function performs a random draw of period income and calculates a participant's payoff.
-    period_payoffs = [p.payoff for p in player.in_all_rounds()]
-    r = int(round(random.uniform(a=0, b=1) * (C.NUM_ROUNDS - C.num_trial_rounds), 0) + C.num_trial_rounds)
-    if r < C.num_trial_rounds:
-        r = C.num_trial_rounds
-    elif r >= C.NUM_ROUNDS:
-        r = C.NUM_ROUNDS
-    player.selectedRound = r - C.num_trial_rounds
-    player.finalPayoff = period_payoffs[r - 1]
+    # Only include trading rounds (exclude trial rounds)
+    trading_rounds = [p for p in player.in_all_rounds() if p.round_number > C.num_trial_rounds]
+    period_payoffs = [p.payoff for p in trading_rounds]
+    
+    # Randomly select from trading rounds only
+    if period_payoffs:  # Make sure there are trading rounds
+        r = random.randint(0, len(period_payoffs) - 1)
+        player.selectedRound = r + 1  # Round numbers start from 1 for display
+        player.finalPayoff = max(period_payoffs[r], C.min_payment)
+    else:
+        # Fallback if no trading rounds (shouldn't happen)
+        player.selectedRound = 1
+        player.finalPayoff = C.min_payment
 
 
 def custom_export(players):
@@ -1377,25 +1388,16 @@ class Results(Page):
 
     @staticmethod
     def vars_for_template(player: Player):
-        # Calculate initial utility for this round (cash + goods utility at start)
-        initial_goods_utility = 0  # At start of round, no goods are held
-        initial_utility = player.initialCash + initial_goods_utility
+        # Calculate initial utility for this round (cash at start, no goods)
+        initial_utility = player.initialCash
         
         # Calculate final utility (current overall_utility)
         final_utility = player.overall_utility
         
-        # Calculate utility change percentage
-        if initial_utility != 0:
-            utility_change_percent = ((final_utility - initial_utility) / initial_utility) * 100
-        else:
-            utility_change_percent = 0
+        # Use the utility change from the existing system
+        utility_change_percent = player.utilityChangePercent
             
         return dict(
-            assetValue=round(player.assetValue, C.decimals),
-            initialEndowment=round(player.initialEndowment, C.decimals),
-            endEndowment=round(player.endEndowment, C.decimals),
-            tradingProfit=round(player.tradingProfit, C.decimals),
-            wealthChange=round(player.wealthChange*100, C.decimals),
             payoff=cu(round(player.payoff, C.decimals)),
             initialUtility=round(initial_utility, C.decimals),
             finalUtility=round(final_utility, C.decimals),
@@ -1418,9 +1420,15 @@ class FinalResults(Page):
 
     @staticmethod
     def vars_for_template(player: Player):
+        # Get the selected round's original payoff (before minimum adjustment)
+        trading_rounds = [p for p in player.in_all_rounds() if p.round_number > C.num_trial_rounds]
+        selected_round_index = player.selectedRound - 1  # Convert to 0-based index
+        selected_round_original_payoff = trading_rounds[selected_round_index].payoff if selected_round_index < len(trading_rounds) else 0
+        
         return dict(
             payoff=cu(round(player.finalPayoff, 0)),
-            periodPayoff=[[p.round_number - C.num_trial_rounds, round(p.payoff, C.decimals), round(p.tradingProfit, C.decimals), round(p.wealthChange * 100, C.decimals)] for p in player.in_all_rounds() if p.round_number > C.num_trial_rounds],
+            selectedRoundOriginalPayoff=cu(round(selected_round_original_payoff, 0)),
+            periodPayoff=[[p.round_number - C.num_trial_rounds, round(p.payoff, C.decimals), round(p.utilityChangePercent, C.decimals)] for p in player.in_all_rounds() if p.round_number > C.num_trial_rounds],
         )
 
 

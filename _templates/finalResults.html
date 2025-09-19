@@ -1,5 +1,5 @@
 {{ block title }}
-    Result
+    Thank you
 {{ endblock }}
 
 {{ block global_styles }}
@@ -8,14 +8,18 @@
 
 {{ block content }}
 
-    <p>Thank you for participating in this experiment</p>
+    <p>You have completed the study. Thank you for your participation!</p>
 
-    <p>In this experiment, you receive {{ payoff }} which is your payoff from round nr. {{ player.selectedRound }}.</p>
+    {% if selectedRoundOriginalPayoff >= 4 %}
+        <p>You receive <strong>{{ payoff }}</strong> which is your payoff from trading round nr. {{ player.selectedRound }}.</p>
+    {% else %}
+        <p>Trading round nr. {{ player.selectedRound }} was randomly selected. As you had a payoff of <strong>{{ selectedRoundOriginalPayoff }}</strong> in this round, you receive the minimum payout of <strong>{{ payoff }}</strong>.</p>
+    {% endif %}
 <br>
 
-<h5>Period Details</h5>
-<table id="periodPayoffTable" align="center">
-    <tr><th style="padding:0 0px 0 15px;">Period</th><th style="padding:0 0px 0 15px;">Period income</th><th style="padding:0 0px 0 15px;">Trading profit</th><th style="padding:0 0px 0 15px;">Wealth change (in %)</th></tr>
+<h5>Round Details</h5>
+<table id="periodPayoffTable" align="left">
+    <tr><th style="padding:0 0px 0 15px;">Round</th><th style="padding:0 0px 0 15px;">Round Payoff</th><th style="padding:0 0px 0 15px;">Score Change (%)</th></tr>
     {{ for p in periodPayoff }}
         <tr>
             {{ for e in p }}
