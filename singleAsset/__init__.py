@@ -397,11 +397,13 @@ def live_method(player: Player, data):
         group.bestAsk = best_ask
     else:
         best_ask = None
+        group.bestAsk = None  # Clear the group field when no asks
     if bids:
         best_bid = bids[0][0]
         group.bestBid = best_bid
     else:
         best_bid = None
+        group.bestBid = None  # Clear the group field when no bids
     BidAsks.create(  # observe Bids and Asks of respective asset after the request
         group=group,
         Period=period,
