@@ -1,5 +1,5 @@
     // set the denomination of the currency
-    const CURRENCY_LABEL = "&euro;" // "taler" , "\$", points
+    const CURRENCY_LABEL = "mu" // "taler" , "\$", points
 
     let defaultHeadWidth = 0
 
@@ -30,5 +30,5 @@
         {
             return amount
         }
-        return `${CURRENCY_LABEL}${value} `
+        return `${value} ${CURRENCY_LABEL}`
     }

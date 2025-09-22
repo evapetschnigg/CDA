@@ -1,4 +1,4 @@
-    const COIN_LABEL = "&euro;"  // "taler" , "\$", points
+    const COIN_LABEL = "mu"  // "taler" , "\$", points
 
     let elInformationBody = $('#information tbody')
     // set information table
@@ -22,5 +22,5 @@
         {
             return amount
         }
-        return `${COIN_LABEL}${value}`
+        return `${value} ${COIN_LABEL}`
     }
