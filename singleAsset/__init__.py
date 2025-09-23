@@ -239,6 +239,96 @@ class Player(BasePlayer):
     # Comprehension check performance tracking
     comp_correct_count = models.IntegerField(initial=0)  # Number of correct answers (0-5)
     comp_passed = models.BooleanField(initial=False)     # True if all 5 questions correct
+    
+    # Survey Demographics
+    age = models.IntegerField(choices=[(i, str(i)) for i in range(18, 101)], initial=0, label="")
+    gender = models.StringField(choices=[
+        ('male', 'Male'),
+        ('female', 'Female'),
+        ('other', 'Other'),
+        ('prefer_not_to_say', 'Prefer not to say')
+    ], widget=widgets.RadioSelect, label="")
+    education = models.StringField(choices=[
+        ('no_degree', 'No degree (yet)'),
+        ('middle_school', 'Middle school'),
+        ('high_school', 'High school'),
+        ('vocational_training', 'Vocational training or apprenticeship'),
+        ('bachelor', 'Bachelor\'s degree'),
+        ('master', 'Master\'s degree (e.g., Diploma, State Exam)'),
+        ('doctorate', 'Doctorate (PhD) or higher'),
+        ('other', 'Other degree')
+    ], widget=widgets.RadioSelect, label="")
+    income = models.IntegerField(choices=[
+        (1, 'Under 200 €'),
+        (2, '200 € to under 300 €'),
+        (3, '300 € to under 400 €'),
+        (4, '400 € to under 500 €'),
+        (5, '500 € to under 625 €'),
+        (6, '625 € to under 750 €'),
+        (7, '750 € to under 875 €'),
+        (8, '875 € to under 1000 €'),
+        (9, '1000 € to under 1125 €'),
+        (10, '1125 € to under 1250 €'),
+        (11, '1250 € to under 1375 €'),
+        (12, '1375 € to under 1500 €'),
+        (13, '1500 € to under 1750 €'),
+        (14, '1750 € to under 2000 €'),
+        (15, '2000 € to under 2250 €'),
+        (16, '2250 € to under 2500 €'),
+        (17, '2500 € to under 2750 €'),
+        (18, '2750 € to under 3000 €'),
+        (19, '3000 € to under 4000 €'),
+        (20, '4000 € to under 5000 €'),
+        (21, '5000 € to under 7500 €'),
+        (22, '7500 € and more'),
+        (23, 'Prefer not to say')
+    ], initial=0, label="")
+    employment = models.StringField(choices=[
+        ('employed_full_time', 'Employed full-time'),
+        ('employed_part_time', 'Employed part-time'),
+        ('self_employed', 'Self-employed / Freelance'),
+        ('student', 'Student'),
+        ('unemployed', 'Unemployed'),
+        ('retired', 'Retired'),
+        ('stay_at_home_parent', 'Stay-at-home parent'),
+        ('other', 'Other')
+    ], widget=widgets.RadioSelect, label="")
+    # Survey Attitudes
+    pct_effectiveness = models.IntegerField(choices=[
+        (1, 'Strongly disagree'),
+        (2, 'Disagree'),
+        (3, 'Neither agree nor disagree'),
+        (4, 'Agree'),
+        (5, 'Strongly agree')
+    ], widget=widgets.RadioSelect, initial=0, label="")
+    pct_fairness = models.IntegerField(choices=[
+        (1, 'Strongly disagree'),
+        (2, 'Disagree'),
+        (3, 'Neither agree nor disagree'),
+        (4, 'Agree'),
+        (5, 'Strongly agree')
+    ], widget=widgets.RadioSelect, initial=0, label="")
+    pct_support = models.IntegerField(choices=[
+        (1, 'Strongly oppose'),
+        (2, 'Oppose'),
+        (3, 'Neither support nor oppose'),
+        (4, 'Support'),
+        (5, 'Strongly support')
+    ], widget=widgets.RadioSelect, initial=0, label="")
+    climate_concern = models.IntegerField(choices=[
+        (1, 'Not at all concerned'),
+        (2, 'Slightly concerned'),
+        (3, 'Moderately concerned'),
+        (4, 'Very concerned'),
+        (5, 'Extremely concerned')
+    ], widget=widgets.RadioSelect, initial=0, label="")
+    climate_responsibility = models.IntegerField(choices=[
+        (1, 'Strongly disagree'),
+        (2, 'Disagree'),
+        (3, 'Neither agree nor disagree'),
+        (4, 'Agree'),
+        (5, 'Strongly agree')
+    ], widget=widgets.RadioSelect, initial=0, label="")
 
 
 def asset_endowment(player: Player):
@@ -1404,6 +1494,7 @@ class Results(Page):
             initialUtility=round(initial_utility, C.decimals),
             finalUtility=round(final_utility, C.decimals),
             utilityChangePercent=round(utility_change_percent, C.decimals),
+            is_last_round=player.round_number == C.NUM_ROUNDS,
         )
 
     @staticmethod
@@ -1411,6 +1502,24 @@ class Results(Page):
         return dict(
             assetValue=round(player.assetValue, C.decimals),
         )
+
+
+class SurveyDemographics(Page):
+    form_model = 'player'
+    form_fields = ['age', 'gender', 'education', 'income', 'employment']
+    
+    @staticmethod
+    def is_displayed(player: Player):
+        return player.round_number == C.NUM_ROUNDS and player.isParticipating == 1
+
+
+class SurveyAttitudes(Page):
+    form_model = 'player'
+    form_fields = ['pct_effectiveness', 'pct_fairness', 'pct_support', 'climate_concern', 'climate_responsibility']
+    
+    @staticmethod
+    def is_displayed(player: Player):
+        return player.round_number == C.NUM_ROUNDS and player.isParticipating == 1
 
 
 class FinalResults(Page):
@@ -1434,4 +1543,4 @@ class FinalResults(Page):
         )
 
 
-page_sequence = [Welcome, Privacy, NoConsent, Instructions, ComprehensionCheck, ComprehensionFeedback, WaitToStart, EndOfTrialRounds, PreMarket, WaitingMarket, Market, ResultsWaitPage, Results, FinalResults, ResultsWaitPage]
+page_sequence = [Welcome, Privacy, NoConsent, Instructions, ComprehensionCheck, ComprehensionFeedback, WaitToStart, EndOfTrialRounds, PreMarket, WaitingMarket, Market, ResultsWaitPage, Results, SurveyAttitudes, SurveyDemographics, FinalResults]

@@ -18,6 +18,12 @@ Your round payoff is <strong>{{ payoff }}</strong>.
 Only one round (excluding the trial) will be randomly chosen at the end of the study to determine your final payout.
 </p>
 
+{% if is_last_round %}
+<p>
+You completed all the trading rounds. Click the next button to proceed to the last part of this study - the brief survey.
+</p>
+{% endif %}
+
     {{ next_button }}
 {{ endblock }}
 

@@ -1,0 +1,64 @@
+{{ block title }}
+Survey (1/2)
+{{ endblock }}
+
+{{ block content }}
+
+<p>Please read the following text and then answer the questions below.</p>
+
+<div style="background-color: #f8f9fa; border: 1px solid #e9ecef; border-radius: 5px; padding: 20px; margin: 20px 0; line-height: 1.6; font-size: 18px;">
+<p><strong>Personal Carbon Trading</strong> is a policy designed to reduce a country's carbon dioxide ('carbon') emissions. Individual emissions come from everyday activities such as driving, heating, or using household appliances. In such a scheme, every person would receive the same number of carbon credits each year (their allowance). These credits are required when buying carbon-intensive goods and services such as petrol, electricity, heating oil, or flights. For example, 200 credits correspond to 200 kg of carbon emissions.</p>
+
+<p>People who use more than their allowance must buy extra credits (costing them money), while those who use less can sell their spare credits (earning money). Spare credits can be created by reducing overall consumption or by choosing less carbon-intensive options.</p>
+
+<p>In the task you just completed, the tradable assets can be thought of as carbon credits. By relabelling the 'asset market' you participated in as a 'carbon market,' the exercise resembles a simplified version of Personal Carbon Trading: not only money, but also carbon credits (= assets), are needed to buy emission-producing goods. These credits are distributed evenly at the beginning of each round (like each year) and can be traded between participants. The overall number of credits each round stays fixed, and total emissions can be reduced by lowering the number of credits allocated.</p>
+</div>
+
+<style>
+/* Target the radio button containers specifically */
+.form-check {
+    display: inline-block !important;
+    margin-right: 20px !important;
+    margin-bottom: 10px !important;
+}
+
+/* Alternative approach - target the form field containers */
+div[id*="pct_effectiveness"] .form-check,
+div[id*="pct_fairness"] .form-check,
+div[id*="pct_support"] .form-check,
+div[id*="climate_concern"] .form-check,
+div[id*="climate_responsibility"] .form-check {
+    display: inline-block !important;
+    margin-right: 20px !important;
+    margin-bottom: 10px !important;
+}
+</style>
+
+<div style="margin-bottom: 30px;">
+    <h4 style="margin-bottom: 0px;">1. To what extent do you agree with the following statement: <br> A Personal Carbon Trading scheme would be effective in reducing emissions.</h4>
+    <div style="margin-top: 0px;">{{ formfield 'pct_effectiveness' }}</div>
+</div>
+
+<div style="margin-bottom: 30px;">
+    <h4 style="margin-bottom: 0px;">2. To what extent do you agree with the following statement: <br> A Personal Carbon Trading scheme is fair.</h4>
+    <div style="margin-top: 0px;">{{ formfield 'pct_fairness' }}</div>
+</div>
+
+<div style="margin-bottom: 30px;">
+    <h4 style="margin-bottom: 0px;">3. Would you support or oppose the introduction of a Personal Carbon Trading scheme?</h4>
+    <div style="margin-top: 0px;">{{ formfield 'pct_support' }}</div>
+</div>
+
+<div style="margin-bottom: 30px;">
+    <h4 style="margin-bottom: 0px;">4. How concerned, if at all, are you about climate change?</h4>
+    <div style="margin-top: 0px;">{{ formfield 'climate_concern' }}</div>
+</div>
+
+<div style="margin-bottom: 30px;">
+    <h4 style="margin-bottom: 0px;">5. To what extent do you agree with the following statement: <br> I feel jointly responsible for climate change.</h4>
+    <div style="margin-top: 0px;">{{ formfield 'climate_responsibility' }}</div>
+</div>
+
+{{ next_button }}
+
+{{ endblock }}

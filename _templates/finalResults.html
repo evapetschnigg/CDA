@@ -18,7 +18,7 @@
 <br>
 
 <h5>Round Details</h5>
-<table id="periodPayoffTable" align="left">
+<table id="periodPayoffTable">
     <tr><th style="padding:0 0px 0 15px;">Round</th><th style="padding:0 0px 0 15px;">Round Payoff</th><th style="padding:0 0px 0 15px;">Score Change (%)</th></tr>
     {{ for p in periodPayoff }}
         <tr>
@@ -28,6 +28,10 @@
         </tr>
     {{ endfor }}
 </table>
+
+<br><br><br>
+
+<p>You may now close your browser window.</p>
 
 {{ endblock }}
 
