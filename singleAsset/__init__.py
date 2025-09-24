@@ -25,6 +25,7 @@ class C(BaseConstants):
     cash_MAX = 100
     decimals = 2
     marketTime = 210  # needed to initialize variables but exchanged by session_config
+    supply_shock_intensity = 0.8  # 0.8 = 20% reduction, 1.0 = no shock, 0.5 = 50% reduction
 
 
 class Subsession(BaseSubsession):
@@ -334,7 +335,19 @@ class Player(BasePlayer):
 def asset_endowment(player: Player):
     # this code is run at the first WaitToStart page, within the initiate_player() function, when all participants arrived
     # this function returns a participant's initial asset endowment
-    return int(random.uniform(a=C.num_assets_MIN, b=C.num_assets_MAX))
+    
+    # Calculate the number of trading rounds
+    num_trading_rounds = C.NUM_ROUNDS - C.num_trial_rounds
+    shock_round = (num_trading_rounds // 2) + C.num_trial_rounds + 1
+    
+    # Apply supply shock: reduction after 50% of trading rounds
+    if player.round_number >= shock_round:
+        # Apply shock intensity (e.g., 0.8 = 20% reduction)
+        base_endowment = int(random.uniform(a=C.num_assets_MIN, b=C.num_assets_MAX))
+        return int(base_endowment * C.supply_shock_intensity)
+    else:
+        # 100% of original endowment (no reduction)
+        return int(random.uniform(a=C.num_assets_MIN, b=C.num_assets_MAX))
 
 
 def short_allowed(player: Player):
