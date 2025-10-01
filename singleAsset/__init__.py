@@ -21,17 +21,35 @@ class C(BaseConstants):
     FV_MAX = 85
     num_assets_MIN = 10
     num_assets_MAX = 10
-    cash_MIN = 100
-    cash_MAX = 100
+    cash_MIN = 80
+    cash_MAX = 120
     decimals = 2
     marketTime = 210  # needed to initialize variables but exchanged by session_config
     supply_shock_intensity = 0.8  # 0.8 = 20% reduction, 1.0 = no shock, 0.5 = 50% reduction
+    
+    # Treatment definitions
+    TREATMENTS = [
+        'baseline_homogeneous', 
+        'baseline_heterogeneous', 
+        'environmental_homogeneous', 
+        'environmental_heterogeneous', 
+        'destruction_homogeneous', 
+        'destruction_heterogeneous'
+    ]
+    ACTIVE_TREATMENTS = [
+        'environmental_homogeneous',
+        'environmental_heterogeneous',
+        ]  # Can be modified to test specific treatments
 
 
 class Subsession(BaseSubsession):
     offerID = models.IntegerField(initial=0)
     orderID = models.IntegerField(initial=0)
     transactionID = models.IntegerField(initial=0)
+    
+    def creating_session(self):
+        # Groups will be created in TreatmentAssignment WaitPage when all players arrive
+        pass
 
 
 def vars_for_admin_report(subsession):
@@ -65,6 +83,10 @@ class Group(BaseGroup):
     assetNames = models.LongStringField()
     aggAssetsValue = models.FloatField()
     assetValue = models.FloatField()
+    # Treatment fields
+    treatment = models.StringField(initial="")
+    framing = models.StringField(initial="")  # 'baseline', 'environmental', 'destruction'
+    endowment_type = models.StringField(initial="")  # 'homogeneous', 'heterogeneous'
     bestAsk = models.FloatField()
     bestBid = models.FloatField()
     transactions = models.IntegerField(initial=0, min=0)
@@ -168,6 +190,10 @@ class Player(BasePlayer):
     cashHolding = models.FloatField(initial=0, decimal=C.decimals)
     assetsHolding = models.IntegerField(initial=0)
     endEndowment = models.FloatField(initial=0, decimal=C.decimals)
+    # Treatment fields
+    treatment = models.StringField(initial="")
+    framing = models.StringField(initial="")
+    endowment_type = models.StringField(initial="")
     capLong = models.FloatField(initial=0, min=0, decimal=C.decimals)
     capShort = models.IntegerField(initial=0, min=0)
     transactions = models.IntegerField(initial=0, min=0)
@@ -375,9 +401,17 @@ def asset_short_limit(player: Player):
 
 def cash_endowment(player: Player):
     # this code is run at the first WaitToStart page, within the initiate_player() function, when all participants arrived
-    # this function returns a participant's initial cash endowment
+    # this function returns a participant's initial cash endowment based on their treatment
     group = player.group
-    return float(round(random.uniform(a=C.cash_MIN, b=C.cash_MAX), C.decimals))  
+    
+    # Check if this is a heterogeneous treatment
+    if group.endowment_type == 'heterogeneous':
+        # For heterogeneous: random amount between cash_MIN and cash_MAX
+        return float(round(random.uniform(a=C.cash_MIN, b=C.cash_MAX), C.decimals))
+    else:
+        # For homogeneous: average of cash_MIN and cash_MAX
+        average_cash = (C.cash_MIN + C.cash_MAX) / 2
+        return float(round(average_cash, C.decimals))  
 
 
 def cash_long_limit(player: Player):
@@ -1265,9 +1299,11 @@ class Instructions(Page):
 
     @staticmethod
     def vars_for_template(player: Player):
+        print(f"DEBUG: Instructions page - Player {player.id} framing: '{player.framing}'")
         return dict(
             numTrials=C.num_trial_rounds,
             numRounds=C.NUM_ROUNDS - C.num_trial_rounds,
+            framing=player.framing,
         )
 
 class ComprehensionCheck(Page):
@@ -1445,6 +1481,13 @@ class Market(Page):
         return player.isParticipating
 
     @staticmethod
+    def vars_for_template(player: Player):
+        print(f"DEBUG: Market page - Player {player.id} framing: '{player.framing}'")
+        return dict(
+            framing=player.framing,
+        )
+
+    @staticmethod
     def js_vars(player: Player):
         group = player.group
         return dict(
@@ -1556,4 +1599,99 @@ class FinalResults(Page):
         )
 
 
-page_sequence = [Welcome, Privacy, NoConsent, Instructions, ComprehensionCheck, ComprehensionFeedback, WaitToStart, EndOfTrialRounds, PreMarket, WaitingMarket, Market, ResultsWaitPage, Results, SurveyAttitudes, SurveyDemographics, FinalResults]
+class TreatmentAssignment(WaitPage):
+    wait_for_all_groups = True
+
+    @staticmethod
+    def is_displayed(player: Player):
+        # Always show after consent (for group persistence in all rounds)
+        return player.participant.vars.get('consent_given', False)
+
+    @staticmethod
+    def after_all_players_arrive(subsession: Subsession):
+        print(f"DEBUG: after_all_players_arrive called for round {subsession.round_number}")
+
+        # For rounds after round 1, copy groups from round 1
+        if subsession.round_number > 1:
+            print(f"DEBUG: Round {subsession.round_number} - copying groups from round 1")
+            subsession.group_like_round(1)
+            
+            # Copy treatment info from round 1 groups to current groups
+            round_1_groups = subsession.in_round(1).get_groups()
+            current_groups = subsession.get_groups()
+            
+            for i, (round_1_group, current_group) in enumerate(zip(round_1_groups, current_groups)):
+                current_group.treatment = round_1_group.treatment
+                current_group.framing = round_1_group.framing
+                current_group.endowment_type = round_1_group.endowment_type
+                print(f"DEBUG: Round {subsession.round_number} - Group {i+1} copied treatment: {current_group.treatment}")
+                
+                # Also update player records with treatment info
+                for p in current_group.get_players():
+                    p.treatment = current_group.treatment
+                    p.framing = current_group.framing
+                    p.endowment_type = current_group.endowment_type
+                    p.participant.vars.update(
+                        treatment=current_group.treatment,
+                        framing=current_group.framing,
+                        endowment_type=current_group.endowment_type,
+                    )
+            
+            # Debug: show the copied groups
+            groups = subsession.get_groups()
+            print(f"DEBUG: Round {subsession.round_number} - copied {len(groups)} groups")
+            for i, group in enumerate(groups):
+                players = group.get_players()
+                print(f"DEBUG: Group {i+1} has {len(players)} players: {[p.id_in_subsession for p in players]}")
+            return
+
+        # Only create groups in round 1
+        if subsession.round_number == 1:
+            players = subsession.get_players()
+            random.shuffle(players)
+
+            treatment_list = C.ACTIVE_TREATMENTS
+            num_players = len(players)
+            n_groups = min(len(treatment_list), num_players)
+
+            if n_groups < 1:
+                raise ValueError("No players available to form groups.")
+
+            # Distribute players into groups (round robin)
+            groups_matrix = [[] for _ in range(n_groups)]
+            for i, p in enumerate(players):
+                groups_matrix[i % n_groups].append(p)
+
+            subsession.set_group_matrix(groups_matrix)
+            print(f"DEBUG: Created {n_groups} groups with set_group_matrix")
+            print(f"DEBUG: Groups matrix: {[[p.id_in_subsession for p in grp] for grp in groups_matrix]}")
+
+            # Assign treatments to groups
+            import math
+            num_treatments = len(treatment_list)
+            reps = math.ceil(n_groups / num_treatments)
+            treatment_pool = (treatment_list * reps)[:n_groups]
+            random.shuffle(treatment_pool)
+
+            for i, group in enumerate(subsession.get_groups()):
+                group.treatment = treatment_pool[i]
+
+                # Split treatment name into components (e.g., baseline_homogeneous)
+                parts = group.treatment.split("_")
+                group.framing = parts[0]
+                group.endowment_type = parts[1]
+
+                print(f"DEBUG: Group {group.id} assigned treatment {group.treatment}")
+
+                # Store treatment info for all players
+                for p in group.get_players():
+                    p.treatment = group.treatment
+                    p.framing = group.framing
+                    p.endowment_type = group.endowment_type
+                    p.participant.vars.update(
+                        treatment=group.treatment,
+                        framing=group.framing,
+                        endowment_type=group.endowment_type,
+                    )
+
+page_sequence = [Welcome, Privacy, NoConsent, TreatmentAssignment, Instructions, ComprehensionCheck, ComprehensionFeedback, WaitToStart, EndOfTrialRounds, PreMarket, WaitingMarket, Market, ResultsWaitPage, Results, SurveyAttitudes, SurveyDemographics, FinalResults]
