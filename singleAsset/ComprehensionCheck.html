@@ -10,29 +10,36 @@ Comprehension Check
 </div>
 
 <div style="margin-bottom: 30px;">
-    <h4 style="margin-bottom: 0px;">1. You have 50 mu, 6 assets, and no goods. What happens to your Total Score if you buy Good B (cost: 20 mu and 1 asset, value: 35 satisfaction points)?</h4>
+    <h4 style="margin-bottom: 0px;">1. You have 50 mu, 6 {% if framing == 'environmental' or framing == 'destruction' %}carbon credits{% else %}assets{% endif %}, and no goods. What happens to your Total Score if you buy Good B (cost: 20 mu and 1 {% if framing == 'environmental' or framing == 'destruction' %}carbon credit{% else %}asset{% endif %}, value: 35 satisfaction points)?</h4>
     <div style="margin-top: 0px;">{{ formfield 'comp_q1' }}</div>
 </div>
 
 <div style="margin-bottom: 30px;">
-    <h4 style="margin-bottom: 0px;">2. You have 30 mu, 5 assets, and 10 satisfaction points from goods. What happens to your Total Score if you buy an asset for 10 mu?</h4>
+    <h4 style="margin-bottom: 0px;">2. You have 30 mu, 5 {% if framing == 'environmental' or framing == 'destruction' %}carbon credits{% else %}assets{% endif %}, and 10 satisfaction points from goods. What happens to your Total Score if you buy {% if framing == 'environmental' or framing == 'destruction' %}a carbon credit{% else %}an asset{% endif %} for 10 mu?</h4>
     <div style="margin-top: 0px;">{{ formfield 'comp_q2' }}</div>
 </div>
 
 <div style="margin-bottom: 30px;">
-    <h4 style="margin-bottom: 0px;">3. Which of the following correctly describes the role of assets in this experiment?</h4>
+    <h4 style="margin-bottom: 0px;">3. Which of the following correctly describes your payout for participating in this study?</h4>
+    <div style="margin-top: 0px;">{{ formfield 'comp_q5' }}</div>
+</div>
+
+<div style="margin-bottom: 30px;">
+    <h4 style="margin-bottom: 0px;">4. Which of the following correctly describes the role of {% if framing == 'environmental' or framing == 'destruction' %}carbon credits{% else %}assets{% endif %} in this experiment?</h4>
     <div style="margin-top: 0px;">{{ formfield 'comp_q3' }}</div>
 </div>
 
 <div style="margin-bottom: 30px;">
-    <h4 style="margin-bottom: 0px;">4. Assets not used by the end of a round will be transferred to the next round.</h4>
+    <h4 style="margin-bottom: 0px;">5. {% if framing == 'environmental' or framing == 'destruction' %}Carbon credits{% else %}Assets{% endif %} not used by the end of a round will be transferred to the next round.</h4>
     <div style="margin-top: 0px;">{{ formfield 'comp_q4' }}</div>
 </div>
 
+{% if framing == 'destruction' %}
 <div style="margin-bottom: 30px;">
-    <h4 style="margin-bottom: 0px;">5. Which of the following correctly describes your payout for participating in this study?</h4>
-    <div style="margin-top: 0px;">{{ formfield 'comp_q5' }}</div>
+    <h4 style="margin-bottom: 0px;">6. Carbon credits not used by the end of a round, will reduce real-world emissions.</h4>
+    <div style="margin-top: 0px;">{{ formfield 'comp_q6' }}</div>
 </div>
+{% endif %}
 
 {{ next_button }}
 
