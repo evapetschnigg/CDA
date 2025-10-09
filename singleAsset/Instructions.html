@@ -6,7 +6,7 @@
 
 <h3>Aim of the study</h3>
 <p>
-The purpose of the study is to investigate trading behavior in an <strong>experimental asset market</strong>.
+The purpose of the study is to investigate trading behavior in an <strong>experimental {% if framing == 'environmental' or framing == 'destruction' %}personal carbon market{% else %}asset market{% endif %}</strong>.
 </p>
 
 <h3>Structure of the study</h3>
@@ -21,45 +21,48 @@ The purpose of the study is to investigate trading behavior in an <strong>experi
 
 <h3>The Market Place</h3>
 <p>
-  You will interact with other participants through a <strong>market screen</strong> (see screenshot below). The layout is the same in all rounds, including the trial.
+  You will interact with 7 other participants through a <strong>market screen</strong> (see screenshot below). The layout is the same in all rounds, including the trial.
 </p>
 <ul>
   <li>The group of participants you interact with remains the same throughout the study.</li>
-  <li>At the start of each round, you will receive a new endowment of <strong>money and assets</strong>. Endowments do <strong>not carry over</strong> between rounds.</li>
-  <li>Your goal in each round is to <strong>maximize your Total Score</strong> by trading assets with other participants and buying goods.</li>
+  <li>At the start of each round, you will receive a new endowment of <strong>money and {% if framing == 'environmental' or framing == 'destruction' %}carbon credits{% else %}assets{% endif %}</strong>.</li>
+  {% if framing == 'environmental' or framing == 'destruction' %}<li>Carbon credits represent the right to emit a certain amount of carbon dioxide. You need carbon credits (in addition to money) to buy goods that cause emissions.</li>{% endif %}
+  <li>Your goal in each round is to <strong>maximize your Total Score</strong> by trading {% if framing == 'environmental' or framing == 'destruction' %}carbon credits{% else %}assets{% endif %} with other participants and buying goods.</li>
 </ul>
 
 <img src="{% static 'images/marketplace_screenshot.png' %}" alt="Screenshot of the Market Place interface" style="max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 5px; margin: 20px auto; display: block;">
 
 <h3>Endowment</h3>
-<p>
-  Before each trading round begins, your <strong>assigned endowment of money and assets</strong> will be displayed. 
-  You will always start the round without any goods.
-  Once the round starts, your holdings are shown in the white box on the market screen.
-</p>
+<ul>
+  <li>Before each trading round begins, your <strong>assigned endowment of money and {% if framing == 'environmental' or framing == 'destruction' %}carbon credits{% else %}assets{% endif %}</strong> will be displayed.</li>
+  <li>{% if endowment_type == 'homogeneous' %}All participants in your group receive the same number of {% if framing == 'environmental' or framing == 'destruction' %}carbon credits{% else %}assets{% endif %} and the same amount of money.{% else %}All participants in your group receive the same number of {% if framing == 'environmental' or framing == 'destruction' %}carbon credits{% else %}assets{% endif %} and a randomly determined amount of money between a maximum and minimum value that is the same across all participants.{% endif %}</li>
+  <li>All participants start the round without any goods.</li>
+  <li>Once the round starts, your holdings are shown in the white box on the market screen.</li>
+  <li>Holdings at the end of a round <strong>do not carry over</strong> to the next round.</li>
+</ul>
 
 <h3>The Goods Market</h3>
 <ul>
   <li>You can buy two types of goods: <strong>Good A</strong> and <strong>Good B</strong>.</li>
-  <li>Goods have fixed costs in money and assets and give you <strong>satisfaction points</strong>.</li>
-  <li>When you buy a good, the required money and assets are deducted, and the satisfaction points are added to your <strong>Total Score</strong>.</li>
-  <li>You may buy as many goods as you want, as long as you have enough money and assets.</li>
+  <li>Goods have fixed costs in money and {% if framing == 'environmental' or framing == 'destruction' %}carbon credits{% else %}assets{% endif %} and give you <strong>satisfaction points</strong>.</li>
+  <li>When you buy a good, the required money and {% if framing == 'environmental' or framing == 'destruction' %}carbon credits{% else %}assets{% endif %} are deducted, and the satisfaction points are added to your <strong>Total Score</strong>.</li>
+  <li>You may buy as many goods as you want, as long as you have enough money and {% if framing == 'environmental' or framing == 'destruction' %}carbon credits{% else %}assets{% endif %}.</li>
   <li>Goods can only be <strong>bought</strong>, not sold.</li>
 </ul>
 
-<h3>The Asset Market</h3>
+<h3>The {% if framing == 'environmental' or framing == 'destruction' %}Carbon{% else %}Asset{% endif %} Market</h3>
 <ul>
-  <li>The asset market is a <strong>double auction market</strong> where you trade assets with other participants.</li>
-  <li>In the top half of the asset market you may post:
+  <li>The {% if framing == 'environmental' or framing == 'destruction' %}carbon market{% else %}asset market{% endif %} is a <strong>double auction market</strong> where you trade {% if framing == 'environmental' or framing == 'destruction' %}carbon credits{% else %}assets{% endif %} with other participants.</li>
+  <li>In the top half of the {% if framing == 'environmental' or framing == 'destruction' %}carbon market{% else %}asset market{% endif %} you may post:
     <ul>
-      <li><strong>Bids (buy offers):</strong> enter the price at which you want to buy an asset.</li>
-      <li><strong>Asks (sell offers):</strong> enter the price at which you want to sell an asset.</li>
+      <li><strong>Bids (buy offers):</strong> enter the price at which you want to buy {% if framing == 'environmental' or framing == 'destruction' %}a carbon credit{% else %}an asset{% endif %}.</li>
+      <li><strong>Asks (sell offers):</strong> enter the price at which you want to sell {% if framing == 'environmental' or framing == 'destruction' %}a carbon credit{% else %}an asset{% endif %}.</li>
     </ul>
   </li>
   <li>All bids and asks are displayed in the lower half of the market.</li>
-  <li>To accept another participant’s bid or ask, select it and click <strong>Sell</strong> or <strong>Buy</strong>. Your asset and money holdings will be updated automatically.</li>
+  <li>To accept another participant's bid or ask, select it and click <strong>Sell</strong> or <strong>Buy</strong>. Your {% if framing == 'environmental' or framing == 'destruction' %}carbon credit{% else %}asset{% endif %} and money holdings will be updated automatically.</li>
   <li>Your own posted offers appear in red. You cannot accept your own offers, but you may cancel them at any time by selecting them and clicking <strong>Cancel</strong>.</li>
-  <li>The <strong>trade history graph</strong> shows the timing and prices of asset trades made between participants in your group.</li>
+  <li>The <strong>trade history graph</strong> shows the timing and prices of {% if framing == 'environmental' or framing == 'destruction' %}carbon credit{% else %}asset{% endif %} trades made between participants in your group.</li>
 </ul>
 
 <img src="{% static 'images/assetmarket_screenshot.png' %}" alt="Screenshot of the Asset Market interface" style="width: 60%; height: auto; border: 1px solid #ddd; border-radius: 5px; margin: 20px auto; display: block;">
@@ -87,19 +90,31 @@ The purpose of the study is to investigate trading behavior in an <strong>experi
   <strong>Total Score = Money holding + Satisfaction points from goods</strong>
 </div>
 
-<p><em>Example:</em><br> Imagine you start a round with 10 assets, 100 monetary units (mu) and 0 goods.
+<p><em>Example:</em><br> Imagine you start a round with 10 {% if framing == 'environmental' or framing == 'destruction' %}carbon credits{% else %}assets{% endif %}, 100 monetary units (mu) and 0 goods.
 This gives you an initial <strong>Total Score of 100</strong>. 
 </p>
 
-<p>You can increase your Score by buying goods or selling assets.</p>
+<p>You can increase your Score by buying goods or selling {% if framing == 'environmental' or framing == 'destruction' %}carbon credits{% else %}assets{% endif %}.</p>
 <ul>
-<li>If you buy Good A (cost: 5 mu and 1 asset, value: 12 satisfaction points),<br>
+<li>If you buy Good A (cost: 5 mu and 1 {% if framing == 'environmental' or framing == 'destruction' %}carbon credit{% else %}asset{% endif %}, value: 12 satisfaction points),<br>
 your new Score is: 100 – 5 mu + 12 points = <strong>107</strong>.</li>
-<li>If you to sell one asset for 10 mu,<br>
+<li>If you to sell one {% if framing == 'environmental' or framing == 'destruction' %}carbon credit{% else %}asset{% endif %} for 10 mu,<br>
 your new Score is: 100 + 10 mu = <strong>110</strong>.</li>
 </ul>
 
-<p><strong>Important:</strong> Assets themselves do not count toward your Score. However, they are valuable as you may trade them for a profit or use them to buy goods. Unused assets expire at the end of each round.</p>
+<h3>{% if framing == 'environmental' or framing == 'destruction' %}Carbon Credits{% else %}Assets{% endif %}</h3>
+<ul>
+  <li>{% if framing == 'environmental' or framing == 'destruction' %}Carbon credits{% else %}Assets{% endif %} themselves do not count toward your Score. However, they are valuable as you may trade them for a profit or use them to buy goods.</li>
+  {% if framing != 'destruction' %}
+    <li>Unused {% if framing == 'environmental' %}carbon credits{% else %}assets{% endif %} expire at the end of each round.</li>
+  {% endif %}
+  {% if framing == 'destruction' %}
+    <li>Any carbon credits you do not sell or spend by the end of a round are not carried over to the next round and will reduce your group's total emissions.</li>
+    <li><strong>For each unused carbon credit in the experiment, the experimenter will purchase and retire a real-world verified carbon certificate from ClimeCo.</strong></li>
+    <li>Each retired certificate corresponds roughly to <strong>1 kg of carbon dioxide avoided</strong> — about 4 km of driving a typical passenger car.</li>
+    <li>In this way, your choices in the experiment have a direct and tangible impact on <strong>real-world carbon emissions</strong>.</li>
+  {% endif %}
+</ul>
 
 <h3>Your Payout</h3>
 <p>
