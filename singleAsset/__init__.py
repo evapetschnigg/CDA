@@ -27,6 +27,10 @@ class C(BaseConstants):
     marketTime = 210  # needed to initialize variables but exchanged by session_config
     supply_shock_intensity = 0.8  # 0.8 = 20% reduction, 1.0 = no shock, 0.5 = 50% reduction
     
+    # Carbon credit destruction constants
+    CO2_PER_CREDIT = 1.0  # kg CO2 per carbon credit
+    KM_PER_KG_CO2 = 7.0   # km driven by car per kg CO2 (approximate)
+    
     # Treatment definitions
     TREATMENTS = [
         'baseline_homogeneous', 
@@ -194,6 +198,7 @@ class Player(BasePlayer):
     treatment = models.StringField(initial="")
     framing = models.StringField(initial="")
     endowment_type = models.StringField(initial="")
+    unused_assets_endofround = models.IntegerField(initial=0)  # Track unused assets at end of round for all treatments
     capLong = models.FloatField(initial=0, min=0, decimal=C.decimals)
     capShort = models.IntegerField(initial=0, min=0)
     transactions = models.IntegerField(initial=0, min=0)
@@ -1556,6 +1561,9 @@ class ResultsWaitPage(WaitPage):
     def after_all_players_arrive(group: Group):
         players = group.get_players()
         for p in players:
+            # Capture unused assets at end of round for all treatments
+            p.unused_assets_endofround = p.assetsHolding
+            
             calc_period_profits(player=p)
             if group.round_number == C.NUM_ROUNDS:
                 calc_final_profit(player=p)
@@ -1576,12 +1584,24 @@ class Results(Page):
         
         # Use the utility change from the existing system
         utility_change_percent = player.utilityChangePercent
+        
+        # Calculate carbon credit impact for destruction group
+        carbon_impact = None
+        if player.framing == 'destruction':
+            co2_retired = player.unused_assets_endofround * C.CO2_PER_CREDIT
+            km_saved = co2_retired * C.KM_PER_KG_CO2
+            carbon_impact = {
+                'unused_credits': player.unused_assets_endofround,
+                'co2_retired': round(co2_retired, 1),
+                'km_saved': round(km_saved, 1)
+            }
             
         return dict(
             payoff=cu(round(player.payoff, C.decimals)),
             initialUtility=round(initial_utility, C.decimals),
             finalUtility=round(final_utility, C.decimals),
             utilityChangePercent=round(utility_change_percent, C.decimals),
+            carbon_impact=carbon_impact,
             is_last_round=player.round_number == C.NUM_ROUNDS,
         )
 
@@ -1624,10 +1644,43 @@ class FinalResults(Page):
         selected_round_index = player.selectedRound - 1  # Convert to 0-based index
         selected_round_original_payoff = trading_rounds[selected_round_index].payoff if selected_round_index < len(trading_rounds) else 0
         
+        # Calculate carbon impact for selected round (destruction group only)
+        selected_round_carbon_impact = None
+        if player.framing == 'destruction' and selected_round_index < len(trading_rounds):
+            selected_round_player = trading_rounds[selected_round_index]
+            if hasattr(selected_round_player, 'unused_assets_endofround'):
+                unused_credits = selected_round_player.unused_assets_endofround
+                co2_retired = unused_credits * C.CO2_PER_CREDIT
+                km_saved = co2_retired * C.KM_PER_KG_CO2
+                selected_round_carbon_impact = {
+                    'unused_credits': unused_credits,
+                    'co2_retired': round(co2_retired, 1),
+                    'km_saved': round(km_saved, 1)
+                }
+        
+        # Generate period payoff data with carbon credit info for destruction group
+        periodPayoff = []
+        
+        for p in player.in_all_rounds():
+            if p.round_number > C.num_trial_rounds:
+                round_data = [p.round_number - C.num_trial_rounds, round(p.payoff, C.decimals), round(p.utilityChangePercent, C.decimals)]
+                
+                # Add carbon credit info for destruction group
+                if player.framing == 'destruction' and hasattr(p, 'unused_assets_endofround'):
+                    unused_credits = p.unused_assets_endofround
+                    co2_retired = unused_credits * C.CO2_PER_CREDIT
+                    km_saved = co2_retired * C.KM_PER_KG_CO2
+                    
+                    round_data.extend([unused_credits, round(co2_retired, 1), round(km_saved, 1)])
+                
+                periodPayoff.append(round_data)
+        
         return dict(
             payoff=cu(round(player.finalPayoff, 0)),
             selectedRoundOriginalPayoff=cu(round(selected_round_original_payoff, 0)),
-            periodPayoff=[[p.round_number - C.num_trial_rounds, round(p.payoff, C.decimals), round(p.utilityChangePercent, C.decimals)] for p in player.in_all_rounds() if p.round_number > C.num_trial_rounds],
+            periodPayoff=periodPayoff,
+            is_destruction_group=player.framing == 'destruction',
+            selected_round_carbon_impact=selected_round_carbon_impact,
         )
 
 

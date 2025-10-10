@@ -13,9 +13,28 @@ In this round, you have {% if utilityChangePercent >= 0 %}increased{% else %}dec
 Your round payoff is <strong>{{ payoff }}</strong>.
 </p>
 
+{% if carbon_impact %}
 <p>
-<b>Please note:</b> The round payoff shows what you would earn if this round were selected. 
+Carbon impact: You left <strong>{{ carbon_impact.unused_credits }}</strong> carbon credits unused. 
+As a result, 
+{% if carbon_impact.co2_retired > 0 %}
+<span class="text-success"><strong>{{ carbon_impact.co2_retired }} kg of CO₂ will be retired through verified carbon certificates</strong></span>
+{% else %}
+{{ carbon_impact.co2_retired }} kg of CO₂ will be retired through verified carbon certificates
+{% endif %}
+, corresponding to about <strong>{{ carbon_impact.km_saved }} km</strong> of car travel avoided.
+</p>
+{% endif %}
+
+<p>
+<b>Please note:</b> 
+{% if carbon_impact %}
+The carbon impact and round payoff show the carbon impact and what you would earn if this round were selected. 
+Only one round (excluding the trial) will be randomly chosen at the end of the study to determine your final carbon impact and payout.
+{% else %}
+The round payoff shows what you would earn if this round were selected. 
 Only one round (excluding the trial) will be randomly chosen at the end of the study to determine your final payout.
+{% endif %}
 </p>
 
 {% if is_last_round %}

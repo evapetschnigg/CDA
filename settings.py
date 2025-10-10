@@ -27,7 +27,7 @@ SESSION_CONFIGS = [
         display_name='PCT',
         app_sequence=['singleAsset'],
         num_demo_participants=4,
-        market_time=20,
+        market_time=60,
         randomise_types=True, # KeyError : 'roleID' shows up if this is set to False
         short_selling=False,
         margin_buying=False,
@@ -57,7 +57,7 @@ SESSION_CONFIG_DEFAULTS = dict(
     real_world_currency_per_point=1.00, participation_fee=0.00, doc=""
 )
 
-PARTICIPANT_FIELDS = ['roleID', 'isObserver', 'isParticipating', 'informed']
+PARTICIPANT_FIELDS = ['roleID', 'isObserver', 'isParticipating', 'informed', 'treatment', 'framing', 'endowment_type', 'unused_assets_endofround']
 SESSION_FIELDS = ['numParticipants']
 
 # ISO-639 code

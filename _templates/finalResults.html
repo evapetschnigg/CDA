@@ -10,16 +10,29 @@
 
     <p>You have completed the study. Thank you for your participation!</p>
 
-    {% if selectedRoundOriginalPayoff >= 4 %}
-        <p>You receive <strong>{{ payoff }}</strong> which is your payoff from trading round nr. {{ player.selectedRound }}.</p>
-    {% else %}
-        <p>Trading round nr. {{ player.selectedRound }} was randomly selected. As you had a payoff of <strong>{{ selectedRoundOriginalPayoff }}</strong> in this round, you receive the minimum payout of <strong>{{ payoff }}</strong>.</p>
-    {% endif %}
+    <div style="background-color: #e8f4f8; border: 2px solid #4a90a4; border-radius: 8px; padding: 20px; margin: 20px 0;">
+        {% if selectedRoundOriginalPayoff >= 4 %}
+            <p style="margin: 0; font-size: 16px;">You receive <strong style="font-size: 18px; color: #2c5f6f;">{{ payoff }}</strong> which is your payoff from trading round nr. {{ player.selectedRound }}.{% if selected_round_carbon_impact %} You left {{ selected_round_carbon_impact.unused_credits }} carbon credits unused in this round, resulting in <strong style="font-size: 18px; color: #2c5f6f;">{{ selected_round_carbon_impact.co2_retired }} kg of CO₂</strong> being retired on your behalf — roughly equivalent to avoiding the emissions from {{ selected_round_carbon_impact.km_saved }} km of car driving.{% endif %}</p>
+        {% else %}
+            <p style="margin: 0; font-size: 16px;">Trading round nr. {{ player.selectedRound }} was randomly selected. As you had a payoff of <strong style="font-size: 18px; color: #2c5f6f;">{{ selectedRoundOriginalPayoff }}</strong> in this round, you receive the minimum payout of <strong style="font-size: 18px; color: #2c5f6f;">{{ payoff }}</strong>.{% if selected_round_carbon_impact %} You left {{ selected_round_carbon_impact.unused_credits }} carbon credits unused in this round, resulting in <strong style="font-size: 18px; color: #2c5f6f;">{{ selected_round_carbon_impact.co2_retired }} kg of CO₂</strong> being retired on your behalf — roughly equivalent to avoiding the emissions from {{ selected_round_carbon_impact.km_saved }} km of car driving.{% endif %}</p>
+        {% endif %}
+    </div>
 <br>
 
 <h5>Round Details</h5>
 <table id="periodPayoffTable">
-    <tr><th style="padding:0 0px 0 15px;">Round</th><th style="padding:0 0px 0 15px;">Round Payoff</th><th style="padding:0 0px 0 15px;">Score Change (%)</th></tr>
+    {% if is_destruction_group %}
+    <tr>
+        <th style="padding:0 0px 0 15px;">Round</th>
+        <th style="padding:0 0px 0 15px;">Round Payoff (€)</th>
+        <th style="padding:0 0px 0 15px;">Score Change (%)</th>
+        <th style="padding:0 0px 0 15px;">Unused Carbon Credits</th>
+        <th style="padding:0 0px 0 15px;">CO₂ Retired (kg)</th>
+        <th style="padding:0 0px 0 15px;">Car km avoided</th>
+    </tr>
+    {% else %}
+    <tr><th style="padding:0 0px 0 15px;">Round</th><th style="padding:0 0px 0 15px;">Round Payoff (€)</th><th style="padding:0 0px 0 15px;">Score Change (%)</th></tr>
+    {% endif %}
     {{ for p in periodPayoff }}
         <tr>
             {{ for e in p }}
@@ -28,6 +41,7 @@
         </tr>
     {{ endfor }}
 </table>
+
 
 <br><br><br>
 
