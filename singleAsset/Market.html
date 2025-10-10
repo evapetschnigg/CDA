@@ -185,7 +185,11 @@ hr { margin: 12px 0 !important; }
     </tr>
         {{ if not player.isObserver }}
     <tr>
-        <th>Asset holding</th>
+        <th>Money holding</th>
+        <td id="cashHolding">{{ player.cashHolding }}</td>
+    </tr>
+    <tr>
+        <th>{% if player.framing == 'environmental' or player.framing == 'destruction' %}Carbon credit{% else %}Asset{% endif %} holding</th>
         <td id="assetsHolding">{{ player.assetsHolding }}</td>
     </tr>
     <tr> {{ if player.allowShort }}
@@ -195,10 +199,7 @@ hr { margin: 12px 0 !important; }
         </td>
         {{ else }} {{ endif }}
     </tr>
-    <tr>
-        <th>Money holding</th>
-        <td id="cashHolding">{{ player.cashHolding }}</td>
-    </tr>
+
     <tr> {{ if player.allowLong }}
         <th>Your credit limit</th>
         <td id="capLong">{{ player.capLong }}</td>
@@ -242,11 +243,11 @@ hr { margin: 12px 0 !important; }
                 <div>
                     <table style="width: 100%; font-size: 0.875rem;">
                         <tr>
-                            <th style="text-align: left; font-weight: normal;">Monetary cost</th>
+                            <th style="text-align: left; font-weight: normal;">Money price</th>
                             <td style="text-align: right; font-weight: normal;">5</td>
                         </tr>
                         <tr>
-                            <th style="text-align: left; font-weight: normal;">Asset cost</th>
+                            <th style="text-align: left; font-weight: normal;">{% if player.framing == 'environmental' or player.framing == 'destruction' %}Carbon price{% else %}Asset price{% endif %}</th>
                             <td style="text-align: right; font-weight: normal;">1</td>
                         </tr>
                         <tr>
@@ -275,11 +276,11 @@ hr { margin: 12px 0 !important; }
                 <div>
                     <table style="width: 100%; font-size: 0.875rem;">
                         <tr>
-                            <th style="text-align: left; font-weight: normal;">Monetary cost</th>
+                            <th style="text-align: left; font-weight: normal;">Money price</th>
                             <td style="text-align: right; font-weight: normal;">10</td>
                         </tr>
                         <tr>
-                            <th style="text-align: left; font-weight: normal;">Asset cost</th>
+                            <th style="text-align: left; font-weight: normal;">{% if player.framing == 'environmental' or player.framing == 'destruction' %}Carbon price{% else %}Asset price{% endif %}</th>
                             <td style="text-align: right; font-weight: normal;">3</td>
                         </tr>
                         <tr>
@@ -307,7 +308,7 @@ hr { margin: 12px 0 !important; }
         <!-- Asset Market + Trade History Container (center + right, 2/3 width) -->
         <td colspan="2" style="width: 66.66%; vertical-align: top;">
             <div style="background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 5px; padding: 6px; margin-bottom: 0;">
-                <h3 style="margin-top: -5px; margin-bottom: 8px; color: #495057; text-align: center;">Asset Market</h3>
+                <h3 style="margin-top: -5px; margin-bottom: 8px; color: #495057; text-align: center;">{% if player.framing == 'environmental' or player.framing == 'destruction' %}Carbon Market{% else %}Asset Market{% endif %}</h3>
                 <table style="width: 100%; border-collapse: separate; border-spacing: 6px;">
                     <tr>
                         <td style="width: 50%; vertical-align: top;">

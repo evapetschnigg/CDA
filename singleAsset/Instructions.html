@@ -30,7 +30,11 @@ The purpose of the study is to investigate trading behavior in an <strong>experi
   <li>Your goal in each round is to <strong>maximize your Total Score</strong> by trading {% if framing == 'environmental' or framing == 'destruction' %}carbon credits{% else %}assets{% endif %} with other participants and buying goods.</li>
 </ul>
 
-<img src="{% static 'images/marketplace_screenshot.png' %}" alt="Screenshot of the Market Place interface" style="max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 5px; margin: 20px auto; display: block;">
+{% if framing == 'baseline' %}
+<img src="{% static 'images/marketplace_baseline_screenshot.png' %}" alt="Screenshot of the Market Place interface" style="max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 5px; margin: 20px auto; display: block;">
+{% else %}
+<img src="{% static 'images/marketplace_env_screenshot.png' %}" alt="Screenshot of the Market Place interface" style="max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 5px; margin: 20px auto; display: block;">
+{% endif %}
 
 <h3>Endowment</h3>
 <ul>
@@ -44,7 +48,7 @@ The purpose of the study is to investigate trading behavior in an <strong>experi
 <h3>The Goods Market</h3>
 <ul>
   <li>You can buy two types of goods: <strong>Good A</strong> and <strong>Good B</strong>.</li>
-  <li>Goods have fixed costs in money and {% if framing == 'environmental' or framing == 'destruction' %}carbon credits{% else %}assets{% endif %} and give you <strong>satisfaction points</strong>.</li>
+  <li>Goods have fixed prices in money and {% if framing == 'environmental' or framing == 'destruction' %}carbon credits{% else %}assets{% endif %} and give you <strong>satisfaction points</strong>.</li>
   <li>When you buy a good, the required money and {% if framing == 'environmental' or framing == 'destruction' %}carbon credits{% else %}assets{% endif %} are deducted, and the satisfaction points are added to your <strong>Total Score</strong>.</li>
   <li>You may buy as many goods as you want, as long as you have enough money and {% if framing == 'environmental' or framing == 'destruction' %}carbon credits{% else %}assets{% endif %}.</li>
   <li>Goods can only be <strong>bought</strong>, not sold.</li>
@@ -65,7 +69,11 @@ The purpose of the study is to investigate trading behavior in an <strong>experi
   <li>The <strong>trade history graph</strong> shows the timing and prices of {% if framing == 'environmental' or framing == 'destruction' %}carbon credit{% else %}asset{% endif %} trades made between participants in your group.</li>
 </ul>
 
+{% if framing == 'baseline' %}
 <img src="{% static 'images/assetmarket_screenshot.png' %}" alt="Screenshot of the Asset Market interface" style="width: 60%; height: auto; border: 1px solid #ddd; border-radius: 5px; margin: 20px auto; display: block;">
+{% else %}
+<img src="{% static 'images/carbonmarket_screenshot.png' %}" alt="Screenshot of the Carbon Market interface" style="width: 60%; height: auto; border: 1px solid #ddd; border-radius: 5px; margin: 20px auto; display: block;">
+{% endif %}
 
 <h3>Alerts</h3>
 <p>
@@ -96,7 +104,7 @@ This gives you an initial <strong>Total Score of 100</strong>.
 
 <p>You can increase your Score by buying goods or selling {% if framing == 'environmental' or framing == 'destruction' %}carbon credits{% else %}assets{% endif %}.</p>
 <ul>
-<li>If you buy Good A (cost: 5 mu and 1 {% if framing == 'environmental' or framing == 'destruction' %}carbon credit{% else %}asset{% endif %}, value: 12 satisfaction points),<br>
+<li>If you buy Good A (price: 5 mu and 1 {% if framing == 'environmental' or framing == 'destruction' %}carbon credit{% else %}asset{% endif %}, value: 12 satisfaction points),<br>
 your new Score is: 100 – 5 mu + 12 points = <strong>107</strong>.</li>
 <li>If you to sell one {% if framing == 'environmental' or framing == 'destruction' %}carbon credit{% else %}asset{% endif %} for 10 mu,<br>
 your new Score is: 100 + 10 mu = <strong>110</strong>.</li>

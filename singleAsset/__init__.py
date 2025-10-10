@@ -37,12 +37,8 @@ class C(BaseConstants):
         'destruction_heterogeneous'
     ]
     ACTIVE_TREATMENTS = [
-        'baseline_homogeneous', 
-        'baseline_heterogeneous', 
-        'environmental_homogeneous', 
-        'environmental_heterogeneous', 
-        'destruction_homogeneous', 
-        'destruction_heterogeneous'
+        'baseline_homogeneous',
+        'destruction_homogeneous',      
     ]  # Can be modified to test specific treatments
 
 
@@ -1522,12 +1518,6 @@ class Market(Page):
     def is_displayed(player: Player):
         return player.isParticipating
 
-    @staticmethod
-    def vars_for_template(player: Player):
-        print(f"DEBUG: Market page - Player {player.id} framing: '{player.framing}'")
-        return dict(
-            framing=player.framing,
-        )
 
     @staticmethod
     def js_vars(player: Player):

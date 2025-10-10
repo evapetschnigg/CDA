@@ -38,8 +38,12 @@ Pre Market Information
         </td>
     </tr>
         {{ if not player.isObserver }}
+     <tr>
+        <th style="width: 80%;">Money</th>
+        <td id="cashHolding" style="text-align: right; width: 20%;">{{ player.cashHolding }}</td>
+    </tr>
     <tr>
-        <th style="width: 80%;">Assets</th>
+        <th style="width: 80%;">{% if player.framing == 'environmental' or player.framing == 'destruction' %}Carbon credits{% else %}Assets{% endif %}</th>
         <td id="assetsHolding" style="text-align: right; width: 20%;">{{ player.assetsHolding }}</td>
     </tr>
     <tr> {{ if player.allowShort }}
@@ -49,10 +53,7 @@ Pre Market Information
         </td>
         {{ else }} {{ endif }}
     </tr>
-    <tr>
-        <th style="width: 80%;">Money</th>
-        <td id="cashHolding" style="text-align: right; width: 20%;">{{ player.cashHolding }}</td>
-    </tr>
+
     <tr> {{ if player.allowLong }}
         <th>Your credit limit</th>
         <td id="capLong">
@@ -74,11 +75,11 @@ Pre Market Information
             <p style="margin-bottom: 4px; text-align: left; font-size: 1rem; font-weight: bold;">Good A</p>
             <table id="goodATable" style="width: 100%;">
             <tr>
-                <th style="text-align: left; font-weight: normal; width: 80%;">Monetary cost</th>
+                <th style="text-align: left; font-weight: normal; width: 80%;">Money price</th>
                 <td style="text-align: right; width: 20%;"><strong>5</strong></td>
             </tr>
             <tr>
-                <th style="text-align: left; font-weight: normal; width: 80%;">Asset cost</th>
+                <th style="text-align: left; font-weight: normal; width: 80%;">{% if player.framing == 'environmental' or player.framing == 'destruction' %}Carbon price{% else %}Asset price{% endif %}</th>
                 <td style="text-align: right; width: 20%;"><strong>1</strong></td>
             </tr>
             <tr>
@@ -99,11 +100,11 @@ Pre Market Information
             <p style="margin-bottom: 4px; text-align: left; font-size: 1rem; font-weight: bold;">Good B</p>
             <table id="goodBTable" style="width: 100%;">
             <tr>
-                <th style="text-align: left; font-weight: normal; width: 80%;">Monetary cost</th>
+                <th style="text-align: left; font-weight: normal; width: 80%;">Money price</th>
                 <td style="text-align: right; width: 20%;"><strong>10</strong></td>
             </tr>
             <tr>
-                <th style="text-align: left; font-weight: normal; width: 80%;">Asset cost</th>
+                <th style="text-align: left; font-weight: normal; width: 80%;">{% if player.framing == 'environmental' or player.framing == 'destruction' %}Carbon price{% else %}Asset price{% endif %}</th>
                 <td style="text-align: right; width: 20%;"><strong>3</strong></td>
             </tr>
             <tr>
