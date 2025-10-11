@@ -366,6 +366,12 @@ class Player(BasePlayer):
         (4, 'Agree'),
         (5, 'Strongly agree')
     ], widget=widgets.RadioSelect, initial=0, label="")
+    
+    # Trust question for destruction group only
+    co2_certificate_trust = models.BooleanField(choices=[
+        (True, 'Yes'),
+        (False, 'No')
+    ], widget=widgets.RadioSelect, initial=None, label="")
 
 
 def asset_endowment(player: Player):
@@ -1628,6 +1634,19 @@ class SurveyAttitudes(Page):
     @staticmethod
     def is_displayed(player: Player):
         return player.round_number == C.NUM_ROUNDS and player.isParticipating == 1
+    
+    @staticmethod
+    def get_form_fields(player: Player):
+        fields = ['pct_effectiveness', 'pct_fairness', 'pct_support', 'climate_concern', 'climate_responsibility']
+        if player.framing == 'destruction':
+            fields.append('co2_certificate_trust')
+        return fields
+    
+    @staticmethod
+    def vars_for_template(player: Player):
+        return dict(
+            framing=player.framing
+        )
 
 
 class FinalResults(Page):
