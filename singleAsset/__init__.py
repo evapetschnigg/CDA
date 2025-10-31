@@ -21,8 +21,8 @@ class C(BaseConstants):
     FV_MAX = 85
     num_assets_MIN = 10
     num_assets_MAX = 10
-    cash_MIN = 80
-    cash_MAX = 120
+    cash_MIN_heterogeneous = 5
+    cash_homogeneous = 25  # Fixed cash endowment for homogeneous groups
     decimals = 2
     marketTime = 210  # needed to initialize variables but exchanged by session_config
     supply_shock_intensity = 0.8  # 0.8 = 20% reduction, 1.0 = no shock, 0.5 = 50% reduction
@@ -41,8 +41,8 @@ class C(BaseConstants):
         'destruction_heterogeneous'
     ]
     ACTIVE_TREATMENTS = [
-        'baseline_homogeneous',
-        'destruction_homogeneous',      
+        'baseline_heterogeneous',
+        'baseline_homogeneous',     
     ]  # Can be modified to test specific treatments
 
 
@@ -415,19 +415,113 @@ def asset_short_limit(player: Player):
         return 0
 
 
+def distribute_heterogeneous_cash(group: Group):
+    """
+    Distributes cash across all players in a heterogeneous group such that:
+    - Total cash equals cash_homogeneous * group_size exactly
+    - Each player gets at least cash_MIN_heterogeneous
+    - Cash is randomly distributed
+    
+    Returns a dictionary mapping player.id_in_group to their cash amount.
+    """
+    players = group.get_players()
+    group_size = len(players)
+    total_cash = C.cash_homogeneous * group_size
+    cash_distribution = {}
+    unrounded_amounts = []
+    
+    # Sort players by id_in_group to ensure consistent distribution
+    sorted_players = sorted(players, key=lambda p: p.id_in_group)
+    
+    # First, calculate unrounded amounts for all players except the last
+    remaining_cash_unrounded = total_cash
+    for i, player in enumerate(sorted_players[:-1]):  # All except last
+        remaining_players = group_size - i - 1
+        # Minimum needed for remaining players (including last)
+        min_for_others = C.cash_MIN_heterogeneous * remaining_players
+        # Maximum available for this player
+        max_for_this = remaining_cash_unrounded - min_for_others
+        # Minimum for this player
+        min_for_this = C.cash_MIN_heterogeneous
+        
+        # Ensure max >= min (safety check)
+        if max_for_this < min_for_this:
+            max_for_this = min_for_this
+        
+        # Randomly assign between min and max (unrounded)
+        cash_amount_unrounded = random.uniform(a=min_for_this, b=max_for_this)
+        unrounded_amounts.append((player.id_in_group, cash_amount_unrounded))
+        remaining_cash_unrounded -= cash_amount_unrounded
+    
+    # Round all but the last player
+    allocated_rounded = 0.0
+    for player_id, unrounded in unrounded_amounts:
+        rounded = float(round(unrounded, C.decimals))
+        cash_distribution[player_id] = rounded
+        allocated_rounded += rounded
+    
+    # Last player gets exactly the remaining cash (ensures exact total)
+    last_player = sorted_players[-1]
+    last_player_amount = total_cash - allocated_rounded
+    
+    # Ensure last player gets at least minimum (should always be true given our constraints)
+    if last_player_amount < C.cash_MIN_heterogeneous:
+        # This shouldn't happen, but if it does, we need to adjust
+        # Take from the previous player(s) to ensure minimum
+        shortage = C.cash_MIN_heterogeneous - last_player_amount
+        if len(unrounded_amounts) > 0:
+            # Adjust the last assigned player
+            last_assigned_id = unrounded_amounts[-1][0]
+            cash_distribution[last_assigned_id] = max(
+                C.cash_MIN_heterogeneous,
+                cash_distribution[last_assigned_id] - shortage
+            )
+            # Recalculate
+            allocated_rounded = sum(cash_distribution.values())
+            last_player_amount = total_cash - allocated_rounded
+    
+    cash_distribution[last_player.id_in_group] = float(round(last_player_amount, C.decimals))
+    
+    return cash_distribution
+
+
 def cash_endowment(player: Player):
-    # this code is run at the first WaitToStart page, within the initiate_player() function, when all participants arrived
-    # this function returns a participant's initial cash endowment based on their treatment
+    # This function returns a participant's initial cash endowment based on their treatment
+    # It is called in TreatmentAssignment (round 1) and the result is stored in participant.vars
+    # Subsequent rounds copy the stored value from round 1
     group = player.group
+    
+    # Check if cash endowment was already calculated and stored
+    if 'cash_endowment' in player.participant.vars:
+        return player.participant.vars['cash_endowment']
     
     # Check if this is a heterogeneous treatment
     if group.endowment_type == 'heterogeneous':
-        # For heterogeneous: random amount between cash_MIN and cash_MAX
-        return float(round(random.uniform(a=C.cash_MIN, b=C.cash_MAX), C.decimals))
+        # For heterogeneous groups, we need to distribute cash at the group level
+        # Check if distribution has already been done for this group
+        players = group.get_players()
+        distribution_done = any('cash_endowment' in p.participant.vars for p in players)
+        
+        if not distribution_done:
+            # Distribute cash for the entire group
+            cash_distribution = distribute_heterogeneous_cash(group=group)
+            total_allocated = 0
+            
+            # Store the distribution results
+            for p in players:
+                cash_amount = cash_distribution[p.id_in_group]
+                p.participant.vars['cash_endowment'] = cash_amount
+                total_allocated += cash_amount
+            
+            print(f"DEBUG: Round 1 - Group {group.id} heterogeneous cash distribution: total={total_allocated}, target={C.cash_homogeneous * len(players)}")
+        
+        # Return this player's cash endowment
+        return player.participant.vars['cash_endowment']
     else:
-        # For homogeneous: average of cash_MIN and cash_MAX
-        average_cash = (C.cash_MIN + C.cash_MAX) / 2
-        return float(round(average_cash, C.decimals))  
+        # For homogeneous: fixed amount from constant
+        cash_amount = float(round(C.cash_homogeneous, C.decimals))
+        player.participant.vars['cash_endowment'] = cash_amount
+        return cash_amount  
 
 
 def cash_long_limit(player: Player):
@@ -453,7 +547,8 @@ def initiate_player(player: Player):
     # this function starts substantial calculations on player level.
     group = player.group
     if not player.isObserver and player.isParticipating:
-        initial_cash = cash_endowment(player=player)
+        # Retrieve cash endowment from participant.vars (set in TreatmentAssignment)
+        initial_cash = player.participant.vars.get('cash_endowment', 0)
         player.initialCash = initial_cash
         player.cashHolding = initial_cash
         player.allowLong = long_allowed(player=player)
@@ -1730,7 +1825,7 @@ class TreatmentAssignment(WaitPage):
                 current_group.endowment_type = round_1_group.endowment_type
                 print(f"DEBUG: Round {subsession.round_number} - Group {i+1} copied treatment: {current_group.treatment}")
                 
-                # Also update player records with treatment info
+                # Also update player records with treatment info and copy cash endowment
                 for p in current_group.get_players():
                     p.treatment = current_group.treatment
                     p.framing = current_group.framing
@@ -1740,6 +1835,12 @@ class TreatmentAssignment(WaitPage):
                         framing=current_group.framing,
                         endowment_type=current_group.endowment_type,
                     )
+                    
+                    # Copy cash endowment from round 1 player
+                    round_1_player = p.in_round(1)
+                    if round_1_player and 'cash_endowment' in round_1_player.participant.vars:
+                        p.participant.vars['cash_endowment'] = round_1_player.participant.vars['cash_endowment']
+                        print(f"DEBUG: Round {subsession.round_number} - Player {p.id_in_subsession} copied cash endowment: {p.participant.vars['cash_endowment']}")
             
             # Debug: show the copied groups
             groups = subsession.get_groups()
@@ -1787,7 +1888,7 @@ class TreatmentAssignment(WaitPage):
 
                 print(f"DEBUG: Group {group.id} assigned treatment {group.treatment}")
 
-                # Store treatment info for all players
+                # Store treatment info and calculate cash endowment for all players
                 for p in group.get_players():
                     p.treatment = group.treatment
                     p.framing = group.framing
@@ -1797,5 +1898,10 @@ class TreatmentAssignment(WaitPage):
                         framing=group.framing,
                         endowment_type=group.endowment_type,
                     )
+                    
+                    # Calculate and store cash endowment once at the start (round 1 only)
+                    # The cash_endowment() function handles both homogeneous and heterogeneous cases
+                    cash_amount = cash_endowment(player=p)
+                    print(f"DEBUG: Round 1 - Player {p.id_in_subsession} (id_in_group={p.id_in_group}) assigned cash endowment: {cash_amount} ({group.endowment_type})")
 
 page_sequence = [Welcome, Privacy, NoConsent, TreatmentAssignment, Instructions, ComprehensionCheck, ComprehensionFeedback, WaitToStart, EndOfTrialRounds, PreMarket, WaitingMarket, Market, ResultsWaitPage, Results, SurveyAttitudes, SurveyDemographics, FinalResults]
