@@ -91,6 +91,7 @@ class Group(BaseGroup):
     treatment = models.StringField(initial="")
     framing = models.StringField(initial="")  # 'baseline', 'environmental', 'destruction'
     endowment_type = models.StringField(initial="")  # 'homogeneous', 'heterogeneous'
+    gini_coefficient = models.FloatField(initial=0, decimal=4)  # Gini coefficient for cash inequality (only for heterogeneous groups)
     bestAsk = models.FloatField()
     bestBid = models.FloatField()
     transactions = models.IntegerField(initial=0, min=0)
@@ -413,6 +414,48 @@ def asset_short_limit(player: Player):
         return player.initialAssets  # currently the short selling limit is set equal to the asset endowment
     else:
         return 0
+
+
+def calculate_gini_coefficient(values):
+    """
+    Calculate the Gini coefficient for a list of values.
+    Gini coefficient measures inequality: 0 = perfect equality, 1 = maximum inequality.
+    
+    Uses the formula: G = (Σ Σ |x_i - x_j|) / (2 * n^2 * μ)
+    Where μ is the mean of all values.
+    
+    Args:
+        values: List of numerical values
+    
+    Returns:
+        float: Gini coefficient (between 0 and 1)
+    """
+    if not values or len(values) == 0:
+        return 0.0
+    
+    # Handle case where all values are the same (perfect equality)
+    if len(set(values)) == 1:
+        return 0.0
+    
+    n = len(values)
+    total_sum = sum(values)
+    
+    if total_sum == 0:
+        return 0.0
+    
+    mean = total_sum / n
+    
+    # Calculate sum of absolute differences between all pairs
+    abs_diff_sum = 0
+    for i in range(n):
+        for j in range(n):
+            abs_diff_sum += abs(values[i] - values[j])
+    
+    # Gini coefficient formula
+    gini = abs_diff_sum / (2 * n * n * mean)
+    
+    # Ensure result is between 0 and 1 (should be, but safety check)
+    return max(0.0, min(1.0, gini))
 
 
 def distribute_heterogeneous_cash(group: Group):
@@ -1856,6 +1899,7 @@ class TreatmentAssignment(WaitPage):
                 current_group.treatment = round_1_group.treatment
                 current_group.framing = round_1_group.framing
                 current_group.endowment_type = round_1_group.endowment_type
+                current_group.gini_coefficient = round_1_group.gini_coefficient
                 print(f"DEBUG: Round {subsession.round_number} - Group {i+1} copied treatment: {current_group.treatment}")
                 
                 # Also update player records with treatment info and copy cash endowment
@@ -1936,5 +1980,16 @@ class TreatmentAssignment(WaitPage):
                     # The cash_endowment() function handles both homogeneous and heterogeneous cases
                     cash_amount = cash_endowment(player=p)
                     print(f"DEBUG: Round 1 - Player {p.id_in_subsession} (id_in_group={p.id_in_group}) assigned cash endowment: {cash_amount} ({group.endowment_type})")
+                
+                # Calculate Gini coefficient for heterogeneous groups
+                if group.endowment_type == 'heterogeneous':
+                    # Collect all cash endowments in the group
+                    cash_endowments = [p.participant.vars.get('cash_endowment', 0) for p in group.get_players()]
+                    gini = calculate_gini_coefficient(cash_endowments)
+                    group.gini_coefficient = round(gini, 4)
+                    print(f"DEBUG: Round 1 - Group {group.id} Gini coefficient: {group.gini_coefficient} (cash endowments: {cash_endowments})")
+                else:
+                    # For homogeneous groups, Gini is always 0
+                    group.gini_coefficient = 0.0
 
 page_sequence = [Welcome, Privacy, NoConsent, TreatmentAssignment, Instructions, ComprehensionCheck, ComprehensionFeedback, WaitToStart, EndOfTrialRounds, PreMarket, WaitingMarket, Market, ResultsWaitPage, Results, SurveyAttitudes, SurveyDemographics, FinalResults]
