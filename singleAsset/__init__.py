@@ -1595,9 +1595,42 @@ class PreMarket(Page):
 
     @staticmethod
     def vars_for_template(player: Player):
-        return dict(
-            round=player.round_number - C.num_trial_rounds,
-        )
+        group = player.group
+        is_heterogeneous = group.endowment_type == 'heterogeneous'
+        
+        if is_heterogeneous:
+            # For heterogeneous groups: collect cash values of other players
+            other_players_cash_values = []
+            for other_player in group.get_players():
+                if other_player.id_in_group != player.id_in_group:
+                    cash_endowment_value = other_player.participant.vars.get('cash_endowment', 0)
+                    cash_endowment_rounded = round(cash_endowment_value, C.decimals)
+                    other_players_cash_values.append(cash_endowment_rounded)
+            
+            # Sort for consistent display
+            other_players_cash_values.sort(reverse=True)
+            
+            # Format as comma-separated string for display
+            if len(other_players_cash_values) == 1:
+                cash_values_display = str(other_players_cash_values[0])
+            elif len(other_players_cash_values) == 2:
+                cash_values_display = f"{other_players_cash_values[0]} and {other_players_cash_values[1]}"
+            else:
+                # Format as "value1, value2, ..., and last_value"
+                cash_values_display = ", ".join(str(v) for v in other_players_cash_values[:-1]) + f", and {other_players_cash_values[-1]}"
+            
+            return dict(
+                round=player.round_number - C.num_trial_rounds,
+                is_heterogeneous=True,
+                cash_values_display=cash_values_display,
+            )
+        else:
+            # For homogeneous groups: all others have the same cash_homogeneous value
+            return dict(
+                round=player.round_number - C.num_trial_rounds,
+                is_heterogeneous=False,
+                homogeneous_cash=round(C.cash_homogeneous, C.decimals),
+            )
 
     @staticmethod
     def js_vars(player: Player):

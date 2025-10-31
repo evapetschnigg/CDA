@@ -67,6 +67,14 @@ Pre Market Information
     </div>
 </div>
 
+{% if not player.isObserver %}
+{% if is_heterogeneous %}
+<p style="margin-top: 15px; margin-bottom: 15px;">Note: The other players in your group have different assigned money endowments. They have {{ cash_values_display }}.</p>
+{% else %}
+<p style="margin-top: 15px; margin-bottom: 15px;">Note: All the other players in your group have the same money endowment of {{ homogeneous_cash }}.</p>
+{% endif %}
+{% endif %}
+
 <p style="margin-top: 2px; margin-bottom: 2px;">The available goods have the following characteristics:</p>
 
 <div style="margin-bottom: 20px;">
