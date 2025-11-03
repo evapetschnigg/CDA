@@ -4,6 +4,11 @@ Thank you
 
 {{ block content }}
 
-<p>Your response has been recorded.</p>
+{% if failed_comprehension %}
+<p>You were unable to answer all comprehension check questions correctly after 6 attempts. Therefore, this is the end of the experiment. Thank you for your participation.</p>
+
+{% else %}
+<p>Your response has been recorded. Thank you for your participation.</p>
+{% endif %}
 
 {{ endblock }}

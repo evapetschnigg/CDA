@@ -1,0 +1,21 @@
+{{ block global_styles }}
+    <link rel="stylesheet" href="{{ static 'style.css' }}">
+{{ endblock }}
+
+{{ block title }}
+Thank you
+{{ endblock }}
+
+{{ block content }}
+
+{% if timeout_inactive %}
+<p>You were inactive for too long during the comprehension check. Unfortunately, you cannot continue with this experiment. Thank you for your participation.</p>
+
+{% elif failed_comprehension %}
+<p>You were unable to answer all comprehension check questions correctly after 6 attempts. Unfortunately, you cannot continue with this experiment. Thank you for your participation.</p>
+
+{% else %}
+<p>Your response has been recorded. Thank you for your participation.</p>
+{% endif %}
+
+{{ endblock }}

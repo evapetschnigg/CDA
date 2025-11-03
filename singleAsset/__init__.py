@@ -25,7 +25,7 @@ class C(BaseConstants):
     cash_homogeneous = 25  # Fixed cash endowment for homogeneous groups
     decimals = 2
     marketTime = 210  # needed to initialize variables but exchanged by session_config
-    supply_shock_intensity = 0.8  # 0.8 = 20% reduction, 1.0 = no shock, 0.5 = 50% reduction
+    supply_shock_intensity = 1  # 0.8 = 20% reduction, 1.0 = no shock, 0.5 = 50% reduction
     
     # Carbon credit destruction constants
     CO2_PER_CREDIT = 1.0  # kg CO2 per carbon credit
@@ -277,6 +277,7 @@ class Player(BasePlayer):
     # Comprehension check performance tracking
     comp_correct_count = models.IntegerField(initial=0)  # Number of correct answers (0-5 or 0-6 for destruction group)
     comp_passed = models.BooleanField(initial=False)     # True if all questions correct
+    comp_attempts = models.IntegerField(initial=0)       # Number of attempts needed to pass comprehension check
     
     # Survey Demographics
     age = models.IntegerField(choices=[(i, str(i)) for i in range(18, 101)], initial=0, label="")
@@ -1418,6 +1419,15 @@ class BidAsks(ExtraModel):
 
 # PAGES
 class Welcome(Page):
+    timeout_seconds = 120  # 2 minutes to read and proceed
+    
+    @staticmethod
+    def before_next_page(player: Player, timeout_happened):
+        # Set everyone to participating by default
+        # Privacy page will handle setting isParticipating=0 if needed (timeout/no consent)
+        player.isParticipating = 1
+        player.participant.vars['isParticipating'] = 1
+    
     @staticmethod
     def is_displayed(player: Player):
         return player.round_number == 1
@@ -1425,27 +1435,61 @@ class Welcome(Page):
 class Privacy(Page):
     form_model = 'player'
     form_fields = ['consent']
+    timeout_seconds = 180  # 3 minutes to read privacy statement and decide
     
     @staticmethod
     def is_displayed(player: Player):
         return player.round_number == 1
+
+    @staticmethod
+    def before_next_page(player: Player, timeout_happened):
+        if timeout_happened or not player.consent:
+            # End the experiment for non-consenting participants
+            player.participant.vars['consent_given'] = False
+            # Also mark them as not participating
+            player.isParticipating = 0
+            player.participant.vars['isParticipating'] = 0
+        else:
+            player.participant.vars['consent_given'] = True
+            # Keep participation flag as-is if previously set on Welcome
+
+class EarlyEnd(Page):
+    timeout_seconds = 10  # 10 seconds to read the message, then auto-advance
+    # Note: This appears BEFORE RegroupForRound in the sequence, so they'll see it before the wait page
+    
+    @staticmethod
+    def is_displayed(player: Player):
+        # Show EarlyEnd if:
+        # 1. Round 1
+        # 2. Either they didn't give consent OR they failed comprehension check 6 times OR they timed out on comprehension check
+        # 3. They haven't already seen it (to avoid showing multiple times)
+        return (player.round_number == 1 and 
+                (not player.participant.vars.get('consent_given', True) or 
+                 player.participant.vars.get('comp_failed_6_times', False) or
+                 player.participant.vars.get('comp_timeout_inactive', False)) and
+                not player.participant.vars.get('early_end_seen', False))
     
     @staticmethod
     def before_next_page(player: Player, timeout_happened):
-        if not player.consent:
-            # End the experiment for non-consenting participants
-            player.participant.vars['consent_given'] = False
-        else:
-            player.participant.vars['consent_given'] = True
-
-class NoConsent(Page):
+        # Mark that they've seen EarlyEnd so it doesn't show again
+        player.participant.vars['early_end_seen'] = True
+        # Mark that they should not see any more pages
+        # This ensures they see "no more pages left" after EarlyEnd
+        player.participant.vars['no_more_pages'] = True
+    
     @staticmethod
-    def is_displayed(player: Player):
-        return player.round_number == 1 and not player.participant.vars.get('consent_given', True)
+    def vars_for_template(player: Player):
+        failed_comprehension = player.participant.vars.get('comp_failed_6_times', False)
+        timeout_inactive = player.participant.vars.get('comp_timeout_inactive', False)
+        return dict(
+            failed_comprehension=failed_comprehension,
+            timeout_inactive=timeout_inactive,
+        )
 
 class Instructions(Page):
-    form_model = 'player'
-    form_fields = ['isParticipating']
+    # Removed isParticipating form field - participation is now determined automatically
+    # (set on Welcome/Privacy pages based on timeouts/consent)
+    timeout_seconds = 480  # 8 minutes to read instructions (generous wiggle room, but prevents indefinite blocking)
 
     @staticmethod
     def is_displayed(player: Player):
@@ -1463,6 +1507,7 @@ class Instructions(Page):
 
 class ComprehensionCheck(Page):
     form_model = 'player'
+    timeout_seconds = 240  # 4 minutes to complete comprehension check (reasonable for 5-6 questions)
     
     @staticmethod
     def get_form_fields(player: Player):
@@ -1473,7 +1518,18 @@ class ComprehensionCheck(Page):
     
     @staticmethod
     def is_displayed(player: Player):
-        return player.round_number == 1 and player.participant.vars.get('consent_given', False)
+        # Show comprehension check if:
+        # 1. Round 1
+        # 2. Consent given  
+        # 3. Not yet passed (allows retries)
+        # 4. Haven't exceeded max attempts (6)
+        # 5. Haven't timed out (those go to EarlyEnd instead)
+        attempts = player.participant.vars.get('comp_attempts', 0)
+        return (player.round_number == 1 and 
+                player.participant.vars.get('consent_given', False) and
+                not player.participant.vars.get('comp_passed', False) and
+                attempts < 6 and
+                not player.participant.vars.get('comp_timeout_inactive', False))
     
     @staticmethod
     def vars_for_template(player: Player):
@@ -1483,6 +1539,31 @@ class ComprehensionCheck(Page):
     
     @staticmethod
     def before_next_page(player: Player, timeout_happened):
+        # Increment attempts counter (timeout counts as an attempt)
+        current_attempts = player.participant.vars.get('comp_attempts', 0)
+        player.participant.vars['comp_attempts'] = current_attempts + 1
+        player.comp_attempts = current_attempts + 1
+        
+        # If timeout happened, they didn't answer, so count as 0 correct (failed attempt)
+        if timeout_happened:
+            player.comp_correct_count = 0
+            player.comp_passed = False
+            player.participant.vars['comp_correct_count'] = 0
+            player.participant.vars['comp_passed'] = False
+            
+            # If timeout happened and they didn't answer anything, mark as inactive
+            # This prevents blocking other players for 18 minutes (6 rounds * 3 minutes each)
+            player.participant.vars['comp_timeout_inactive'] = True
+            player.isParticipating = 0
+            player.participant.vars['isParticipating'] = 0
+            player.roleID = 'not participating'
+            player.participant.vars['roleID'] = 'not participating'
+            
+            # Also check if they've failed 6 times (for consistency)
+            if player.comp_attempts == 6:
+                player.participant.vars['comp_failed_6_times'] = True
+            return  # Exit early, they'll see EarlyEnd
+        
         # Define correct answers
         correct_answers = {
             'comp_q1': 'c',  # Question 1: c
@@ -1507,6 +1588,17 @@ class ComprehensionCheck(Page):
         player.comp_correct_count = correct_count
         player.comp_passed = (correct_count == total_questions)  # Pass if all questions correct
         
+        # Check if they've failed 6 times (6 attempts without passing)
+        if player.comp_attempts == 6 and not player.comp_passed:
+            # Mark that they've failed 6 times - they'll be directed to EarlyEnd
+            player.participant.vars['comp_failed_6_times'] = True
+            # Immediately mark player as not participating so wait pages exclude them
+            player.isParticipating = 0
+            player.participant.vars['isParticipating'] = 0
+            # Assign a non-participating role label for clarity in tables
+            player.roleID = 'not participating'
+            player.participant.vars['roleID'] = 'not participating'
+        
         # Store in participant vars for easy access across rounds
         player.participant.vars['comp_correct_count'] = correct_count
         player.participant.vars['comp_passed'] = player.comp_passed
@@ -1514,9 +1606,23 @@ class ComprehensionCheck(Page):
 
 
 class ComprehensionFeedback(Page):
+    timeout_seconds = 60  # 1 minute to read feedback, then auto-advance
+    
     @staticmethod
     def is_displayed(player: Player):
-        return player.round_number == 1 and player.participant.vars.get('consent_given', False)
+        # Show feedback only for failures (not when passed)
+        # 1. Round 1
+        # 2. Consent given
+        # 3. They have just attempted (comp_correct_count is set)
+        # 4. They haven't passed (passed players see ComprehensionPassed instead)
+        # 5. They haven't failed 6 times (those go to EarlyEnd instead)
+        # 6. They haven't timed out (those go to EarlyEnd instead)
+        return (player.round_number == 1 and 
+                player.participant.vars.get('consent_given', False) and
+                player.participant.vars.get('comp_correct_count') is not None and
+                not player.participant.vars.get('comp_passed', False) and
+                not player.participant.vars.get('comp_failed_6_times', False) and
+                not player.participant.vars.get('comp_timeout_inactive', False))
     
     @staticmethod
     def vars_for_template(player: Player):
@@ -1606,25 +1712,164 @@ class ComprehensionFeedback(Page):
             'questions': questions,
             'correct_count': player.comp_correct_count,
             'total_questions': total_questions,
-            'passed': player.comp_passed
+            'attempts': player.comp_attempts,
+            'max_attempts': 6
         }
 
 
-class WaitToStart(WaitPage):
+class ComprehensionPassed(Page):
+    timeout_seconds = 15  # 15 seconds to see success message, then auto-advance
+    
     @staticmethod
-    def after_all_players_arrive(group: Group):
-        group.randomisedTypes = random_types(group=group)
-        initiate_group(group=group)
-        players = group.get_players()
-        for p in players:
-            p.assetValue = group.assetValue
-            if p.isParticipating:
-                set_player(player=p)
-                initiate_player(player=p)
+    def is_displayed(player: Player):
+        # Show passed message only once when they first pass
+        # 1. Round 1
+        # 2. Consent given
+        # 3. They have passed
+        # 4. They haven't seen the passed message yet
+        return (player.round_number == 1 and 
+                player.participant.vars.get('consent_given', False) and
+                player.participant.vars.get('comp_passed', False) and
+                not player.participant.vars.get('comp_passed_message_shown', False))
+    
+    @staticmethod
+    def vars_for_template(player: Player):
+        total_questions = player.participant.vars.get('comp_total_questions', 5)
+        # Mark that they've seen the passed message
+        player.participant.vars['comp_passed_message_shown'] = True
+        return dict(
+            total_questions=total_questions,
+        )
+
+
+
+
+class RegroupForRound(WaitPage):
+    # This page runs once in round 1 after comprehension pass to (1) initialize and (2) regroup out dropouts
+    wait_for_all_groups = True  # Need subsession access for set_group_matrix
+    
+    @staticmethod
+    def is_displayed(player: Player):
+        # Run regrouping once in round 1 only, after comprehension pass
+        # Players stuck on EarlyEnd will skip this but can still proceed through pages
+        # Also skip if they timed out or failed comprehension check
+        return (
+            player.round_number == 1 and
+            player.participant.vars.get('comp_passed', False) and
+            player.isParticipating == 1 and
+            not player.participant.vars.get('comp_timeout_inactive', False) and
+            not player.participant.vars.get('comp_failed_6_times', False)
+        )
+
+    @staticmethod
+    def after_all_players_arrive(subsession: Subsession):
+        round_number = subsession.round_number
+
+        # Build new group matrix by filtering the original round-1 groups
+        base_matrix = subsession.in_round(1).get_group_matrix()
+        # Get all players from round 1 for lookup
+        players_round1 = {p.id_in_subsession: p for p in subsession.in_round(1).get_players()}
+        
+        # Get original groups from round 1 to preserve treatment info
+        original_groups_round1 = subsession.in_round(1).get_groups()
+        # Create a mapping: player_id -> (original_group_index, original_group_object)
+        player_to_original_group = {}
+        for idx, orig_group in enumerate(original_groups_round1):
+            for p in orig_group.get_players():
+                player_to_original_group[p.id_in_subsession] = (idx, orig_group)
+        
+        # Separate participating and non-participating players
+        # Participating players stay in their original groups
+        # Non-participating players are moved to a single separate group
+        participating_groups = []
+        # Map each player to their original group's treatment info
+        player_id_to_original_group = {}
+        non_participating_players = []
+        
+        for base_group_idx, base_group in enumerate(base_matrix):
+            participating_in_group = []
+            
+            for player_id in base_group:
+                # Convert player ID to Player object from round 1
+                p_round1 = players_round1.get(player_id)
+                if p_round1 is None:
+                    continue  # Skip if player not found
+                # Get the same player in current round
+                p_current = p_round1.in_round(round_number)
+                if getattr(p_current, 'isParticipating', 0) == 1 and p_current.participant.vars.get('comp_passed', False):
+                    # Participating player - keep in original group
+                    participating_in_group.append(p_current.id_in_subsession)
+                    # Store mapping from player to their original group for treatment info
+                    _, orig_group = player_to_original_group.get(player_id, (None, None))
+                    if orig_group is not None:
+                        player_id_to_original_group[p_current.id_in_subsession] = orig_group
+                else:
+                    # Non-participating player - will be moved to separate group
+                    non_participating_players.append(p_current.id_in_subsession)
+            
+            # Only add groups that have at least one participating player
+            # This preserves original group structure for participating players
+            if len(participating_in_group) > 0:
+                participating_groups.append(participating_in_group)
+        
+        # Build final matrix: participating groups (preserved) + one group for all non-participating players
+        # set_group_matrix requires ALL players to be present
+        new_matrix = participating_groups.copy()
+        # Add all non-participating players together in one group (so they don't block participating players)
+        if len(non_participating_players) > 0:
+            new_matrix.append(non_participating_players)
+        
+        if len(new_matrix) > 0:
+            subsession.set_group_matrix(new_matrix)
+            print(f"DEBUG: RegroupForRound - Set new group matrix with {len(new_matrix)} groups")
+            for i, grp in enumerate(new_matrix):
+                print(f"DEBUG: RegroupForRound - Group {i+1} has {len(grp)} players: {grp}")
+
+        # Preserve treatment information from original groups to regrouped groups
+        current_groups = subsession.get_groups()
+        for i, current_group in enumerate(current_groups):
+            # For participating groups, determine treatment from players' original groups
+            # If all players in this group came from the same original group, use that group's treatment
+            # Otherwise, use the first player's original group
+            participating_players = [p for p in current_group.get_players() if p.isParticipating == 1]
+            if len(participating_players) > 0:
+                # Get the original group for the first participating player
+                first_player_id = participating_players[0].id_in_subsession
+                orig_group = player_id_to_original_group.get(first_player_id)
+                
+                if orig_group is not None:
+                    current_group.treatment = orig_group.treatment
+                    current_group.framing = orig_group.framing
+                    current_group.endowment_type = orig_group.endowment_type
+                    current_group.gini_coefficient = orig_group.gini_coefficient
+                    print(f"DEBUG: RegroupForRound - Group {i+1} copied treatment: {current_group.treatment} (from player {first_player_id})")
+                    
+                    # Also update player records with treatment info
+                    for p in current_group.get_players():
+                        if p.isParticipating == 1:
+                            p.treatment = current_group.treatment
+                            p.framing = current_group.framing
+                            p.endowment_type = current_group.endowment_type
+                else:
+                    print(f"WARNING: RegroupForRound - Group {i+1} has no original group info for players")
+            # For non-participating groups (the last group if it exists), we don't need treatment info
+
+        # Initialize group- and player-level state for current round (idempotent)
+        for group in subsession.get_groups():
+            if not group.field_maybe_none('randomisedTypes'):
+                group.randomisedTypes = random_types(group=group)
+                initiate_group(group=group)
+            for p in group.get_players():
+                if not p.participant.vars.get('post_comp_inited', False) and p.isParticipating == 1:
+                    p.assetValue = group.assetValue
+                    set_player(player=p)
+                    initiate_player(player=p)
+                    p.participant.vars['post_comp_inited'] = True
 
 
 class EndOfTrialRounds(Page):
     template_name = "_templates/endOfTrialRounds.html"
+    timeout_seconds = 10  # 10 seconds to read message, then auto-advance
 
     @staticmethod
     def is_displayed(player: Player):
@@ -1632,6 +1877,8 @@ class EndOfTrialRounds(Page):
 
 
 class PreMarket(Page):
+    timeout_seconds = 60  # 1 minute to review pre-market info
+    
     @staticmethod
     def is_displayed(player: Player):
         return player.isParticipating == 1
@@ -1654,7 +1901,9 @@ class PreMarket(Page):
             other_players_cash_values.sort(reverse=True)
             
             # Format as comma-separated string for display
-            if len(other_players_cash_values) == 1:
+            if len(other_players_cash_values) == 0:
+                cash_values_display = ""
+            elif len(other_players_cash_values) == 1:
                 cash_values_display = str(other_players_cash_values[0])
             elif len(other_players_cash_values) == 2:
                 cash_values_display = f"{other_players_cash_values[0]} and {other_players_cash_values[1]}"
@@ -1687,7 +1936,18 @@ class PreMarket(Page):
 
 class WaitingMarket(WaitPage):
     @staticmethod
+    def is_displayed(player: Player):
+        # Only participating players should see this wait page
+        return player.isParticipating == 1
+
+    @staticmethod
+    def get_players_for_group(group: Group):
+        # Wait only for participating players
+        return [p for p in group.get_players() if p.isParticipating == 1]
+
+    @staticmethod
     def after_all_players_arrive(group: Group):
+        # Only called when all participating players (group 1) have arrived
         group.marketStartTime = round(float(time.time()), C.decimals)
         group.marketTime = get_max_time(group=group)
 
@@ -1732,11 +1992,13 @@ class Market(Page):
 class ResultsWaitPage(WaitPage):
     @staticmethod
     def is_displayed(player: Player):
+        # Only participating players should see this wait page
         return player.isParticipating == 1
 
     @staticmethod
     def after_all_players_arrive(group: Group):
-        players = group.get_players()
+        # Only process participating players
+        players = [p for p in group.get_players() if p.isParticipating == 1]
         for p in players:
             # Capture unused assets at end of round for all treatments
             p.unused_assets_endofround = p.assetsHolding
@@ -1747,6 +2009,8 @@ class ResultsWaitPage(WaitPage):
 
 
 class Results(Page):
+    timeout_seconds = 45  # 45 seconds to review results
+    
     @staticmethod
     def is_displayed(player: Player):
         return player.isParticipating == 1
@@ -1792,6 +2056,7 @@ class Results(Page):
 class SurveyDemographics(Page):
     form_model = 'player'
     form_fields = ['age', 'gender', 'education', 'income', 'employment']
+    timeout_seconds = 180  # 3 minutes to complete demographics survey
     
     @staticmethod
     def is_displayed(player: Player):
@@ -1801,6 +2066,7 @@ class SurveyDemographics(Page):
 class SurveyAttitudes(Page):
     form_model = 'player'
     form_fields = ['pct_effectiveness', 'pct_fairness', 'pct_support', 'climate_concern', 'climate_responsibility']
+    timeout_seconds = 180  # 3 minutes to complete attitudes survey
     
     @staticmethod
     def is_displayed(player: Player):
@@ -1880,20 +2146,38 @@ class TreatmentAssignment(WaitPage):
     @staticmethod
     def is_displayed(player: Player):
         # Always show after consent (for group persistence in all rounds)
-        return player.participant.vars.get('consent_given', False)
+        # For rounds > 1, we need to copy the regrouped structure
+        # But skip if player has seen EarlyEnd and should not continue
+        return (player.participant.vars.get('consent_given', True) and
+                not player.participant.vars.get('no_more_pages', False))
 
     @staticmethod
     def after_all_players_arrive(subsession: Subsession):
         print(f"DEBUG: after_all_players_arrive called for round {subsession.round_number}")
 
-        # For rounds after round 1, copy groups from round 1
+        # For rounds after round 1, copy groups from round 1 (after regrouping happened)
         if subsession.round_number > 1:
-            print(f"DEBUG: Round {subsession.round_number} - copying groups from round 1")
+            print(f"DEBUG: Round {subsession.round_number} - copying groups from round 1 (after regrouping)")
+            # Verify round 1 groups exist and show their structure
+            round_1_groups = subsession.in_round(1).get_groups()
+            print(f"DEBUG: Round 1 has {len(round_1_groups)} groups")
+            for i, grp in enumerate(round_1_groups):
+                players = grp.get_players()
+                print(f"DEBUG: Round 1 Group {i+1} has {len(players)} players: {[p.id_in_subsession for p in players]}")
+            
+            # Copy the regrouped structure from round 1
             subsession.group_like_round(1)
             
-            # Copy treatment info from round 1 groups to current groups
-            round_1_groups = subsession.in_round(1).get_groups()
+            # Verify the copy worked
             current_groups = subsession.get_groups()
+            print(f"DEBUG: Round {subsession.round_number} - After group_like_round(1), got {len(current_groups)} groups")
+            for i, grp in enumerate(current_groups):
+                players = grp.get_players()
+                print(f"DEBUG: Round {subsession.round_number} - Group {i+1} has {len(players)} players: {[p.id_in_subsession for p in players]}")
+            
+            # Ensure we have matching number of groups
+            if len(round_1_groups) != len(current_groups):
+                print(f"ERROR: Round 1 has {len(round_1_groups)} groups but round {subsession.round_number} has {len(current_groups)} groups after copy!")
             
             for i, (round_1_group, current_group) in enumerate(zip(round_1_groups, current_groups)):
                 current_group.treatment = round_1_group.treatment
@@ -1918,6 +2202,28 @@ class TreatmentAssignment(WaitPage):
                     if round_1_player and 'cash_endowment' in round_1_player.participant.vars:
                         p.participant.vars['cash_endowment'] = round_1_player.participant.vars['cash_endowment']
                         print(f"DEBUG: Round {subsession.round_number} - Player {p.id_in_subsession} copied cash endowment: {p.participant.vars['cash_endowment']}")
+            
+            # Initialize group- and player-level state for current round (for rounds > 1)
+            for group in subsession.get_groups():
+                # Initialize group if not already done (should already be set from round 1, but check anyway)
+                if not group.field_maybe_none('randomisedTypes'):
+                    group.randomisedTypes = random_types(group=group)
+                    initiate_group(group=group)
+                    print(f"DEBUG: Round {subsession.round_number} - Initialized group {group.id}")
+                
+                # Initialize players for this round (for participating players)
+                # We initialize each round - set_player and initiate_player handle the initialization
+                for p in group.get_players():
+                    if p.isParticipating == 1:
+                        # Check if assetValue needs to be set using field_maybe_none to safely check for None
+                        if p.field_maybe_none('assetValue') is None:
+                            p.assetValue = group.assetValue
+                            print(f"DEBUG: Round {subsession.round_number} - Set assetValue for player {p.id_in_subsession}")
+                        
+                        # Always call set_player and initiate_player for this round
+                        set_player(player=p)
+                        initiate_player(player=p)
+                        print(f"DEBUG: Round {subsession.round_number} - Initialized player {p.id_in_subsession}")
             
             # Debug: show the copied groups
             groups = subsession.get_groups()
@@ -1992,4 +2298,19 @@ class TreatmentAssignment(WaitPage):
                     # For homogeneous groups, Gini is always 0
                     group.gini_coefficient = 0.0
 
-page_sequence = [Welcome, Privacy, NoConsent, TreatmentAssignment, Instructions, ComprehensionCheck, ComprehensionFeedback, WaitToStart, EndOfTrialRounds, PreMarket, WaitingMarket, Market, ResultsWaitPage, Results, SurveyAttitudes, SurveyDemographics, FinalResults]
+# Page sequence with multiple comprehension check attempts (max 6 attempts)
+# The is_displayed logic ensures only relevant pages are shown
+page_sequence = [
+    Welcome, Privacy, EarlyEnd, TreatmentAssignment, Instructions,
+    # Comprehension check loop (up to 6 attempts)
+    # EarlyEnd appears after each ComprehensionFeedback to catch 6-time failures
+    ComprehensionCheck, ComprehensionFeedback, ComprehensionPassed, EarlyEnd,
+    ComprehensionCheck, ComprehensionFeedback, ComprehensionPassed, EarlyEnd,
+    ComprehensionCheck, ComprehensionFeedback, ComprehensionPassed, EarlyEnd,
+    ComprehensionCheck, ComprehensionFeedback, ComprehensionPassed, EarlyEnd,
+    ComprehensionCheck, ComprehensionFeedback, ComprehensionPassed, EarlyEnd,
+    ComprehensionCheck, ComprehensionFeedback, ComprehensionPassed, EarlyEnd,
+    # Continue with rest of experiment (only if passed)
+    RegroupForRound, EndOfTrialRounds, PreMarket, WaitingMarket, Market, 
+    ResultsWaitPage, Results, SurveyAttitudes, SurveyDemographics, FinalResults
+]

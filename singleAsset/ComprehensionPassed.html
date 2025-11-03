@@ -1,0 +1,19 @@
+{{ block global_styles }}
+    <link rel="stylesheet" href="{{ static 'style.css' }}">
+{{ endblock }}
+
+{{ block title }}
+Comprehension Check Results
+{{ endblock }}
+
+{{ block content }}
+
+<p>
+    You have answered all <strong>{{ total_questions }}</strong> questions correctly.<br>
+    You can now proceed to the trial round.
+</p>
+
+{{ next_button }}
+
+{{ endblock }}
+
