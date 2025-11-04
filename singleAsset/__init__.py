@@ -2056,7 +2056,7 @@ class Results(Page):
 class SurveyDemographics(Page):
     form_model = 'player'
     form_fields = ['age', 'gender', 'education', 'income', 'employment']
-    timeout_seconds = 180  # 3 minutes to complete demographics survey
+    timeout_seconds = 120  # 2 minutes to complete demographics survey
     
     @staticmethod
     def is_displayed(player: Player):
