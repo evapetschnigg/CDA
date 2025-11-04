@@ -3,7 +3,6 @@
 from otree.api import *
 import time
 import random
-import json 
 from operator import itemgetter
 
 doc = """Continuous double auction market"""
@@ -30,6 +29,22 @@ class C(BaseConstants):
     # Carbon credit destruction constants
     CO2_PER_CREDIT = 1.0  # kg CO2 per carbon credit
     KM_PER_KG_CO2 = 7.0   # km driven by car per kg CO2 (approximate)
+    
+    # Good definitions
+    # Good A (oatmilk): money price 3, carbon price 1
+    # Good B (cowmilk): money price 2, carbon price 3
+    GOOD_A_MONEY_PRICE = 3
+    GOOD_A_CARBON_PRICE = 1
+    GOOD_B_MONEY_PRICE = 2
+    GOOD_B_CARBON_PRICE = 3
+    
+    # Satisfaction points (constant marginal utility)
+    # Conventional preference: prefers cowmilk (Good B) - higher carbon, lower price
+    SATISFACTION_CONVENTIONAL_GOOD_A = 6   # oatmilk satisfaction for conventional
+    SATISFACTION_CONVENTIONAL_GOOD_B = 12  # cowmilk satisfaction for conventional
+    # Eco preference: prefers oatmilk (Good A) - lower carbon, higher price
+    SATISFACTION_ECO_GOOD_A = 12  # oatmilk satisfaction for eco
+    SATISFACTION_ECO_GOOD_B = 6   # cowmilk satisfaction for eco
     
     # Treatment definitions
     TREATMENTS = [
@@ -92,6 +107,7 @@ class Group(BaseGroup):
     framing = models.StringField(initial="")  # 'baseline', 'environmental', 'destruction'
     endowment_type = models.StringField(initial="")  # 'homogeneous', 'heterogeneous'
     gini_coefficient = models.FloatField(initial=0, decimal=4)  # Gini coefficient for cash inequality (only for heterogeneous groups)
+    group_size = models.IntegerField(initial=0)  # Final group size after regrouping (for data analysis)
     bestAsk = models.FloatField()
     bestBid = models.FloatField()
     transactions = models.IntegerField(initial=0, min=0)
@@ -199,6 +215,7 @@ class Player(BasePlayer):
     treatment = models.StringField(initial="")
     framing = models.StringField(initial="")
     endowment_type = models.StringField(initial="")
+    good_preference = models.StringField(initial="")  # 'conventional' prefers cowmilk (Good B), 'eco' prefers oatmilk (Good A)
     unused_assets_endofround = models.IntegerField(initial=0)  # Track unused assets at end of round for all treatments
     capLong = models.FloatField(initial=0, min=0, decimal=C.decimals)
     capShort = models.IntegerField(initial=0, min=0)
@@ -577,6 +594,36 @@ def cash_long_limit(player: Player):
         return 0
 
 
+def assign_good_preferences(group: Group):
+    """
+    Assign good_preference to players in a group: 50% conventional, 50% eco.
+    Randomly shuffles both players and preferences to ensure true randomization.
+    """
+    players = group.get_players()
+    num_players = len(players)
+    
+    # Shuffle players to prevent systematic assignment patterns
+    shuffled_players = list(players)
+    random.shuffle(shuffled_players)
+    
+    # Calculate how many should be conventional (at least half)
+    num_conventional = num_players // 2
+    num_eco = num_players - num_conventional
+    
+    # Create list of preferences
+    preferences = ['conventional'] * num_conventional + ['eco'] * num_eco
+    
+    # Shuffle preferences as well
+    random.shuffle(preferences)
+    
+    # Assign to shuffled players (random order)
+    for player, preference in zip(shuffled_players, preferences):
+        player.good_preference = preference
+        player.participant.vars['good_preference'] = preference
+        print(f"DEBUG: Player {player.id_in_subsession} assigned good_preference: {preference}")
+    
+    return preferences
+
 def assign_role_attr(player: Player, role_id):
     # this code is run at the first WaitToStart page, within the set_player() function, when all participants arrived
     # this function determines a participant's attributes in terms of being active or observer, and distributes information
@@ -605,8 +652,10 @@ def initiate_player(player: Player):
         player.capShort = asset_short_limit(player=player)
         player.goodA_qty = 0
         player.goodB_qty = 0
-        player.goodA_utility_table = '[26,17,13,10,9,7,6,5]'
-        player.goodB_utility_table = '[37,28,23,20,17,14,12,10]'
+        # Utility tables no longer used - we use constant marginal utility based on preference
+        # Keep fields empty to avoid issues, but they're not used
+        player.goodA_utility_table = ''
+        player.goodB_utility_table = ''
         player.goods_utility = calculate_goods_utility(player)
         player.overall_utility = player.goods_utility + player.cashHolding
 
@@ -617,30 +666,56 @@ def set_player(player: Player):
     if player.isParticipating:
         player.isObserver = player.participant.vars['isObserver']
 
+def get_good_money_price(good: str) -> int:
+    """Get money price for a good from constants."""
+    if good == 'A':
+        return C.GOOD_A_MONEY_PRICE
+    elif good == 'B':
+        return C.GOOD_B_MONEY_PRICE
+    else:
+        raise ValueError(f"Invalid good: {good}")
+
+def get_good_carbon_price(good: str) -> int:
+    """Get carbon price for a good from constants."""
+    if good == 'A':
+        return C.GOOD_A_CARBON_PRICE
+    elif good == 'B':
+        return C.GOOD_B_CARBON_PRICE
+    else:
+        raise ValueError(f"Invalid good: {good}")
+
+def get_good_satisfaction(good: str, preference: str) -> int:
+    """Get satisfaction points for a good based on player preference."""
+    if preference == 'conventional':
+        if good == 'A':
+            return C.SATISFACTION_CONVENTIONAL_GOOD_A
+        elif good == 'B':
+            return C.SATISFACTION_CONVENTIONAL_GOOD_B
+    elif preference == 'eco':
+        if good == 'A':
+            return C.SATISFACTION_ECO_GOOD_A
+        elif good == 'B':
+            return C.SATISFACTION_ECO_GOOD_B
+    else:
+        raise ValueError(f"Invalid preference: {preference}")
+    raise ValueError(f"Invalid good: {good}")
+
 def calculate_goods_utility(player: Player):
     """
-    Calculate total utility from goods based on session configuration.
+    Calculate total utility from goods based on player preference.
+    Uses constants for satisfaction points.
     """
     total_utility = 0
     
-    # Get configuration from session
-    use_constant = player.session.config.get('use_constant_marginal_utility', True)
+    # Get player preference (default to 'conventional' if not set)
+    preference = player.good_preference or 'conventional'
     
-    if use_constant:
-        # Use constant marginal utility
-        goodA_marginal_utility = player.session.config.get('good_a_marginal_utility', 12)
-        goodB_marginal_utility = player.session.config.get('good_b_marginal_utility', 20)
-        
-        total_utility += player.goodA_qty * goodA_marginal_utility
-        total_utility += player.goodB_qty * goodB_marginal_utility
-    else:
-        # Use utility tables
-        for i in range(player.goodA_qty):
-            if i < len(json.loads(player.goodA_utility_table)):
-                total_utility += json.loads(player.goodA_utility_table)[i]
-        for i in range(player.goodB_qty):
-            if i < len(json.loads(player.goodB_utility_table)):
-                total_utility += json.loads(player.goodB_utility_table)[i]
+    # Get satisfaction points from constants
+    goodA_satisfaction = get_good_satisfaction('A', preference)
+    goodB_satisfaction = get_good_satisfaction('B', preference)
+    
+    total_utility += player.goodA_qty * goodA_satisfaction
+    total_utility += player.goodB_qty * goodB_satisfaction
     
     return total_utility
 
@@ -1339,14 +1414,11 @@ def buy_good(player: Player, data):
         )
         return dict()
 
-    # Prices and asset costs
-    if good == 'A':
-        price = 5
-        asset_cost = 1
-    elif good == 'B':
-        price = 10
-        asset_cost = 3
-    else:
+    # Prices and asset costs from constants
+    try:
+        price = get_good_money_price(good)
+        asset_cost = get_good_carbon_price(good)
+    except ValueError:
         News.create(
             player=player,
             playerID=player.id_in_group,
@@ -1446,6 +1518,9 @@ class Privacy(Page):
         if timeout_happened or not player.consent:
             # End the experiment for non-consenting participants
             player.participant.vars['consent_given'] = False
+            # Track if it was a timeout (for EarlyEnd feedback)
+            if timeout_happened:
+                player.participant.vars['privacy_timeout'] = True
             # Also mark them as not participating
             player.isParticipating = 0
             player.participant.vars['isParticipating'] = 0
@@ -1481,9 +1556,13 @@ class EarlyEnd(Page):
     def vars_for_template(player: Player):
         failed_comprehension = player.participant.vars.get('comp_failed_6_times', False)
         timeout_inactive = player.participant.vars.get('comp_timeout_inactive', False)
+        privacy_timeout = player.participant.vars.get('privacy_timeout', False)
+        no_consent = not player.participant.vars.get('consent_given', True) and not privacy_timeout
         return dict(
             failed_comprehension=failed_comprehension,
             timeout_inactive=timeout_inactive,
+            privacy_timeout=privacy_timeout,
+            no_consent=no_consent,
         )
 
 class Instructions(Page):
@@ -1828,6 +1907,10 @@ class RegroupForRound(WaitPage):
         # Preserve treatment information from original groups to regrouped groups
         current_groups = subsession.get_groups()
         for i, current_group in enumerate(current_groups):
+            # Set group_size based on current number of players in this group (after regrouping)
+            current_group.group_size = len(current_group.get_players())
+            print(f"DEBUG: RegroupForRound - Group {i+1} has group_size: {current_group.group_size}")
+            
             # For participating groups, determine treatment from players' original groups
             # If all players in this group came from the same original group, use that group's treatment
             # Otherwise, use the first player's original group
@@ -1844,12 +1927,25 @@ class RegroupForRound(WaitPage):
                     current_group.gini_coefficient = orig_group.gini_coefficient
                     print(f"DEBUG: RegroupForRound - Group {i+1} copied treatment: {current_group.treatment} (from player {first_player_id})")
                     
-                    # Also update player records with treatment info
+                    # Also update player records with treatment info and good_preference
                     for p in current_group.get_players():
                         if p.isParticipating == 1:
                             p.treatment = current_group.treatment
                             p.framing = current_group.framing
                             p.endowment_type = current_group.endowment_type
+                            # Update participant.vars to match (consistent with TreatmentAssignment pattern)
+                            p.participant.vars.update(
+                                treatment=current_group.treatment,
+                                framing=current_group.framing,
+                                endowment_type=current_group.endowment_type,
+                            )
+                            # Copy good_preference from original player (before regrouping)
+                            original_player_id = p.id_in_subsession
+                            original_player = players_round1.get(original_player_id)
+                            if original_player and original_player.good_preference:
+                                p.good_preference = original_player.good_preference
+                                p.participant.vars['good_preference'] = original_player.good_preference
+                                print(f"DEBUG: RegroupForRound - Player {p.id_in_subsession} copied good_preference: {p.good_preference}")
                 else:
                     print(f"WARNING: RegroupForRound - Group {i+1} has no original group info for players")
             # For non-participating groups (the last group if it exists), we don't need treatment info
@@ -1888,6 +1984,11 @@ class PreMarket(Page):
         group = player.group
         is_heterogeneous = group.endowment_type == 'heterogeneous'
         
+        # Calculate marginal utilities based on preference for display
+        preference = player.good_preference or 'conventional'
+        goodA_marginal_utility = get_good_satisfaction('A', preference)
+        goodB_marginal_utility = get_good_satisfaction('B', preference)
+        
         if is_heterogeneous:
             # For heterogeneous groups: collect cash values of other players
             other_players_cash_values = []
@@ -1915,6 +2016,12 @@ class PreMarket(Page):
                 round=player.round_number - C.num_trial_rounds,
                 is_heterogeneous=True,
                 cash_values_display=cash_values_display,
+                goodA_marginal_utility=goodA_marginal_utility,
+                goodB_marginal_utility=goodB_marginal_utility,
+                goodA_money_price=C.GOOD_A_MONEY_PRICE,
+                goodA_carbon_price=C.GOOD_A_CARBON_PRICE,
+                goodB_money_price=C.GOOD_B_MONEY_PRICE,
+                goodB_carbon_price=C.GOOD_B_CARBON_PRICE,
             )
         else:
             # For homogeneous groups: all others have the same cash_homogeneous value
@@ -1922,6 +2029,12 @@ class PreMarket(Page):
                 round=player.round_number - C.num_trial_rounds,
                 is_heterogeneous=False,
                 homogeneous_cash=round(C.cash_homogeneous, C.decimals),
+                goodA_marginal_utility=goodA_marginal_utility,
+                goodB_marginal_utility=goodB_marginal_utility,
+                goodA_money_price=C.GOOD_A_MONEY_PRICE,
+                goodA_carbon_price=C.GOOD_A_CARBON_PRICE,
+                goodB_money_price=C.GOOD_B_MONEY_PRICE,
+                goodB_carbon_price=C.GOOD_B_CARBON_PRICE,
             )
 
     @staticmethod
@@ -1984,9 +2097,18 @@ class Market(Page):
 
     @staticmethod
     def vars_for_template(player: Player):
+        # Calculate marginal utilities based on preference for display
+        preference = player.good_preference or 'conventional'
+        goodA_marginal_utility = get_good_satisfaction('A', preference)
+        goodB_marginal_utility = get_good_satisfaction('B', preference)
+        
         return dict(
-            goodA_utility_table=json.loads(player.goodA_utility_table) if not player.session.config.get('use_constant_marginal_utility', True) else [],
-            goodB_utility_table=json.loads(player.goodB_utility_table) if not player.session.config.get('use_constant_marginal_utility', True) else [],
+            goodA_marginal_utility=goodA_marginal_utility,
+            goodB_marginal_utility=goodB_marginal_utility,
+            goodA_money_price=C.GOOD_A_MONEY_PRICE,
+            goodA_carbon_price=C.GOOD_A_CARBON_PRICE,
+            goodB_money_price=C.GOOD_B_MONEY_PRICE,
+            goodB_carbon_price=C.GOOD_B_CARBON_PRICE,
         )
 
 class ResultsWaitPage(WaitPage):
@@ -2056,7 +2178,7 @@ class Results(Page):
 class SurveyDemographics(Page):
     form_model = 'player'
     form_fields = ['age', 'gender', 'education', 'income', 'employment']
-    timeout_seconds = 120  # 2 minutes to complete demographics survey
+    # No timeout - surveys don't block others, and we want complete data
     
     @staticmethod
     def is_displayed(player: Player):
@@ -2066,7 +2188,7 @@ class SurveyDemographics(Page):
 class SurveyAttitudes(Page):
     form_model = 'player'
     form_fields = ['pct_effectiveness', 'pct_fairness', 'pct_support', 'climate_concern', 'climate_responsibility']
-    timeout_seconds = 180  # 3 minutes to complete attitudes survey
+    # No timeout - surveys don't block others, and we want complete data
     
     @staticmethod
     def is_displayed(player: Player):
@@ -2184,7 +2306,8 @@ class TreatmentAssignment(WaitPage):
                 current_group.framing = round_1_group.framing
                 current_group.endowment_type = round_1_group.endowment_type
                 current_group.gini_coefficient = round_1_group.gini_coefficient
-                print(f"DEBUG: Round {subsession.round_number} - Group {i+1} copied treatment: {current_group.treatment}")
+                current_group.group_size = round_1_group.group_size  # Copy group_size from round 1
+                print(f"DEBUG: Round {subsession.round_number} - Group {i+1} copied treatment: {current_group.treatment}, group_size: {current_group.group_size}")
                 
                 # Also update player records with treatment info and copy cash endowment
                 for p in current_group.get_players():
@@ -2202,6 +2325,12 @@ class TreatmentAssignment(WaitPage):
                     if round_1_player and 'cash_endowment' in round_1_player.participant.vars:
                         p.participant.vars['cash_endowment'] = round_1_player.participant.vars['cash_endowment']
                         print(f"DEBUG: Round {subsession.round_number} - Player {p.id_in_subsession} copied cash endowment: {p.participant.vars['cash_endowment']}")
+                    
+                    # Copy good_preference from round 1 player
+                    if round_1_player and round_1_player.good_preference:
+                        p.good_preference = round_1_player.good_preference
+                        p.participant.vars['good_preference'] = round_1_player.good_preference
+                        print(f"DEBUG: Round {subsession.round_number} - Player {p.id_in_subsession} copied good_preference: {p.good_preference}")
             
             # Initialize group- and player-level state for current round (for rounds > 1)
             for group in subsession.get_groups():
@@ -2271,8 +2400,12 @@ class TreatmentAssignment(WaitPage):
 
                 print(f"DEBUG: Group {group.id} assigned treatment {group.treatment}")
 
-                # Store treatment info and calculate cash endowment for all players
-                for p in group.get_players():
+                # Store treatment info and calculate cash endowment only for consenting players
+                # (Non-consenting players will be moved to separate group in RegroupForRound)
+                # Default to False (safer assumption: no consent until explicitly given)
+                consenting_players = [p for p in group.get_players() if p.participant.vars.get('consent_given', False)]
+                
+                for p in consenting_players:
                     p.treatment = group.treatment
                     p.framing = group.framing
                     p.endowment_type = group.endowment_type
@@ -2287,10 +2420,29 @@ class TreatmentAssignment(WaitPage):
                     cash_amount = cash_endowment(player=p)
                     print(f"DEBUG: Round 1 - Player {p.id_in_subsession} (id_in_group={p.id_in_group}) assigned cash endowment: {cash_amount} ({group.endowment_type})")
                 
-                # Calculate Gini coefficient for heterogeneous groups
+                # Assign good_preference only to consenting players in this group (50% conventional, 50% eco)
+                if len(consenting_players) > 0:
+                    # Shuffle both players and preferences to ensure true randomization
+                    # This prevents systematic assignment patterns (e.g., first player always conventional)
+                    shuffled_players = consenting_players.copy()
+                    random.shuffle(shuffled_players)
+                    
+                    num_consenting = len(shuffled_players)
+                    num_conventional = num_consenting // 2
+                    num_eco = num_consenting - num_conventional
+                    preferences = ['conventional'] * num_conventional + ['eco'] * num_eco
+                    random.shuffle(preferences)
+                    
+                    # Assign preferences to shuffled players (random order)
+                    for p, preference in zip(shuffled_players, preferences):
+                        p.good_preference = preference
+                        p.participant.vars['good_preference'] = preference
+                        print(f"DEBUG: Player {p.id_in_subsession} assigned good_preference: {preference}")
+                
+                # Calculate Gini coefficient for heterogeneous groups (only for consenting players)
                 if group.endowment_type == 'heterogeneous':
-                    # Collect all cash endowments in the group
-                    cash_endowments = [p.participant.vars.get('cash_endowment', 0) for p in group.get_players()]
+                    # Collect all cash endowments from consenting players only
+                    cash_endowments = [p.participant.vars.get('cash_endowment', 0) for p in consenting_players]
                     gini = calculate_gini_coefficient(cash_endowments)
                     group.gini_coefficient = round(gini, 4)
                     print(f"DEBUG: Round 1 - Group {group.id} Gini coefficient: {group.gini_coefficient} (cash endowments: {cash_endowments})")

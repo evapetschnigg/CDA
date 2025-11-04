@@ -244,26 +244,15 @@ hr { margin: 12px 0 !important; }
                     <table style="width: 100%; font-size: 0.875rem;">
                         <tr>
                             <th style="text-align: left; font-weight: normal;">Money price</th>
-                            <td style="text-align: right; font-weight: normal;">5</td>
+                            <td style="text-align: right; font-weight: normal;">{{ goodA_money_price }}</td>
                         </tr>
                         <tr>
                             <th style="text-align: left; font-weight: normal;">{% if player.framing == 'environmental' or player.framing == 'destruction' %}Carbon price{% else %}Asset price{% endif %}</th>
-                            <td style="text-align: right; font-weight: normal;">1</td>
+                            <td style="text-align: right; font-weight: normal;">{{ goodA_carbon_price }}</td>
                         </tr>
                         <tr>
                             <th style="text-align: left; font-weight: normal;">Satisfaction points</th>
-                            <td style="text-align: right; font-weight: normal;">
-                                {% if session.config.use_constant_marginal_utility %}
-                                    {{ session.config.good_a_marginal_utility }}
-                                {% else %}
-                                    <br><table class="table_box" style="font-size: 12px; margin-top: 5px;">
-                                        <tr><th>Units</th><th>Utility</th></tr>
-                                        {% for unit, utility in player.goodA_utility_table %}
-                                            <tr><td>{{ unit }}</td><td>{{ utility }}</td></tr>
-                                        {% endfor %}
-                                    </table>
-                                {% endif %}
-                            </td>
+                            <td style="text-align: right; font-weight: normal;">{{ goodA_marginal_utility }}</td>
                         </tr>
                     </table>
                 </div>
@@ -277,26 +266,15 @@ hr { margin: 12px 0 !important; }
                     <table style="width: 100%; font-size: 0.875rem;">
                         <tr>
                             <th style="text-align: left; font-weight: normal;">Money price</th>
-                            <td style="text-align: right; font-weight: normal;">10</td>
+                            <td style="text-align: right; font-weight: normal;">{{ goodB_money_price }}</td>
                         </tr>
                         <tr>
                             <th style="text-align: left; font-weight: normal;">{% if player.framing == 'environmental' or player.framing == 'destruction' %}Carbon price{% else %}Asset price{% endif %}</th>
-                            <td style="text-align: right; font-weight: normal;">3</td>
+                            <td style="text-align: right; font-weight: normal;">{{ goodB_carbon_price }}</td>
                         </tr>
                         <tr>
                             <th style="text-align: left; font-weight: normal;">Satisfaction points</th>
-                            <td style="text-align: right; font-weight: normal;">
-                                {% if session.config.use_constant_marginal_utility %}
-                                    {{ session.config.good_b_marginal_utility }}
-                                {% else %}
-                                    <br><table class="table_box" style="font-size: 12px; margin-top: 5px;">
-                                        <tr><th>Units</th><th>Utility</th></tr>
-                                        {% for unit, utility in player.goodB_utility_table %}
-                                            <tr><td>{{ unit }}</td><td>{{ utility }}</td></tr>
-                                        {% endfor %}
-                                    </table>
-                                {% endif %}
-                            </td>
+                            <td style="text-align: right; font-weight: normal;">{{ goodB_marginal_utility }}</td>
                         </tr>
                     </table>
                 </div>

@@ -84,21 +84,15 @@ Pre Market Information
             <table id="goodATable" style="width: 100%;">
             <tr>
                 <th style="text-align: left; font-weight: normal; width: 80%;">Money price</th>
-                <td style="text-align: right; width: 20%;"><strong>5</strong></td>
+                <td style="text-align: right; width: 20%;"><strong>{{ goodA_money_price }}</strong></td>
             </tr>
             <tr>
                 <th style="text-align: left; font-weight: normal; width: 80%;">{% if player.framing == 'environmental' or player.framing == 'destruction' %}Carbon price{% else %}Asset price{% endif %}</th>
-                <td style="text-align: right; width: 20%;"><strong>1</strong></td>
+                <td style="text-align: right; width: 20%;"><strong>{{ goodA_carbon_price }}</strong></td>
             </tr>
             <tr>
                 <th style="text-align: left; font-weight: normal; width: 80%;">Satisfaction points</th>
-                <td style="text-align: right; width: 20%;"><strong>
-                    {% if session.config.use_constant_marginal_utility %}
-                        {{ session.config.good_a_marginal_utility }}
-                    {% else %}
-                        Variable
-                    {% endif %}
-                </strong></td>
+                <td style="text-align: right; width: 20%;"><strong>{{ goodA_marginal_utility }}</strong></td>
             </tr>
             </table>
         </div>
@@ -109,21 +103,15 @@ Pre Market Information
             <table id="goodBTable" style="width: 100%;">
             <tr>
                 <th style="text-align: left; font-weight: normal; width: 80%;">Money price</th>
-                <td style="text-align: right; width: 20%;"><strong>10</strong></td>
+                <td style="text-align: right; width: 20%;"><strong>{{ goodB_money_price }}</strong></td>
             </tr>
             <tr>
                 <th style="text-align: left; font-weight: normal; width: 80%;">{% if player.framing == 'environmental' or player.framing == 'destruction' %}Carbon price{% else %}Asset price{% endif %}</th>
-                <td style="text-align: right; width: 20%;"><strong>3</strong></td>
+                <td style="text-align: right; width: 20%;"><strong>{{ goodB_carbon_price }}</strong></td>
             </tr>
             <tr>
                 <th style="text-align: left; font-weight: normal; width: 80%;">Satisfaction points</th>
-                <td style="text-align: right; width: 20%;"><strong>
-                    {% if session.config.use_constant_marginal_utility %}
-                        {{ session.config.good_b_marginal_utility }}
-                    {% else %}
-                        Variable
-                    {% endif %}
-                </strong></td>
+                <td style="text-align: right; width: 20%;"><strong>{{ goodB_marginal_utility }}</strong></td>
             </tr>
             </table>
         </div>

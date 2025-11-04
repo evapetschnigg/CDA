@@ -31,9 +31,6 @@ SESSION_CONFIGS = [
         randomise_types=True, # KeyError : 'roleID' shows up if this is set to False
         short_selling=False,
         margin_buying=False,
-        use_constant_marginal_utility=True,  # Set to False for utility tables
-        good_a_marginal_utility=12,
-        good_b_marginal_utility=20,
         ),
 
     dict(
@@ -57,7 +54,7 @@ SESSION_CONFIG_DEFAULTS = dict(
     real_world_currency_per_point=1.00, participation_fee=0.00, doc=""
 )
 
-PARTICIPANT_FIELDS = ['roleID', 'isObserver', 'isParticipating', 'informed', 'treatment', 'framing', 'endowment_type', 'unused_assets_endofround', 'co2_certificate_trust']
+PARTICIPANT_FIELDS = ['roleID', 'isObserver', 'isParticipating', 'informed', 'treatment', 'framing', 'endowment_type', 'good_preference', 'unused_assets_endofround', 'co2_certificate_trust']
 SESSION_FIELDS = ['numParticipants']
 
 # ISO-639 code

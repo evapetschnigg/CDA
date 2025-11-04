@@ -8,7 +8,13 @@ Thank you
 
 {{ block content }}
 
-{% if timeout_inactive %}
+{% if privacy_timeout %}
+<p>You did not respond in time on the privacy statement page. Since you did not provide consent, the experiment has ended. Thank you for your participation.</p>
+
+{% elif no_consent %}
+<p>You did not provide consent to participate in this experiment. The experiment has ended. Thank you for your participation.</p>
+
+{% elif timeout_inactive %}
 <p>You were inactive for too long during the comprehension check. Unfortunately, you cannot continue with this experiment. Thank you for your participation.</p>
 
 {% elif failed_comprehension %}
