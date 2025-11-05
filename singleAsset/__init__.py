@@ -1829,6 +1829,12 @@ class RegroupForRound(WaitPage):
     wait_for_all_groups = True  # Need subsession access for set_group_matrix
     
     @staticmethod
+    def get_timeout_seconds(player: Player):
+        # Timeout after 6 minutes - accounts for players finishing comprehension check at different times
+        # and late arrivals who might still be catching up
+        return 360
+    
+    @staticmethod
     def is_displayed(player: Player):
         # Run regrouping once in round 1 only, after comprehension pass
         # Players stuck on EarlyEnd will skip this but can still proceed through pages
@@ -2052,6 +2058,11 @@ class PreMarket(Page):
 
 class WaitingMarket(WaitPage):
     @staticmethod
+    def get_timeout_seconds(player: Player):
+        # Timeout after 3 minutes - if someone closes browser, others can proceed
+        return 180
+    
+    @staticmethod
     def is_displayed(player: Player):
         # Only participating players should see this wait page
         return player.isParticipating == 1
@@ -2116,6 +2127,11 @@ class Market(Page):
         )
 
 class ResultsWaitPage(WaitPage):
+    @staticmethod
+    def get_timeout_seconds(player: Player):
+        # Timeout after 2 minutes - results calculation should be quick
+        return 120
+    
     @staticmethod
     def is_displayed(player: Player):
         # Only participating players should see this wait page
@@ -2268,6 +2284,13 @@ class FinalResults(Page):
 
 class TreatmentAssignment(WaitPage):
     wait_for_all_groups = True
+
+    @staticmethod
+    def get_timeout_seconds(player: Player):
+        # Timeout after 6 minutes - happens early (after Welcome/Privacy, before Instructions)
+        # Accounts for late arrivals who might still be on Welcome (2 min) or Privacy (3 min)
+        # Plus slow readers and network delays
+        return 360
 
     @staticmethod
     def is_displayed(player: Player):
