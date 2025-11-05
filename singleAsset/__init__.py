@@ -708,7 +708,8 @@ def calculate_goods_utility(player: Player):
     total_utility = 0
     
     # Get player preference (default to 'conventional' if not set)
-    preference = player.good_preference or 'conventional'
+    # Use field_maybe_none() to safely handle None values
+    preference = player.field_maybe_none('good_preference') or 'conventional'
     
     # Get satisfaction points from constants
     goodA_satisfaction = get_good_satisfaction('A', preference)
@@ -1942,9 +1943,10 @@ class RegroupForRound(WaitPage):
                             # Copy good_preference from original player (before regrouping)
                             original_player_id = p.id_in_subsession
                             original_player = players_round1.get(original_player_id)
-                            if original_player and original_player.good_preference:
-                                p.good_preference = original_player.good_preference
-                                p.participant.vars['good_preference'] = original_player.good_preference
+                            if original_player and original_player.field_maybe_none('good_preference'):
+                                good_pref = original_player.field_maybe_none('good_preference')
+                                p.good_preference = good_pref
+                                p.participant.vars['good_preference'] = good_pref
                                 print(f"DEBUG: RegroupForRound - Player {p.id_in_subsession} copied good_preference: {p.good_preference}")
                 else:
                     print(f"WARNING: RegroupForRound - Group {i+1} has no original group info for players")
@@ -1985,7 +1987,8 @@ class PreMarket(Page):
         is_heterogeneous = group.endowment_type == 'heterogeneous'
         
         # Calculate marginal utilities based on preference for display
-        preference = player.good_preference or 'conventional'
+        # Use field_maybe_none() to safely handle None values
+        preference = player.field_maybe_none('good_preference') or 'conventional'
         goodA_marginal_utility = get_good_satisfaction('A', preference)
         goodB_marginal_utility = get_good_satisfaction('B', preference)
         
@@ -2098,7 +2101,8 @@ class Market(Page):
     @staticmethod
     def vars_for_template(player: Player):
         # Calculate marginal utilities based on preference for display
-        preference = player.good_preference or 'conventional'
+        # Use field_maybe_none() to safely handle None values
+        preference = player.field_maybe_none('good_preference') or 'conventional'
         goodA_marginal_utility = get_good_satisfaction('A', preference)
         goodB_marginal_utility = get_good_satisfaction('B', preference)
         
@@ -2327,9 +2331,10 @@ class TreatmentAssignment(WaitPage):
                         print(f"DEBUG: Round {subsession.round_number} - Player {p.id_in_subsession} copied cash endowment: {p.participant.vars['cash_endowment']}")
                     
                     # Copy good_preference from round 1 player
-                    if round_1_player and round_1_player.good_preference:
-                        p.good_preference = round_1_player.good_preference
-                        p.participant.vars['good_preference'] = round_1_player.good_preference
+                    if round_1_player and round_1_player.field_maybe_none('good_preference'):
+                        good_pref = round_1_player.field_maybe_none('good_preference')
+                        p.good_preference = good_pref
+                        p.participant.vars['good_preference'] = good_pref
                         print(f"DEBUG: Round {subsession.round_number} - Player {p.id_in_subsession} copied good_preference: {p.good_preference}")
             
             # Initialize group- and player-level state for current round (for rounds > 1)
