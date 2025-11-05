@@ -12,10 +12,8 @@ class C(BaseConstants):
     PLAYERS_PER_GROUP = None
     num_trial_rounds = 1
     NUM_ROUNDS = 3  ## incl. trial periods
-    base_payment = cu(15)
-    multiplier = 90
-    min_payment_in_round = cu(0)
-    min_payment = cu(4)
+    base_payment = cu(1.81)  # Base payment for all participants who complete survey
+    bonus_payment = cu(1.81)  # Additional payment for highest score increase winner
     FV_MIN = 30
     FV_MAX = 85
     num_assets_MIN = 10
@@ -56,8 +54,8 @@ class C(BaseConstants):
         'destruction_heterogeneous'
     ]
     ACTIVE_TREATMENTS = [
-        'baseline_heterogeneous',
-        'baseline_homogeneous',     
+        'environmental_homogeneous', 
+        'environmental_heterogeneous', 
     ]  # Can be modified to test specific treatments
 
 
@@ -247,6 +245,7 @@ class Player(BasePlayer):
     wealthChange = models.FloatField(initial=0) # change this to relative utility change 
     finalPayoff = models.CurrencyField(initial=0)
     selectedRound = models.IntegerField(initial=1)
+    isWinner = models.BooleanField(initial=False)  # True if player won the bonus (highest Score Change in selected round)
     goodA_qty = models.IntegerField(initial=0)
     goodB_qty = models.IntegerField(initial=0)
     goodA_utility_table = models.StringField()
@@ -281,9 +280,9 @@ class Player(BasePlayer):
     ], widget=widgets.RadioSelect, label="")
     
     comp_q5 = models.StringField(choices=[
-        ('a', 'a. My payout cannot drop below €15'),
-        ('b', 'b. I will receive the base payout even if I do not complete the survey at the end'),
-        ('c', 'c. My payout is determined by my performance in one randomly selected round')
+        ('a', 'a. I will receive the bonus of €1.81 if I have the highest Score Change in my group in any of the trading rounds'),
+        ('b', 'b. I will receive the base payout of €1.81 even if I do not complete the survey at the end'),
+        ('c', 'c. All participants who complete the full study receive €1.81, and the player with highest Score Change in her group in the randomly selected round gets an additional €1.81')
     ], widget=widgets.RadioSelect, label="")
     
     comp_q6 = models.StringField(choices=[
@@ -808,7 +807,7 @@ def live_method(player: Player, data):
 
 def calc_period_profits(player: Player):
     # this code is run at the results wait page.
-    # this function assesses a participant's initial and final utility and calculates the period income.
+    # this function calculates the participant's Score Change percentage for the round.
     
     # Calculate initial utility (cash at start, no goods)
     initial_utility = player.initialCash
@@ -816,32 +815,86 @@ def calc_period_profits(player: Player):
     # Calculate final utility (Total Score at end)
     final_utility = player.overall_utility
     
-    # Calculate utility change percentage
+    # Calculate utility change percentage (Score Change %)
     if not player.isObserver and player.isParticipating and initial_utility != 0:
         player.utilityChangePercent = ((final_utility - initial_utility) / initial_utility) * 100
     else:
         player.utilityChangePercent = 0
     
-    # Calculate payoff based on utility change
-    player.payoff = max(C.base_payment + C.multiplier * (player.utilityChangePercent / 100), C.min_payment_in_round)
+    # Note: Payoff is no longer calculated here - it's determined at the end based on group comparison
 
 
-def calc_final_profit(player: Player):
-    # this code is run at the final results page.
-    # this function performs a random draw of period income and calculates a participant's payoff.
-    # Only include trading rounds (exclude trial rounds)
-    trading_rounds = [p for p in player.in_all_rounds() if p.round_number > C.num_trial_rounds]
-    period_payoffs = [p.payoff for p in trading_rounds]
+def calc_final_profit(group: Group):
+    # this code is run at the final results wait page after all players arrive.
+    # this function randomly selects a round and determines the winner within the group.
+    # All participating players get base payment (€1.81), winner gets bonus (€1.81).
     
-    # Randomly select from trading rounds only
-    if period_payoffs:  # Make sure there are trading rounds
-        r = random.randint(0, len(period_payoffs) - 1)
-        player.selectedRound = r + 1  # Round numbers start from 1 for display
-        player.finalPayoff = max(period_payoffs[r], C.min_payment)
-    else:
+    # Get all participating players in the group
+    participating_players = [p for p in group.get_players() if p.isParticipating == 1]
+    
+    if not participating_players:
+        return  # No participating players, skip calculation
+    
+    # Get trading rounds (exclude trial rounds) - use first player as reference
+    first_player = participating_players[0]
+    trading_rounds = [p for p in first_player.in_all_rounds() if p.round_number > C.num_trial_rounds]
+    
+    if not trading_rounds:
         # Fallback if no trading rounds (shouldn't happen)
-        player.selectedRound = 1
-        player.finalPayoff = C.min_payment
+        for p in participating_players:
+            p.selectedRound = 1
+            p.finalPayoff = C.base_payment
+            p.isWinner = False
+        return
+    
+    # Randomly select a round (same for all players in the group)
+    selected_round_index = random.randint(0, len(trading_rounds) - 1)
+    selected_round_number = trading_rounds[selected_round_index].round_number
+    
+    # Store selected round for all players
+    for p in participating_players:
+        # Convert to display round number (1-based, excluding trial rounds)
+        p.selectedRound = selected_round_number - C.num_trial_rounds
+    
+    # Find Score Change % for each player in the selected round
+    player_scores = []
+    for p in participating_players:
+        # Find the player's round data for the selected round
+        selected_round_player = None
+        for round_player in p.in_all_rounds():
+            if round_player.round_number == selected_round_number:
+                selected_round_player = round_player
+                break
+        
+        if selected_round_player:
+            score_change = selected_round_player.utilityChangePercent
+            player_scores.append((p, score_change))
+        else:
+            # Fallback: no score found
+            player_scores.append((p, 0))
+    
+    # Find the maximum Score Change % in the group
+    max_score_change = max(score for _, score in player_scores) if player_scores else 0
+    
+    # Find all players with the highest Score Change %
+    tied_winners = [p for p, score in player_scores if score == max_score_change and max_score_change is not None]
+    
+    # Randomly select one winner if there's a tie
+    if tied_winners:
+        winner = random.choice(tied_winners)
+    else:
+        winner = None
+    
+    # Set finalPayoff and isWinner for each player
+    for p, score_change in player_scores:
+        # Everyone gets base payment
+        p.finalPayoff = C.base_payment
+        p.isWinner = False
+        
+        # Only the selected winner gets bonus
+        if p == winner:
+            p.isWinner = True
+            p.finalPayoff = C.base_payment + C.bonus_payment
 
 
 def custom_export(players):
@@ -1650,7 +1703,7 @@ class ComprehensionCheck(Page):
             'comp_q2': 'a',  # Question 2: a
             'comp_q3': 'c',  # Question 3: c (now question 4 in display order)
             'comp_q4': 'b',  # Question 4: b (now question 5 in display order)
-            'comp_q5': 'c'   # Question 5: c (now question 3 in display order)
+            'comp_q5': 'c'   # Question 5: c - (now question 3 in display order) All get base €1.81, highest in group gets bonus
         }
         
         # Add comp_q6 for destruction group
@@ -1731,11 +1784,11 @@ class ComprehensionFeedback(Page):
             'comp_q5': {
                 'question': '3. Which of the following correctly describes your payout for participating in this study?',
                 'correct': 'c',
-                'correct_text': 'c. My payout is determined by my performance in one randomly selected round',
+                'correct_text': 'c. All participants who complete the full study receive €1.81, and the player with highest Score Change in her group in the randomly selected round gets an additional €1.81',
                 'options': {
-                    'a': 'a. My payout cannot drop below €15',
-                    'b': 'b. I will receive the base payout even if I do not complete the survey at the end',
-                    'c': 'c. My payout is determined by my performance in one randomly selected round'
+                    'a': 'a. I will receive the bonus of €1.81 if I have the highest Score Change in my group in any of the trading rounds',
+                    'b': 'b. I will receive the base payout of €1.81 even if I do not complete the survey at the end',
+                    'c': 'c. All participants who complete the full study receive €1.81, and the player with highest Score Change in her group in the randomly selected round gets an additional €1.81'
                 }
             },
             'comp_q3': {
@@ -2146,8 +2199,10 @@ class ResultsWaitPage(WaitPage):
             p.unused_assets_endofround = p.assetsHolding
             
             calc_period_profits(player=p)
-            if group.round_number == C.NUM_ROUNDS:
-                calc_final_profit(player=p)
+        
+        # Calculate final profit and determine winners at group level (only in final round)
+        if group.round_number == C.NUM_ROUNDS:
+            calc_final_profit(group=group)
 
 
 class Results(Page):
@@ -2180,7 +2235,6 @@ class Results(Page):
             }
             
         return dict(
-            payoff=cu(round(player.payoff, C.decimals)),
             initialUtility=round(initial_utility, C.decimals),
             finalUtility=round(final_utility, C.decimals),
             utilityChangePercent=round(utility_change_percent, C.decimals),
@@ -2237,10 +2291,9 @@ class FinalResults(Page):
 
     @staticmethod
     def vars_for_template(player: Player):
-        # Get the selected round's original payoff (before minimum adjustment)
+        # Get trading rounds for selected round lookup
         trading_rounds = [p for p in player.in_all_rounds() if p.round_number > C.num_trial_rounds]
         selected_round_index = player.selectedRound - 1  # Convert to 0-based index
-        selected_round_original_payoff = trading_rounds[selected_round_index].payoff if selected_round_index < len(trading_rounds) else 0
         
         # Calculate carbon impact for selected round (destruction group only)
         selected_round_carbon_impact = None
@@ -2256,12 +2309,55 @@ class FinalResults(Page):
                     'km_saved': round(km_saved, 1)
                 }
         
-        # Generate period payoff data with carbon credit info for destruction group
+        # Get all players in the same group (for comparing Score Changes)
+        group_players = [p for p in player.group.get_players() if p.isParticipating == 1]
+        
+        # Check if player was tied for highest but not randomly selected as winner
+        was_tied_but_not_selected = False
+        if selected_round_index < len(trading_rounds):
+            selected_round_player = trading_rounds[selected_round_index]
+            player_score = selected_round_player.utilityChangePercent
+            
+            # Get all group members' scores for the selected round
+            all_scores = []
+            for group_player in group_players:
+                for rp in group_player.in_all_rounds():
+                    if rp.round_number == selected_round_player.round_number:
+                        all_scores.append(rp.utilityChangePercent)
+                        break
+            
+            if all_scores:
+                max_score = max(all_scores)
+                # Player had max score but wasn't selected as winner (tied and lost random draw)
+                if player_score == max_score and not player.isWinner:
+                    was_tied_but_not_selected = True
+        
+        # Generate period data with Score Change % and carbon credit info for destruction group
         periodPayoff = []
         
         for p in player.in_all_rounds():
             if p.round_number > C.num_trial_rounds:
-                round_data = [p.round_number - C.num_trial_rounds, round(p.payoff, C.decimals), round(p.utilityChangePercent, C.decimals)]
+                # Round data: [Round number, Score Change %]
+                round_data = [p.round_number - C.num_trial_rounds, round(p.utilityChangePercent, C.decimals)]
+                
+                # Collect Score Changes of other group members for this round
+                other_players_scores = []
+                for other_player in group_players:
+                    if other_player.id != player.id:  # Exclude current player
+                        # Find the other player's round data for this round number
+                        other_round_player = None
+                        for rp in other_player.in_all_rounds():
+                            if rp.round_number == p.round_number:
+                                other_round_player = rp
+                                break
+                        
+                        if other_round_player:
+                            other_score = round(other_round_player.utilityChangePercent, C.decimals)
+                            other_players_scores.append(f"{other_score}")
+                
+                # Format as comma-separated list
+                other_scores_str = ", ".join(other_players_scores) if other_players_scores else "-"
+                round_data.append(other_scores_str)
                 
                 # Add carbon credit info for destruction group
                 if player.framing == 'destruction' and hasattr(p, 'unused_assets_endofround'):
@@ -2274,8 +2370,9 @@ class FinalResults(Page):
                 periodPayoff.append(round_data)
         
         return dict(
-            payoff=cu(round(player.finalPayoff, 0)),
-            selectedRoundOriginalPayoff=cu(round(selected_round_original_payoff, 0)),
+            payoff=cu(round(player.finalPayoff, 2)),
+            isWinner=player.isWinner,
+            was_tied_but_not_selected=was_tied_but_not_selected,
             periodPayoff=periodPayoff,
             is_destruction_group=player.framing == 'destruction',
             selected_round_carbon_impact=selected_round_carbon_impact,

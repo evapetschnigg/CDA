@@ -14,8 +14,7 @@ Results
 {{ block content }}
 
 <p>
-In this round, you have {% if utilityChangePercent >= 0 %}increased{% else %}decreased{% endif %} your Total Score from <strong>{{ initialUtility }}</strong> to <strong>{{ finalUtility }}</strong>, corresponding to a percentage change of <strong class="{% if utilityChangePercent >= 0 %}text-success{% else %}text-danger{% endif %}">{% if utilityChangePercent >= 0 %}+{% endif %}{{ utilityChangePercent }}%</strong>.<br>
-Your round payoff is <strong>{{ payoff }}</strong>.
+In this round, you have {% if utilityChangePercent >= 0 %}increased{% else %}decreased{% endif %} your Total Score from <strong>{{ initialUtility }}</strong> to <strong>{{ finalUtility }}</strong>, corresponding to a percentage change of <strong class="{% if utilityChangePercent >= 0 %}text-success{% else %}text-danger{% endif %}">{% if utilityChangePercent >= 0 %}+{% endif %}{{ utilityChangePercent }}%</strong>.
 </p>
 
 {% if carbon_impact %}
@@ -34,11 +33,11 @@ As a result,
 <p>
 <b>Please note:</b> 
 {% if carbon_impact %}
-The carbon impact and round payoff show the carbon impact and what you would earn if this round were selected. 
-Only one round (excluding the trial) will be randomly chosen at the end of the study to determine your final carbon impact and payout.
+This Score Change and carbon impact will be used if this round is randomly selected at the end of the study. 
+Only one trading round (excluding the trial) will be randomly chosen. Your Score Change in that round will be compared to the other players in your group to determine whether you receive the bonus.
 {% else %}
-The round payoff shows what you would earn if this round were selected. 
-Only one round (excluding the trial) will be randomly chosen at the end of the study to determine your final payout.
+This Score Change will be used if this round is randomly selected at the end of the study. 
+Only one trading round (excluding the trial) will be randomly chosen. Your Score Change in that round will be compared to the other players in your group to determine whether you receive the bonus.
 {% endif %}
 </p>
 
