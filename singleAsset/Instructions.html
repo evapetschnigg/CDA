@@ -47,7 +47,7 @@ The purpose of the study is to investigate trading behavior in an <strong>experi
 <h3>Endowment</h3>
 <ul>
   <li>Before each trading round begins, your <strong>assigned endowment of money and {% if framing == 'environmental' or framing == 'destruction' %}carbon credits{% else %}assets{% endif %}</strong> will be displayed.</li>
-  <li>{% if endowment_type == 'homogeneous' %}All participants in your group receive the same number of {% if framing == 'environmental' or framing == 'destruction' %}carbon credits{% else %}assets{% endif %} and the same amount of money.{% else %}All participants in your group receive the same number of {% if framing == 'environmental' or framing == 'destruction' %}carbon credits{% else %}assets{% endif %} and a randomly determined amount of money between a maximum and minimum value that is the same across all participants.{% endif %}</li>
+  <li>{% if endowment_type == 'homogeneous' %}All participants in your group receive the same number of {% if framing == 'environmental' or framing == 'destruction' %}carbon credits{% else %}assets{% endif %} and the same amount of money.{% else %}All participants in your group receive the same number of {% if framing == 'environmental' or framing == 'destruction' %}carbon credits{% else %}assets{% endif %} and a randomly determined amount of money.{% endif %}</li>
   <li>All participants start the round without any goods.</li>
   <li>Once the round starts, your holdings are shown in the white box on the market screen.</li>
   <li>Holdings at the end of a round <strong>do not carry over</strong> to the next round.</li>
@@ -56,7 +56,8 @@ The purpose of the study is to investigate trading behavior in an <strong>experi
 <h3>The Goods Market</h3>
 <ul>
   <li>You can buy two types of goods: <strong>Good A</strong> and <strong>Good B</strong>.</li>
-  <li>Goods have fixed prices in money and {% if framing == 'environmental' or framing == 'destruction' %}carbon credits{% else %}assets{% endif %} and give you <strong>satisfaction points</strong>.</li>
+  <li>Goods have <strong>fixed prices in money and {% if framing == 'environmental' or framing == 'destruction' %}carbon credits{% else %}assets{% endif %}</strong> and give you <strong>satisfaction points</strong>.</li>
+  <li>While all participants see the same money and {% if framing == 'environmental' or framing == 'destruction' %}carbon{% else %}asset{% endif %} price for the two goods, different participants may receive different satisfaction points for the goods. You will see your own points on-screen.</li>
   <li>When you buy a good, the required money and {% if framing == 'environmental' or framing == 'destruction' %}carbon credits{% else %}assets{% endif %} are deducted, and the satisfaction points are added to your <strong>Total Score</strong>.</li>
   <li>You may buy as many goods as you want, as long as you have enough money and {% if framing == 'environmental' or framing == 'destruction' %}carbon credits{% else %}assets{% endif %}.</li>
   <li>Goods can only be <strong>bought</strong>, not sold.</li>
@@ -64,8 +65,8 @@ The purpose of the study is to investigate trading behavior in an <strong>experi
 
 <h3>The {% if framing == 'environmental' or framing == 'destruction' %}Carbon{% else %}Asset{% endif %} Market</h3>
 <ul>
-  <li>The {% if framing == 'environmental' or framing == 'destruction' %}carbon market{% else %}asset market{% endif %} is a <strong>double auction market</strong> where you trade {% if framing == 'environmental' or framing == 'destruction' %}carbon credits{% else %}assets{% endif %} with other participants.</li>
-  <li>In the top half of the {% if framing == 'environmental' or framing == 'destruction' %}carbon market{% else %}asset market{% endif %} you may post:
+  <li>In the {% if framing == 'environmental' or framing == 'destruction' %}carbon market{% else %}asset market{% endif %}, you can <strong>buy</strong> {% if framing == 'environmental' or framing == 'destruction' %}carbon credits{% else %}assets{% endif %} from and <strong>sell</strong> them to other participants in your group.</li>
+  <li>In the top half of the {% if framing == 'environmental' or framing == 'destruction' %}carbon market{% else %}asset market{% endif %} you may place bids and asks:
     <ul>
       <li><strong>Bids (buy offers):</strong> enter the price at which you want to buy {% if framing == 'environmental' or framing == 'destruction' %}a carbon credit{% else %}an asset{% endif %}.</li>
       <li><strong>Asks (sell offers):</strong> enter the price at which you want to sell {% if framing == 'environmental' or framing == 'destruction' %}a carbon credit{% else %}an asset{% endif %}.</li>
@@ -125,10 +126,10 @@ your new Score is: 100 + 10 mu = <strong>110</strong>.</li>
     <li>Unused {% if framing == 'environmental' %}carbon credits{% else %}assets{% endif %} expire at the end of each round.</li>
   {% endif %}
   {% if framing == 'destruction' %}
-    <li>Any carbon credits you do not sell or spend by the end of a round are not carried over to the next round and will reduce your group's total emissions.</li>
-    <li><strong>For each unused carbon credit in a randomly selected trading round, the experimenter will purchase and retire a real-world verified carbon certificate from ClimeCo.</strong></li>
-    <li>Each retired certificate corresponds roughly to <strong>1 kg of carbon dioxide avoided</strong> — about 7 km of driving a typical passenger car.</li>
-    <li>In this way, your choices in the experiment have a direct and tangible impact on <strong>real-world carbon emissions</strong>.</li>
+  <li>Unused carbon credits do not carry over to the next round and reduce your group's total emissions.</li>
+  <li>To make this effect tangible, <strong>in one randomly selected round, the experimenter will purchase CO₂ compensation certificates from the non-profit organization ForTomorrow for each unused carbon credit in the experiment.</strong></li>
+  <li>Each certificate removes <strong>1 kg of CO₂</strong> from the atmosphere through reforestation projects in Germany — about as much as is emitted during a 7 km car drive.</li>
+  <li>Your decisions in this experiment therefore have a <strong>real and measurable impact</strong> on carbon emissions.</li>
   {% endif %}
 </ul>
 

@@ -54,8 +54,8 @@ class C(BaseConstants):
         'destruction_heterogeneous'
     ]
     ACTIVE_TREATMENTS = [
-        'environmental_homogeneous', 
-        'environmental_heterogeneous', 
+        'destruction_homogeneous', 
+        'destruction_heterogeneous'
     ]  # Can be modified to test specific treatments
 
 
@@ -286,7 +286,7 @@ class Player(BasePlayer):
     ], widget=widgets.RadioSelect, label="")
     
     comp_q6 = models.StringField(choices=[
-        ('a', 'a. Correct. For each unused carbon credit in the experiment, a verified real-world carbon certificate (~1 kg CO₂) will be purchased and retired, reducing real-world carbon emissions'),
+        ('a', 'a. Correct. For each unused carbon credit in the experiment, 1 kg of CO₂ will be compensated through reforestation projects in Germany, helping to reduce real-world carbon emissions.'),
         ('b', 'b. Incorrect. Unused carbon credits in the experiment have no effect on real-world emissions')
     ], widget=widgets.RadioSelect, label="", blank=True)
     
@@ -1815,11 +1815,11 @@ class ComprehensionFeedback(Page):
         # Add comp_q6 for destruction group
         if player.framing == 'destruction':
             questions_data['comp_q6'] = {
-                'question': '6. Carbon credits not used by the end of a round, will reduce real-world emissions.',
+                'question': '6. Carbon credits not used by the end of a round will reduce real-world emissions.',
                 'correct': 'a',
-                'correct_text': 'a. Correct. For each unused carbon credit in the experiment, a verified real-world carbon certificate (~1 kg CO₂) will be purchased and retired, reducing real-world carbon emissions',
+                'correct_text': 'a. Correct. For each unused carbon credit in the experiment, 1 kg of CO₂ will be compensated through reforestation projects in Germany, helping to reduce real-world carbon emissions.',
                 'options': {
-                    'a': 'a. Correct. For each unused carbon credit in the experiment, a verified real-world carbon certificate (~1 kg CO₂) will be purchased and retired, reducing real-world carbon emissions',
+                    'a': 'a. Correct. For each unused carbon credit in the experiment, 1 kg CO₂ will be compensated through reforestation projects in Germany, helping to reduce real-world carbon emissions.',
                     'b': 'b. Incorrect. Unused carbon credits in the experiment have no effect on real-world emissions'
                 }
             }

@@ -22,9 +22,9 @@ In this round, you have {% if utilityChangePercent >= 0 %}increased{% else %}dec
 Carbon impact: You left <strong>{{ carbon_impact.unused_credits }}</strong> carbon credits unused. 
 As a result, 
 {% if carbon_impact.co2_retired > 0 %}
-<span class="text-success"><strong>{{ carbon_impact.co2_retired }} kg of CO₂ will be retired through verified carbon certificates</strong></span>
+<span class="text-success"><strong>{{ carbon_impact.co2_retired }} kg of CO₂ will be removed from the atmosphere through CO₂ compensation certificates purchased from ForTomorrow</strong></span>
 {% else %}
-{{ carbon_impact.co2_retired }} kg of CO₂ will be retired through verified carbon certificates
+{{ carbon_impact.co2_retired }} kg of CO₂ will be removed from the atmosphere through CO₂ compensation certificates purchased from ForTomorrow
 {% endif %}
 , corresponding to about <strong>{{ carbon_impact.km_saved }} km</strong> of car travel avoided.
 </p>
