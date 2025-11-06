@@ -3,12 +3,14 @@
         <script src="{{ static 'script.js' }}"></script>
         <script>
             $(document).ready(function() {
-                // Format money display to show only number without currency sign
+                // Format money display to show only number without currency sign, with 2 decimal places
                 var cashElement = $('#cashHolding');
                 var cashValue = cashElement.text();
-                // Remove currency symbol and convert to integer
-                var cleanValue = Math.round(parseFloat(cashValue.replace(/[^\d.-]/g, '')));
-                cashElement.text(cleanValue);
+                // Remove currency symbol and format to 2 decimal places
+                var cleanValue = parseFloat(cashValue.replace(/[^\d.-]/g, ''));
+                if (!isNaN(cleanValue)) {
+                    cashElement.text(cleanValue.toFixed(2));
+                }
             });
         </script>
 {{ endblock }}
@@ -26,10 +28,10 @@ Pre Market Information
     <div id="jsError">ERROR: this page runs only with javascript enabled</div>
 </noscript>
 
-<p>Soon, {{ if player.round_number <= C.num_trial_rounds }} the trial round {{ else }} trading round {{ round }} {{ endif }} starts.</p>
-<p style="margin-top: 0px; margin-bottom: 2px;">In this round you are endowed with:</p>
+<p style="margin-bottom: 8px;">Soon, {{ if player.round_number <= C.num_trial_rounds }} the trial round {{ else }} trading round {{ round }} {{ endif }} starts.</p><br>
+<p style="margin-top: 0px; margin-bottom: 5px;">In this round you are endowed with:</p>
 
-<div id="endowmentDiv" class="endowment-container row" style="margin-bottom: 10px">
+<div id="endowmentDiv" class="endowment-container row" style="margin-bottom: 8px">
     <div class="endowment-div col-sm div_box">
     <table id="endowmentTable" style="width: 100%;">
     <tr style="display: none;">
@@ -68,19 +70,11 @@ Pre Market Information
     </div>
 </div>
 
-{% if not player.isObserver %}
-{% if is_heterogeneous %}
-<p style="margin-top: 15px; margin-bottom: 15px;">Note: The other players in your group have different assigned money endowments. They have {{ cash_values_display }}.</p>
-{% else %}
-<p style="margin-top: 15px; margin-bottom: 15px;">Note: All the other players in your group have the same money endowment of {{ homogeneous_cash }}.</p>
-{% endif %}
-{% endif %}
+<p style="margin-top: 8px; margin-bottom: 5px;">The available goods have the following characteristics:</p>
 
-<p style="margin-top: 2px; margin-bottom: 2px;">The available goods have the following characteristics:</p>
-
-<div style="margin-bottom: 20px;">
+<div style="margin-bottom: 8px;">
     <div class="endowment-container row" style="margin-bottom: 0px;">
-        <div class="endowment-div col-sm div_box">
+        <div class="endowment-div col-sm div_box" style="margin-right: 20px;">
             <p style="margin-bottom: 4px; text-align: left; font-size: 1rem; font-weight: bold;">Good A</p>
             <table id="goodATable" style="width: 100%;">
             <tr>
@@ -97,8 +91,6 @@ Pre Market Information
             </tr>
             </table>
         </div>
-    </div>
-    <div class="endowment-container row">
         <div class="endowment-div col-sm div_box">
             <p style="margin-bottom: 4px; text-align: left; font-size: 1rem; font-weight: bold;">Good B</p>
             <table id="goodBTable" style="width: 100%;">
@@ -119,5 +111,14 @@ Pre Market Information
     </div>
 </div>
 
+{% if not player.isObserver and has_other_players %}
+<p style="margin-top: 12px; margin-bottom: 5px;">Note that the other participants in your group:</p>
+<ul style="margin-bottom: 20px;">
+    <li>Have the same assigned {% if player.framing == 'environmental' or player.framing == 'destruction' %}carbon credit{% else %}asset{% endif %} endowment.</li>
+    <li>Have {% if is_heterogeneous %}different assigned money endowments{% else %}the same assigned money endowment{% endif %}{% if is_heterogeneous %}: {{ cash_values_display }}{% else %} of {{ homogeneous_cash }}{% endif %}.</li>
+    <li>May have different assigned satisfaction points.</li>
+</ul>
+{% endif %}
+<br>
     {{ next_button }}
 {{ endblock }}

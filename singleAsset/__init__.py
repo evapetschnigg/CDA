@@ -54,7 +54,7 @@ class C(BaseConstants):
         'destruction_heterogeneous'
     ]
     ACTIVE_TREATMENTS = [
-        'destruction_homogeneous', 
+
         'destruction_heterogeneous'
     ]  # Can be modified to test specific treatments
 
@@ -1866,10 +1866,13 @@ class ComprehensionPassed(Page):
                 not player.participant.vars.get('comp_passed_message_shown', False))
     
     @staticmethod
+    def before_next_page(player: Player, timeout_happened):
+        # Mark that they've seen the passed message (only when actually leaving the page)
+        player.participant.vars['comp_passed_message_shown'] = True
+    
+    @staticmethod
     def vars_for_template(player: Player):
         total_questions = player.participant.vars.get('comp_total_questions', 5)
-        # Mark that they've seen the passed message
-        player.participant.vars['comp_passed_message_shown'] = True
         return dict(
             total_questions=total_questions,
         )
@@ -2051,14 +2054,17 @@ class PreMarket(Page):
         goodA_marginal_utility = get_good_satisfaction('A', preference)
         goodB_marginal_utility = get_good_satisfaction('B', preference)
         
+        # Check if there are other players in the group
+        other_players = [p for p in group.get_players() if p.id_in_group != player.id_in_group and p.isParticipating == 1]
+        has_other_players = len(other_players) > 0
+        
         if is_heterogeneous:
             # For heterogeneous groups: collect cash values of other players
             other_players_cash_values = []
-            for other_player in group.get_players():
-                if other_player.id_in_group != player.id_in_group:
-                    cash_endowment_value = other_player.participant.vars.get('cash_endowment', 0)
-                    cash_endowment_rounded = round(cash_endowment_value, C.decimals)
-                    other_players_cash_values.append(cash_endowment_rounded)
+            for other_player in other_players:
+                cash_endowment_value = other_player.participant.vars.get('cash_endowment', 0)
+                cash_endowment_rounded = round(cash_endowment_value, C.decimals)
+                other_players_cash_values.append(cash_endowment_rounded)
             
             # Sort for consistent display
             other_players_cash_values.sort(reverse=True)
@@ -2072,11 +2078,13 @@ class PreMarket(Page):
                 cash_values_display = f"{other_players_cash_values[0]} and {other_players_cash_values[1]}"
             else:
                 # Format as "value1, value2, ..., and last_value"
-                cash_values_display = ", ".join(str(v) for v in other_players_cash_values[:-1]) + f", and {other_players_cash_values[-1]}"
+                formatted_values = [str(v) for v in other_players_cash_values[:-1]]
+                cash_values_display = ", ".join(formatted_values) + f", and {other_players_cash_values[-1]}"
             
             return dict(
                 round=player.round_number - C.num_trial_rounds,
                 is_heterogeneous=True,
+                has_other_players=has_other_players,
                 cash_values_display=cash_values_display,
                 goodA_marginal_utility=goodA_marginal_utility,
                 goodB_marginal_utility=goodB_marginal_utility,
@@ -2090,7 +2098,8 @@ class PreMarket(Page):
             return dict(
                 round=player.round_number - C.num_trial_rounds,
                 is_heterogeneous=False,
-                homogeneous_cash=round(C.cash_homogeneous, C.decimals),
+                has_other_players=has_other_players,
+                homogeneous_cash=str(round(C.cash_homogeneous, C.decimals)),
                 goodA_marginal_utility=goodA_marginal_utility,
                 goodB_marginal_utility=goodB_marginal_utility,
                 goodA_money_price=C.GOOD_A_MONEY_PRICE,
