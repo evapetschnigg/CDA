@@ -1,26 +1,26 @@
 from os import environ
 
 SESSION_CONFIGS = [
-    dict(
-        name='sPartitions',
-        display_name='single asset: Aggregation mechanisms for crowd predictions on partitions',
-        app_sequence=['singleAssetInfo'],
-        num_demo_participants=4,
-        market_time=300,
-        randomise_types=True,
-        short_selling=True,
-        margin_buying=True,
-    ),
-    dict(
-        name='nPartitions',
-        display_name='n assets: Aggregation mechanisms for crowd predictions with multiple assets on partitions',
-        app_sequence=['nAssetsInfo'],
-        num_demo_participants=4,
-        market_time=210,
-        randomise_types=True,
-        short_selling=True,
-        margin_buying=True,
-    ),
+    #dict(
+        #name='sPartitions',
+        #display_name='single asset: Aggregation mechanisms for crowd predictions on partitions',
+        #app_sequence=['singleAssetInfo'],
+        #num_demo_participants=4,
+        #market_time=300,
+        #randomise_types=True,
+        #short_selling=True,
+        #margin_buying=True,
+        #),
+    #dict(
+        #name='nPartitions',
+        #display_name='n assets: Aggregation mechanisms for crowd predictions with multiple assets on partitions',
+        #app_sequence=['nAssetsInfo'],
+        #num_demo_participants=4,
+        #market_time=210,
+        #randomise_types=True,
+        #short_selling=True,
+        #margin_buying=True,
+        #),
 
         dict(
         name='singleAsset',
@@ -33,16 +33,16 @@ SESSION_CONFIGS = [
         margin_buying=False,
         ),
 
-    dict(
-        name='nAssets',
-        display_name='n assets: Continuous double auction',
-        app_sequence=['nAssets'],
-        num_demo_participants=5,
-        market_time=210,
-        randomise_types=True,
-        short_selling=True,
-        margin_buying=True,
-        ),
+    #dict(
+        #name='nAssets',
+        #display_name='n assets: Continuous double auction',
+        #app_sequence=['nAssets'],
+        #num_demo_participants=5,
+        #market_time=210,
+        #randomise_types=True,
+        #short_selling=True,
+        #margin_buying=True,
+        #),
 ]
 
 # if you set a property in SESSION_CONFIG_DEFAULTS, it will be inherited by all configs
