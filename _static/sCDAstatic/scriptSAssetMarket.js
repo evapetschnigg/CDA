@@ -7,6 +7,25 @@
     let lastGoodsTrade = null;
 
 
+    function formatToTwoDecimals(value) {
+        if (value === undefined || value === null) {
+            return value;
+        }
+        const numeric = parseFloat(String(value).replace(/[^\d.-]/g, ''));
+        if (Number.isNaN(numeric)) {
+            return value;
+        }
+        return numeric.toFixed(2);
+    }
+
+    $(document).ready(function() {
+        const cashElement = $('#cashHolding');
+        const overallUtilityElement = $('#overall_utility');
+        cashElement.text(formatToTwoDecimals(cashElement.text()));
+        overallUtilityElement.text(formatToTwoDecimals(overallUtilityElement.text()));
+    });
+
+
     function liveRecv(data) {
         
         // sanitise
@@ -77,10 +96,10 @@
             $('#goods_utility').text(data.goods_utility);
         }
         if (data.overall_utility !== undefined) {
-            $('#overall_utility').text(data.overall_utility);
+            $('#overall_utility').text(formatToTwoDecimals(data.overall_utility));
         }
         if (data.cashHolding !== undefined) {
-            $('#cashHolding').text(data.cashHolding);
+            $('#cashHolding').text(formatToTwoDecimals(data.cashHolding));
         }
         if (data.assetsHolding !== undefined) {
             $('#assetsHolding').text(data.assetsHolding);
