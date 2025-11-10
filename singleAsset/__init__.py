@@ -11,7 +11,7 @@ class C(BaseConstants):
     NAME_IN_URL = 'sCDA'
     PLAYERS_PER_GROUP = None
     num_trial_rounds = 1
-    NUM_ROUNDS = 3  ## incl. trial periods
+    NUM_ROUNDS = 7  ## incl. trial periods
     base_payment = cu(1.81)  # Base payment for all participants who complete survey
     bonus_payment = cu(1.81)  # Additional payment for highest score increase winner
     FV_MIN = 30
@@ -54,8 +54,7 @@ class C(BaseConstants):
         'destruction_heterogeneous'
     ]
     ACTIVE_TREATMENTS = [
-
-        'destruction_heterogeneous'
+        'destruction_homogeneous', 
     ]  # Can be modified to test specific treatments
 
 
@@ -194,6 +193,30 @@ def get_max_time(group: Group):
     # this code is run at the WaitingMarket page just before the market page when all participants arrived
     # this function returns the duration time of a market.
     return group.session.config['market_time']  # currently the binary value is retrieved from the config variables
+
+
+def persistent_timeout(player: 'Player', page_name: str, default_seconds: float) -> float:
+    """
+    Create a server-side deadline the first time the player reaches a page in a given round.
+    Subsequent visits (via browser back button, refresh, etc.) use the same deadline so the
+    remaining time can only decrease.
+    """
+    key = f'timeout_deadline_{page_name}_round_{player.round_number}'
+    deadlines = player.participant.vars.setdefault('page_deadlines', {})
+    now = time.time()
+    deadline = deadlines.get(key)
+
+    if deadline is None:
+        deadline = now + default_seconds
+        deadlines[key] = deadline
+
+    remaining = deadline - now
+    print(f"DEBUG TIMER | page={page_name} round={player.round_number} player={player.id_in_subsession} "
+          f"deadline={deadline:.3f} now={now:.3f} remaining={remaining:.3f} stored_keys={list(deadlines.keys())}")
+
+    if remaining < 0:
+        return 0
+    return remaining
 
 
 class Player(BasePlayer):
@@ -592,36 +615,6 @@ def cash_long_limit(player: Player):
     else:
         return 0
 
-
-def assign_good_preferences(group: Group):
-    """
-    Assign good_preference to players in a group: 50% conventional, 50% eco.
-    Randomly shuffles both players and preferences to ensure true randomization.
-    """
-    players = group.get_players()
-    num_players = len(players)
-    
-    # Shuffle players to prevent systematic assignment patterns
-    shuffled_players = list(players)
-    random.shuffle(shuffled_players)
-    
-    # Calculate how many should be conventional (at least half)
-    num_conventional = num_players // 2
-    num_eco = num_players - num_conventional
-    
-    # Create list of preferences
-    preferences = ['conventional'] * num_conventional + ['eco'] * num_eco
-    
-    # Shuffle preferences as well
-    random.shuffle(preferences)
-    
-    # Assign to shuffled players (random order)
-    for player, preference in zip(shuffled_players, preferences):
-        player.good_preference = preference
-        player.participant.vars['good_preference'] = preference
-        print(f"DEBUG: Player {player.id_in_subsession} assigned good_preference: {preference}")
-    
-    return preferences
 
 def assign_role_attr(player: Player, role_id):
     # this code is run at the first WaitToStart page, within the set_player() function, when all participants arrived
@@ -1545,7 +1538,9 @@ class BidAsks(ExtraModel):
 
 # PAGES
 class Welcome(Page):
-    timeout_seconds = 120  # 2 minutes to read and proceed
+    @staticmethod
+    def get_timeout_seconds(player: Player):
+        return persistent_timeout(player, 'Welcome', 120)
     
     @staticmethod
     def before_next_page(player: Player, timeout_happened):
@@ -1561,7 +1556,9 @@ class Welcome(Page):
 class Privacy(Page):
     form_model = 'player'
     form_fields = ['consent']
-    timeout_seconds = 180  # 3 minutes to read privacy statement and decide
+    @staticmethod
+    def get_timeout_seconds(player: Player):
+        return persistent_timeout(player, 'Privacy', 180)
     
     @staticmethod
     def is_displayed(player: Player):
@@ -1583,8 +1580,11 @@ class Privacy(Page):
             # Keep participation flag as-is if previously set on Welcome
 
 class EarlyEnd(Page):
-    timeout_seconds = 10  # 10 seconds to read the message, then auto-advance
     # Note: This appears BEFORE RegroupForRound in the sequence, so they'll see it before the wait page
+    
+    @staticmethod
+    def get_timeout_seconds(player: Player):
+        return persistent_timeout(player, 'EarlyEnd', 10)
     
     @staticmethod
     def is_displayed(player: Player):
@@ -1622,8 +1622,10 @@ class EarlyEnd(Page):
 class Instructions(Page):
     # Removed isParticipating form field - participation is now determined automatically
     # (set on Welcome/Privacy pages based on timeouts/consent)
-    timeout_seconds = 480  # 8 minutes to read instructions (generous wiggle room, but prevents indefinite blocking)
-
+    @staticmethod
+    def get_timeout_seconds(player: Player):
+        return persistent_timeout(player, 'Instructions', 480)
+    
     @staticmethod
     def is_displayed(player: Player):
         return player.round_number == 1 and player.participant.vars.get('consent_given', False)
@@ -1640,7 +1642,9 @@ class Instructions(Page):
 
 class ComprehensionCheck(Page):
     form_model = 'player'
-    timeout_seconds = 240  # 4 minutes to complete comprehension check (reasonable for 5-6 questions)
+    @staticmethod
+    def get_timeout_seconds(player: Player):
+        return persistent_timeout(player, 'ComprehensionCheck', 240)
     
     @staticmethod
     def get_form_fields(player: Player):
@@ -1739,7 +1743,9 @@ class ComprehensionCheck(Page):
 
 
 class ComprehensionFeedback(Page):
-    timeout_seconds = 60  # 1 minute to read feedback, then auto-advance
+    @staticmethod
+    def get_timeout_seconds(player: Player):
+        return persistent_timeout(player, 'ComprehensionFeedback', 60)
     
     @staticmethod
     def is_displayed(player: Player):
@@ -1851,7 +1857,9 @@ class ComprehensionFeedback(Page):
 
 
 class ComprehensionPassed(Page):
-    timeout_seconds = 15  # 15 seconds to see success message, then auto-advance
+    @staticmethod
+    def get_timeout_seconds(player: Player):
+        return persistent_timeout(player, 'ComprehensionPassed', 15)
     
     @staticmethod
     def is_displayed(player: Player):
@@ -2029,7 +2037,10 @@ class RegroupForRound(WaitPage):
 
 class EndOfTrialRounds(Page):
     template_name = "_templates/endOfTrialRounds.html"
-    timeout_seconds = 10  # 10 seconds to read message, then auto-advance
+
+    @staticmethod
+    def get_timeout_seconds(player: Player):
+        return persistent_timeout(player, 'EndOfTrialRounds', 10)
 
     @staticmethod
     def is_displayed(player: Player):
@@ -2037,7 +2048,9 @@ class EndOfTrialRounds(Page):
 
 
 class PreMarket(Page):
-    timeout_seconds = 60  # 1 minute to review pre-market info
+    @staticmethod
+    def get_timeout_seconds(player: Player):
+        return persistent_timeout(player, 'PreMarket', 60)
     
     @staticmethod
     def is_displayed(player: Player):
@@ -2215,7 +2228,9 @@ class ResultsWaitPage(WaitPage):
 
 
 class Results(Page):
-    timeout_seconds = 45  # 45 seconds to review results
+    @staticmethod
+    def get_timeout_seconds(player: Player):
+        return persistent_timeout(player, 'Results', 45)
     
     @staticmethod
     def is_displayed(player: Player):
