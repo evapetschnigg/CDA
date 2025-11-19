@@ -54,7 +54,7 @@ class C(BaseConstants):
         'destruction_heterogeneous'
     ]
     ACTIVE_TREATMENTS = [
-        'destruction_homogeneous', 
+        'baseline_homogeneous', 
     ]  # Can be modified to test specific treatments
 
 
