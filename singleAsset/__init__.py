@@ -1578,9 +1578,32 @@ class Privacy(Page):
         else:
             player.participant.vars['consent_given'] = True
             # Keep participation flag as-is if previously set on Welcome
+            
+            # Automatically assign treatment to consenting players (round 1 only)
+            if player.round_number == 1:
+                # ACTIVE_TREATMENTS should contain only one treatment per app for rolling groups
+                treatment_list = C.ACTIVE_TREATMENTS
+                if len(treatment_list) != 1:
+                    raise ValueError(f"ACTIVE_TREATMENTS must contain exactly one treatment for rolling groups. Found: {treatment_list}")
+                
+                # Assign the single treatment to this player
+                treatment = treatment_list[0]
+                player.treatment = treatment
+                
+                # Split treatment name into components (e.g., baseline_homogeneous)
+                parts = treatment.split("_")
+                player.framing = parts[0]
+                player.endowment_type = parts[1]
+                
+                # Store in participant.vars for persistence
+                player.participant.vars.update(
+                    treatment=treatment,
+                    framing=parts[0],
+                    endowment_type=parts[1],
+                )
 
 class EarlyEnd(Page):
-    # Note: This appears BEFORE RegroupForRound in the sequence, so they'll see it before the wait page
+    # Note: This appears after FormTradingGroups and after each ComprehensionFeedback to catch failures
     
     @staticmethod
     def get_timeout_seconds(player: Player):
@@ -1590,12 +1613,13 @@ class EarlyEnd(Page):
     def is_displayed(player: Player):
         # Show EarlyEnd if:
         # 1. Round 1
-        # 2. Either they didn't give consent OR they failed comprehension check 6 times OR they timed out on comprehension check
+        # 2. Either they didn't give consent OR they failed comprehension check 6 times OR they timed out on comprehension check OR they timed out on FormTradingGroups
         # 3. They haven't already seen it (to avoid showing multiple times)
         return (player.round_number == 1 and 
                 (not player.participant.vars.get('consent_given', True) or 
                  player.participant.vars.get('comp_failed_6_times', False) or
-                 player.participant.vars.get('comp_timeout_inactive', False)) and
+                 player.participant.vars.get('comp_timeout_inactive', False) or
+                 player.participant.vars.get('insufficient_players_timeout', False)) and
                 not player.participant.vars.get('early_end_seen', False))
     
     @staticmethod
@@ -1612,11 +1636,13 @@ class EarlyEnd(Page):
         timeout_inactive = player.participant.vars.get('comp_timeout_inactive', False)
         privacy_timeout = player.participant.vars.get('privacy_timeout', False)
         no_consent = not player.participant.vars.get('consent_given', True) and not privacy_timeout
+        insufficient_players = player.participant.vars.get('insufficient_players_timeout', False)
         return dict(
             failed_comprehension=failed_comprehension,
             timeout_inactive=timeout_inactive,
             privacy_timeout=privacy_timeout,
             no_consent=no_consent,
+            insufficient_players=insufficient_players,
         )
 
 class Instructions(Page):
@@ -2403,206 +2429,383 @@ class FinalResults(Page):
         )
 
 
-class TreatmentAssignment(WaitPage):
-    wait_for_all_groups = True
-
+class FormTradingGroups(Page):
+    """
+    Forms groups of 6 players who have passed the comprehension check.
+    This page polls to check if enough players are ready, then forms groups immediately.
+    Only runs in round 1.
+    """
+    template_name = 'singleAsset/FormTradingGroups.html'
+    
     @staticmethod
     def get_timeout_seconds(player: Player):
-        # Timeout after 6 minutes - happens early (after Welcome/Privacy, before Instructions)
-        # Accounts for late arrivals who might still be on Welcome (2 min) or Privacy (3 min)
-        # Plus slow readers and network delays
-        return 360
-
+        # Timeout after 5 minutes (300 seconds) - send to EarlyEnd
+        return 300
+    
     @staticmethod
     def is_displayed(player: Player):
-        # Always show after consent (for group persistence in all rounds)
-        # For rounds > 1, we need to copy the regrouped structure
-        # But skip if player has seen EarlyEnd and should not continue
-        return (player.participant.vars.get('consent_given', True) and
-                not player.participant.vars.get('no_more_pages', False))
-
+        # Only show in round 1 after comprehension check is passed
+        if player.round_number != 1:
+            return False
+        
+        # Don't show if already in a group (has cash_endowment)
+        if 'cash_endowment' in player.participant.vars:
+            return False
+        
+        # Don't show if marked for EarlyEnd
+        if player.participant.vars.get('insufficient_players_timeout', False):
+            return False
+        
+        # Only show if passed comprehension check
+        return player.participant.vars.get('comp_passed', False)
+    
     @staticmethod
-    def after_all_players_arrive(subsession: Subsession):
-        print(f"DEBUG: after_all_players_arrive called for round {subsession.round_number}")
-
-        # For rounds after round 1, copy groups from round 1 (after regrouping happened)
-        if subsession.round_number > 1:
-            print(f"DEBUG: Round {subsession.round_number} - copying groups from round 1 (after regrouping)")
-            # Verify round 1 groups exist and show their structure
-            round_1_groups = subsession.in_round(1).get_groups()
-            print(f"DEBUG: Round 1 has {len(round_1_groups)} groups")
-            for i, grp in enumerate(round_1_groups):
-                players = grp.get_players()
-                print(f"DEBUG: Round 1 Group {i+1} has {len(players)} players: {[p.id_in_subsession for p in players]}")
+    def vars_for_template(player: Player):
+        """
+        Check if groups can be formed and form them immediately.
+        Groups form when 6 eligible players are on the page.
+        """
+        if player.round_number != 1:
+            return {}
+        
+        subsession = player.subsession
+        session = subsession.session
+        
+        min_group_size = 6
+        timeout_key = 'form_trading_groups_first_arrival_time'
+        timeout_duration = 300  # 5 minutes
+        
+        # Get all eligible players who haven't been assigned yet
+        eligible = [p for p in subsession.get_players() 
+                   if p.participant.vars.get('comp_passed', False) and 
+                      p.isParticipating == 1 and
+                      'cash_endowment' not in p.participant.vars]
+        
+        # Set first arrival time if this is the first eligible player
+        if eligible and timeout_key not in session.vars:
+            session.vars[timeout_key] = time.time()
+        
+        # Check if timeout has been reached
+        timeout_reached = False
+        if timeout_key in session.vars:
+            elapsed = time.time() - session.vars[timeout_key]
+            if elapsed >= timeout_duration:
+                timeout_reached = True
+        
+        # Handle timeout: mark all waiting players for EarlyEnd
+        if timeout_reached and len(eligible) < min_group_size:
+            for p in eligible:
+                p.isParticipating = 0
+                p.participant.vars['isParticipating'] = 0
+                p.participant.vars['insufficient_players_timeout'] = True
+            if timeout_key in session.vars:
+                del session.vars[timeout_key]
+            return {
+                'eligible_count': 0,
+                'players_needed': 0,
+                'group_size': min_group_size,
+                'player_has_cash_endowment': False,
+                'timeout_reached': True,
+                'insufficient_players': True,
+                'time_remaining': None,
+            }
+        
+        # Form groups of exactly 6 players
+        groups_to_form = []
+        if len(eligible) >= min_group_size:
+            while len(eligible) >= min_group_size:
+                new_group = eligible[:min_group_size]
+                # Double-check these players still don't have cash_endowment
+                still_eligible = [p for p in new_group if 'cash_endowment' not in p.participant.vars]
+                if len(still_eligible) == min_group_size:
+                    groups_to_form.append(still_eligible)
+                eligible = eligible[min_group_size:]
+        
+        if groups_to_form:
+            # Build new group matrix
+            all_players = subsession.get_players()
+            new_matrix = []
+            assigned_ids = set()
             
-            # Copy the regrouped structure from round 1
-            subsession.group_like_round(1)
+            # Add existing groups (players already initialized)
+            existing_groups = subsession.get_groups()
+            for g in existing_groups:
+                g_players = [p for p in g.get_players() 
+                           if 'cash_endowment' in p.participant.vars]
+                if g_players:
+                    group_ids = [p.id_in_subsession for p in g_players]
+                    new_matrix.append(group_ids)
+                    assigned_ids.update(group_ids)
             
-            # Verify the copy worked
-            current_groups = subsession.get_groups()
-            print(f"DEBUG: Round {subsession.round_number} - After group_like_round(1), got {len(current_groups)} groups")
-            for i, grp in enumerate(current_groups):
-                players = grp.get_players()
-                print(f"DEBUG: Round {subsession.round_number} - Group {i+1} has {len(players)} players: {[p.id_in_subsession for p in players]}")
+            # Add new groups of 6
+            for new_group_players in groups_to_form:
+                group_ids = [p.id_in_subsession for p in new_group_players]
+                new_matrix.append(group_ids)
+                assigned_ids.update(group_ids)
             
-            # Ensure we have matching number of groups
-            if len(round_1_groups) != len(current_groups):
-                print(f"ERROR: Round 1 has {len(round_1_groups)} groups but round {subsession.round_number} has {len(current_groups)} groups after copy!")
+            # Add remaining unassigned eligible players as individual groups (they'll continue waiting)
+            unassigned_eligible = [p for p in all_players 
+                                  if p.id_in_subsession not in assigned_ids and
+                                     p.participant.vars.get('comp_passed', False) and
+                                     p.isParticipating == 1]
+            for p in unassigned_eligible:
+                new_matrix.append([p.id_in_subsession])
+                assigned_ids.add(p.id_in_subsession)
             
-            for i, (round_1_group, current_group) in enumerate(zip(round_1_groups, current_groups)):
-                current_group.treatment = round_1_group.treatment
-                current_group.framing = round_1_group.framing
-                current_group.endowment_type = round_1_group.endowment_type
-                current_group.gini_coefficient = round_1_group.gini_coefficient
-                current_group.group_size = round_1_group.group_size  # Copy group_size from round 1
-                print(f"DEBUG: Round {subsession.round_number} - Group {i+1} copied treatment: {current_group.treatment}, group_size: {current_group.group_size}")
+            # Add ALL remaining players as individual groups
+            remaining_players = [p for p in all_players 
+                                if p.id_in_subsession not in assigned_ids]
+            for p in remaining_players:
+                new_matrix.append([p.id_in_subsession])
+                assigned_ids.add(p.id_in_subsession)
+            
+            # Verify we have all players
+            all_ids_in_matrix = set()
+            for group_list in new_matrix:
+                all_ids_in_matrix.update(group_list)
+            all_player_ids = {p.id_in_subsession for p in all_players}
+            
+            if all_ids_in_matrix == all_player_ids:
+                # Set the new group matrix
+                subsession.set_group_matrix(new_matrix)
                 
-                # Also update player records with treatment info and copy cash endowment
-                for p in current_group.get_players():
-                    p.treatment = current_group.treatment
-                    p.framing = current_group.framing
-                    p.endowment_type = current_group.endowment_type
-                    p.participant.vars.update(
-                        treatment=current_group.treatment,
-                        framing=current_group.framing,
-                        endowment_type=current_group.endowment_type,
-                    )
+                # Initialize each new group of 6
+                for new_group_players in groups_to_form:
+                    # Find the group these players are now in
+                    target_group = None
+                    for g in subsession.get_groups():
+                        g_player_ids = {p.id_in_subsession for p in g.get_players()}
+                        if g_player_ids == {p.id_in_subsession for p in new_group_players} and len(g.get_players()) == min_group_size:
+                            target_group = g
+                            break
                     
-                    # Copy cash endowment from round 1 player
-                    round_1_player = p.in_round(1)
-                    if round_1_player and 'cash_endowment' in round_1_player.participant.vars:
-                        p.participant.vars['cash_endowment'] = round_1_player.participant.vars['cash_endowment']
-                        print(f"DEBUG: Round {subsession.round_number} - Player {p.id_in_subsession} copied cash endowment: {p.participant.vars['cash_endowment']}")
-                    
-                    # Copy good_preference from round 1 player
-                    if round_1_player and round_1_player.field_maybe_none('good_preference'):
-                        good_pref = round_1_player.field_maybe_none('good_preference')
-                        p.good_preference = good_pref
-                        p.participant.vars['good_preference'] = good_pref
-                        print(f"DEBUG: Round {subsession.round_number} - Player {p.id_in_subsession} copied good_preference: {p.good_preference}")
+                    if target_group and len(target_group.get_players()) == min_group_size:
+                        fresh_players = target_group.get_players()
+                        if all(p.isParticipating == 1 for p in fresh_players):
+                            # Get treatment from first player (all should have same treatment)
+                            first_player = fresh_players[0]
+                            treatment = first_player.participant.vars.get('treatment')
+                            framing = first_player.participant.vars.get('framing')
+                            endowment_type = first_player.participant.vars.get('endowment_type')
+                            
+                            if treatment:
+                                # Assign treatment to group
+                                target_group.treatment = treatment
+                                target_group.framing = framing
+                                target_group.endowment_type = endowment_type
+                                target_group.group_size = len(fresh_players)
+                                
+                                # Update all players with group treatment info
+                                for p in fresh_players:
+                                    p.treatment = treatment
+                                    p.framing = framing
+                                    p.endowment_type = endowment_type
+                                    p.participant.vars.update(
+                                        treatment=treatment,
+                                        framing=framing,
+                                        endowment_type=endowment_type,
+                                    )
+                                
+                                # Calculate and assign cash endowments
+                                for p in fresh_players:
+                                    cash_val = cash_endowment(player=p)
+                                
+                                # Assign good_preference (50% conventional, 50% eco)
+                                shuffled = fresh_players.copy()
+                                random.shuffle(shuffled)
+                                num_players = len(fresh_players)
+                                num_eco = num_players // 2
+                                num_conventional = num_players - num_eco
+                                preferences = (['conventional'] * num_conventional + ['eco'] * num_eco)
+                                random.shuffle(preferences)
+                                for p, pref in zip(shuffled, preferences):
+                                    p.good_preference = pref
+                                    p.participant.vars['good_preference'] = pref
+                                
+                                # Calculate Gini coefficient for heterogeneous groups
+                                if endowment_type == 'heterogeneous':
+                                    cash_endowments = [p.participant.vars.get('cash_endowment', 0) for p in fresh_players]
+                                    target_group.gini_coefficient = round(calculate_gini_coefficient(cash_endowments), 4)
+                                else:
+                                    target_group.gini_coefficient = 0.0
+                                
+                                # Initialize group and players for trading
+                                target_group.randomisedTypes = random_types(group=target_group)
+                                participating_count = sum(1 for p in fresh_players if p.isParticipating == 1)
+                                target_group.numParticipants = participating_count
+                                
+                                initiate_group(group=target_group)
+                                target_group.numParticipants = participating_count
+                                
+                                for p in fresh_players:
+                                    if p.isParticipating == 1:
+                                        p.assetValue = target_group.assetValue
+                                        set_player(player=p)
+                                        initiate_player(player=p)
+                
+                # Reset timeout when groups are successfully formed
+                if groups_to_form and timeout_key in session.vars:
+                    any_initialized = False
+                    for group_players in groups_to_form:
+                        if any('cash_endowment' in p.participant.vars for p in group_players):
+                            any_initialized = True
+                            break
+                    if any_initialized:
+                        del session.vars[timeout_key]
+        
+        # Calculate display values
+        waiting = [p for p in subsession.get_players() 
+                  if p.participant.vars.get('comp_passed', False) and 
+                     p.isParticipating == 1 and
+                     'cash_endowment' not in p.participant.vars]
+        needed = min_group_size - (len(waiting) % min_group_size)
+        if needed == min_group_size:
+            needed = 0
+        
+        # Check if timeout is approaching (for display purposes)
+        time_remaining = None
+        if timeout_key in session.vars:
+            elapsed = time.time() - session.vars[timeout_key]
+            time_remaining = max(0, timeout_duration - elapsed)
+            time_remaining = int(time_remaining)
+        
+        # Check if this player was just assigned to a group
+        player_has_cash = 'cash_endowment' in player.participant.vars
+        
+        return {
+            'eligible_count': len(waiting), 
+            'players_needed': needed, 
+            'group_size': min_group_size,
+            'player_has_cash_endowment': player_has_cash,
+            'time_remaining': time_remaining,
+            'insufficient_players': False
+        }
+    
+    @staticmethod
+    def before_next_page(player: Player, timeout_happened):
+        """Handle timeout - mark player for EarlyEnd"""
+        if timeout_happened:
+            player.isParticipating = 0
+            player.participant.vars['isParticipating'] = 0
+            player.participant.vars['insufficient_players_timeout'] = True
+
+
+class TreatmentAssignment(Page):
+    """
+    For rounds > 1, preserves groups from round 1.
+    Same players, same cash endowment, same treatment, same preferences.
+    """
+    
+    @staticmethod
+    def is_displayed(player: Player):
+        # Only show in rounds > 1 to preserve groups
+        # Skip if player has seen EarlyEnd
+        if player.round_number == 1:
+            return False
+        return (player.participant.vars.get('consent_given', True) and
+                not player.participant.vars.get('no_more_pages', False) and
+                player.isParticipating == 1)
+    
+    @staticmethod
+    def get_timeout_seconds(player: Player):
+        # Auto-advance immediately
+        return 0.1
+    
+    @staticmethod
+    def before_next_page(player: Player, timeout_happened):
+        """Preserve groups from round 1 for rounds > 1"""
+        if player.round_number > 1:
+            subsession = player.subsession
+            round_1_player = player.in_round(1)
             
-            # Initialize group- and player-level state for current round (for rounds > 1)
-            for group in subsession.get_groups():
-                # Initialize group if not already done (should already be set from round 1, but check anyway)
-                if not group.field_maybe_none('randomisedTypes'):
-                    group.randomisedTypes = random_types(group=group)
-                    initiate_group(group=group)
-                    print(f"DEBUG: Round {subsession.round_number} - Initialized group {group.id}")
-                
-                # Initialize players for this round (for participating players)
-                # We initialize each round - set_player and initiate_player handle the initialization
-                for p in group.get_players():
-                    if p.isParticipating == 1:
-                        # Check if assetValue needs to be set using field_maybe_none to safely check for None
-                        if p.field_maybe_none('assetValue') is None:
-                            p.assetValue = group.assetValue
-                            print(f"DEBUG: Round {subsession.round_number} - Set assetValue for player {p.id_in_subsession}")
-                        
-                        # Always call set_player and initiate_player for this round
-                        set_player(player=p)
-                        initiate_player(player=p)
-                        print(f"DEBUG: Round {subsession.round_number} - Initialized player {p.id_in_subsession}")
+            # Copy group structure from round 1 (only do this once per subsession)
+            init_key = f'_round_{subsession.round_number}_initialized'
+            if not subsession.session.vars.get(init_key, False):
+                subsession.group_like_round(1)
+                subsession.session.vars[init_key] = True
             
-            # Debug: show the copied groups
-            groups = subsession.get_groups()
-            print(f"DEBUG: Round {subsession.round_number} - copied {len(groups)} groups")
-            for i, group in enumerate(groups):
-                players = group.get_players()
-                print(f"DEBUG: Group {i+1} has {len(players)} players: {[p.id_in_subsession for p in players]}")
-            return
-
-        # Only create groups in round 1
-        if subsession.round_number == 1:
-            players = subsession.get_players()
-            random.shuffle(players)
-
-            treatment_list = C.ACTIVE_TREATMENTS
-            num_players = len(players)
-            n_groups = min(len(treatment_list), num_players)
-
-            if n_groups < 1:
-                raise ValueError("No players available to form groups.")
-
-            # Distribute players into groups (round robin)
-            groups_matrix = [[] for _ in range(n_groups)]
-            for i, p in enumerate(players):
-                groups_matrix[i % n_groups].append(p)
-
-            subsession.set_group_matrix(groups_matrix)
-            print(f"DEBUG: Created {n_groups} groups with set_group_matrix")
-            print(f"DEBUG: Groups matrix: {[[p.id_in_subsession for p in grp] for grp in groups_matrix]}")
-
-            # Assign treatments to groups
-            import math
-            num_treatments = len(treatment_list)
-            reps = math.ceil(n_groups / num_treatments)
-            treatment_pool = (treatment_list * reps)[:n_groups]
-            random.shuffle(treatment_pool)
-
-            for i, group in enumerate(subsession.get_groups()):
-                group.treatment = treatment_pool[i]
-
-                # Split treatment name into components (e.g., baseline_homogeneous)
-                parts = group.treatment.split("_")
-                group.framing = parts[0]
-                group.endowment_type = parts[1]
-
-                print(f"DEBUG: Group {group.id} assigned treatment {group.treatment}")
-
-                # Store treatment info and calculate cash endowment only for consenting players
-                # (Non-consenting players will be moved to separate group in RegroupForRound)
-                # Default to False (safer assumption: no consent until explicitly given)
-                consenting_players = [p for p in group.get_players() if p.participant.vars.get('consent_given', False)]
+            # Get player's current group
+            current_group = player.group
+            if not current_group:
+                return
+            
+            # Copy isParticipating from round 1
+            if round_1_player:
+                player.isParticipating = round_1_player.isParticipating
+                player.participant.vars['isParticipating'] = round_1_player.isParticipating
+            
+            # Find corresponding group from round 1 by matching players
+            round_1_group = None
+            current_group_participant_ids = {p.participant.id for p in current_group.get_players()}
+            for r1_group in subsession.in_round(1).get_groups():
+                r1_group_participant_ids = {p.participant.id for p in r1_group.get_players()}
+                if current_group_participant_ids == r1_group_participant_ids:
+                    round_1_group = r1_group
+                    break
+            
+            # Copy treatment/framing/endowment_type from round 1
+            if round_1_player:
+                treatment_val = round_1_player.participant.vars.get('treatment')
+                framing_val = round_1_player.participant.vars.get('framing')
+                endowment_type_val = round_1_player.participant.vars.get('endowment_type')
                 
-                for p in consenting_players:
-                    p.treatment = group.treatment
-                    p.framing = group.framing
-                    p.endowment_type = group.endowment_type
-                    p.participant.vars.update(
-                        treatment=group.treatment,
-                        framing=group.framing,
-                        endowment_type=group.endowment_type,
-                    )
-                    
-                    # Calculate and store cash endowment once at the start (round 1 only)
-                    # The cash_endowment() function handles both homogeneous and heterogeneous cases
-                    cash_amount = cash_endowment(player=p)
-                    print(f"DEBUG: Round 1 - Player {p.id_in_subsession} (id_in_group={p.id_in_group}) assigned cash endowment: {cash_amount} ({group.endowment_type})")
-                
-                # Assign good_preference only to consenting players in this group (50% conventional, 50% eco)
-                if len(consenting_players) > 0:
-                    # Shuffle both players and preferences to ensure true randomization
-                    # This prevents systematic assignment patterns (e.g., first player always conventional)
-                    shuffled_players = consenting_players.copy()
-                    random.shuffle(shuffled_players)
-                    
-                    num_consenting = len(shuffled_players)
-                    num_conventional = num_consenting // 2
-                    num_eco = num_consenting - num_conventional
-                    preferences = ['conventional'] * num_conventional + ['eco'] * num_eco
-                    random.shuffle(preferences)
-                    
-                    # Assign preferences to shuffled players (random order)
-                    for p, preference in zip(shuffled_players, preferences):
-                        p.good_preference = preference
-                        p.participant.vars['good_preference'] = preference
-                        print(f"DEBUG: Player {p.id_in_subsession} assigned good_preference: {preference}")
-                
-                # Calculate Gini coefficient for heterogeneous groups (only for consenting players)
-                if group.endowment_type == 'heterogeneous':
-                    # Collect all cash endowments from consenting players only
-                    cash_endowments = [p.participant.vars.get('cash_endowment', 0) for p in consenting_players]
-                    gini = calculate_gini_coefficient(cash_endowments)
-                    group.gini_coefficient = round(gini, 4)
-                    print(f"DEBUG: Round 1 - Group {group.id} Gini coefficient: {group.gini_coefficient} (cash endowments: {cash_endowments})")
+                if treatment_val:
+                    player.treatment = treatment_val
+                    current_group.treatment = treatment_val
+                if framing_val:
+                    player.framing = framing_val
+                    current_group.framing = framing_val
+                if endowment_type_val:
+                    player.endowment_type = endowment_type_val
+                    current_group.endowment_type = endowment_type_val
+            
+            # Copy group-level fields from round 1
+            if round_1_group:
+                if round_1_group.treatment:
+                    current_group.treatment = round_1_group.treatment
+                if round_1_group.framing:
+                    current_group.framing = round_1_group.framing
+                if round_1_group.endowment_type:
+                    current_group.endowment_type = round_1_group.endowment_type
+                if round_1_group.gini_coefficient is not None:
+                    current_group.gini_coefficient = round_1_group.gini_coefficient
+                if round_1_group.group_size:
+                    current_group.group_size = round_1_group.group_size
                 else:
-                    # For homogeneous groups, Gini is always 0
-                    group.gini_coefficient = 0.0
+                    current_group.group_size = 6
+                if round_1_group.numParticipants:
+                    current_group.numParticipants = round_1_group.numParticipants
+            
+            # Copy cash endowment and good_preference from round 1
+            if round_1_player:
+                if 'cash_endowment' in round_1_player.participant.vars:
+                    player.participant.vars['cash_endowment'] = round_1_player.participant.vars['cash_endowment']
+                if round_1_player.field_maybe_none('good_preference'):
+                    good_pref = round_1_player.field_maybe_none('good_preference')
+                    player.good_preference = good_pref
+                    player.participant.vars['good_preference'] = good_pref
+                
+                # Initialize group and players for this round (only once per group)
+                if round_1_group and player.isParticipating == 1:
+                    # Check that this group has exactly 6 participating players
+                    participating_in_group = [p for p in current_group.get_players() if p.isParticipating == 1]
+                    if len(participating_in_group) == 6:
+                        group_init_key = f'_group_{current_group.id}_round_{subsession.round_number}_initialized'
+                        if not subsession.session.vars.get(group_init_key, False):
+                            if not current_group.field_maybe_none('randomisedTypes'):
+                                current_group.randomisedTypes = random_types(group=current_group)
+                                initiate_group(group=current_group)
+                            subsession.session.vars[group_init_key] = True
+                        
+                        if player.field_maybe_none('assetValue') is None:
+                            player.assetValue = current_group.assetValue
+                        set_player(player=player)
+                        initiate_player(player=player)
 
 # Page sequence with multiple comprehension check attempts (max 6 attempts)
 # The is_displayed logic ensures only relevant pages are shown
 page_sequence = [
-    Welcome, Privacy, EarlyEnd, TreatmentAssignment, Instructions,
+    Welcome, Privacy, EarlyEnd, Instructions,
     # Comprehension check loop (up to 6 attempts)
     # EarlyEnd appears after each ComprehensionFeedback to catch 6-time failures
     ComprehensionCheck, ComprehensionFeedback, ComprehensionPassed, EarlyEnd,
@@ -2611,7 +2814,11 @@ page_sequence = [
     ComprehensionCheck, ComprehensionFeedback, ComprehensionPassed, EarlyEnd,
     ComprehensionCheck, ComprehensionFeedback, ComprehensionPassed, EarlyEnd,
     ComprehensionCheck, ComprehensionFeedback, ComprehensionPassed, EarlyEnd,
-    # Continue with rest of experiment (only if passed)
-    RegroupForRound, EndOfTrialRounds, PreMarket, WaitingMarket, Market, 
+    # Form groups of 6 after comprehension check is passed (round 1 only)
+    FormTradingGroups, EarlyEnd,  # EarlyEnd for players who timeout or can't form groups
+    # TreatmentAssignment handles round > 1 group copying (right before trading starts)
+    TreatmentAssignment,
+    # Continue with rest of experiment (only if passed and in a group)
+    EndOfTrialRounds, PreMarket, WaitingMarket, Market, 
     ResultsWaitPage, Results, SurveyAttitudes, SurveyDemographics, FinalResults
 ]

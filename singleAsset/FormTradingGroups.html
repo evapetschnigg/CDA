@@ -1,0 +1,92 @@
+{{ block global_styles }}
+    <link rel="stylesheet" href="{{ static 'style.css' }}">
+{{ endblock }}
+
+{{ block global_scripts }}
+<script src="{{ static 'prevent_back.js' }}"></script>
+{{ endblock }}
+
+{{ block title }}
+Forming Groups
+{{ endblock }}
+
+{{ block content }}
+
+<style>
+/* Hide next button immediately with CSS - more reliable than JavaScript */
+.otree-btn-next {
+    display: none !important;
+    visibility: hidden !important;
+}
+
+/* Hide the page timeout timer in the top right */
+.otree-timer {
+    display: none !important;
+    visibility: hidden !important;
+}
+</style>
+
+{% if player_has_cash_endowment %}
+<p>Your group has been formed! You will be redirected to the next page shortly...</p>
+<script>
+    // Auto-advance when group is formed
+    setTimeout(function() {
+        document.querySelector('form').submit();
+    }, 1000);
+</script>
+
+{% elif timeout_reached and insufficient_players %}
+<p>Unfortunately, there were not enough participants online to form a group with you. The experiment will end here.</p>
+<script>
+    // Auto-advance to EarlyEnd
+    setTimeout(function() {
+        document.querySelector('form').submit();
+    }, 2000);
+</script>
+
+{% elif players_needed > 0 %}
+<p>Waiting for {{ players_needed }} more participant{% if players_needed > 1 %}s{% endif %} to join your group (need {{ group_size }} total)...</p>
+{% if time_remaining %}
+<p style="font-size: 0.9em; color: #666;">Time remaining: <span id="countdown">{{ time_remaining }}</span> seconds</p>
+{% endif %}
+<p style="font-size: 0.9em; color: #666; font-style: italic; margin-top: 10px;">Please wait for others to join and do not leave this page.</p>
+
+<script>
+    // Auto-refresh every 3 seconds to check for new players
+    var refreshInterval = setInterval(function() {
+        location.reload();
+    }, 3000);
+    
+    // Update countdown if time_remaining is shown
+    {% if time_remaining %}
+    var timeRemaining = {{ time_remaining }};
+    var countdownEl = document.getElementById('countdown');
+    if (countdownEl) {
+        var countdownInterval = setInterval(function() {
+            timeRemaining--;
+            if (timeRemaining >= 0) {
+                countdownEl.textContent = timeRemaining;
+            } else {
+                clearInterval(countdownInterval);
+            }
+        }, 1000);
+    }
+    {% endif %}
+    
+    // Stop refreshing if player gets cash_endowment (group formed)
+    var checkGroupFormed = setInterval(function() {
+        // This will be handled by page reload detecting player_has_cash_endowment
+    }, 1000);
+</script>
+
+{% else %}
+<p>Waiting for other participants to arrive...</p>
+<script>
+    // Auto-refresh every 3 seconds
+    setInterval(function() {
+        location.reload();
+    }, 3000);
+</script>
+{% endif %}
+
+{{ endblock }}
