@@ -10,9 +10,9 @@ doc = """Continuous double auction market"""
 class C(BaseConstants):
     NAME_IN_URL = 'sCDA'
   
-    PLAYERS_PER_GROUP = 2  # Production group size
+    PLAYERS_PER_GROUP = 6  # Production group size
     num_trial_rounds = 1
-    NUM_ROUNDS = 2  ## incl. trial periods
+    NUM_ROUNDS = 7  ## incl. trial periods
     base_payment = cu(2.50)  # Base payment for all participants who complete survey
     bonus_payment = cu(1.90)  # Additional payment for highest score increase winner
     FV_MIN = 30
@@ -290,7 +290,8 @@ class Player(BasePlayer):
     # are only in the preparation app, not here
     
     # Survey Demographics
-    age = models.IntegerField(choices=[(i, str(i)) for i in range(18, 101)], initial=0, label="")
+    # Note: No initial value - fields are required (blank=False by default)
+    age = models.IntegerField(choices=[(i, str(i)) for i in range(18, 101)], label="")
     gender = models.StringField(choices=[
         ('male', 'Male'),
         ('female', 'Female'),
@@ -331,7 +332,7 @@ class Player(BasePlayer):
         (21, '£5000 to under £7500'),
         (22, '£7500 and more'),
         (23, 'Prefer not to say')
-    ], initial=0, label="")
+    ], label="")
     employment = models.StringField(choices=[
         ('employed_full_time', 'Employed full-time'),
         ('employed_part_time', 'Employed part-time'),
@@ -343,41 +344,42 @@ class Player(BasePlayer):
         ('other', 'Other')
     ], widget=widgets.RadioSelect, label="")
     # Survey Attitudes
+    # Note: No initial values - fields are required (blank=False by default)
     pct_effectiveness = models.IntegerField(choices=[
         (1, 'Strongly disagree'),
         (2, 'Disagree'),
         (3, 'Neither agree nor disagree'),
         (4, 'Agree'),
         (5, 'Strongly agree')
-    ], widget=widgets.RadioSelect, initial=0, label="")
+    ], widget=widgets.RadioSelect, label="")
     pct_fairness = models.IntegerField(choices=[
         (1, 'Strongly disagree'),
         (2, 'Disagree'),
         (3, 'Neither agree nor disagree'),
         (4, 'Agree'),
         (5, 'Strongly agree')
-    ], widget=widgets.RadioSelect, initial=0, label="")
+    ], widget=widgets.RadioSelect, label="")
     pct_support = models.IntegerField(choices=[
         (1, 'Strongly oppose'),
         (2, 'Oppose'),
         (3, 'Neither support nor oppose'),
         (4, 'Support'),
         (5, 'Strongly support')
-    ], widget=widgets.RadioSelect, initial=0, label="")
+    ], widget=widgets.RadioSelect, label="")
     climate_concern = models.IntegerField(choices=[
         (1, 'Not at all concerned'),
         (2, 'Slightly concerned'),
         (3, 'Moderately concerned'),
         (4, 'Very concerned'),
         (5, 'Extremely concerned')
-    ], widget=widgets.RadioSelect, initial=0, label="")
+    ], widget=widgets.RadioSelect, label="")
     climate_responsibility = models.IntegerField(choices=[
         (1, 'Strongly disagree'),
         (2, 'Disagree'),
         (3, 'Neither agree nor disagree'),
         (4, 'Agree'),
         (5, 'Strongly agree')
-    ], widget=widgets.RadioSelect, initial=0, label="")
+    ], widget=widgets.RadioSelect, label="")
     
     # Trust question for destruction group only
     co2_certificate_trust = models.BooleanField(choices=[

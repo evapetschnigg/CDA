@@ -26,7 +26,7 @@ class C(BaseConstants):
         'destruction_heterogeneous'
     ]
     ACTIVE_TREATMENTS = [
-        'environmental_heterogeneous', 
+        'baseline_homogeneous', 
     ]  # Can be modified to test specific treatments
 
 
@@ -71,39 +71,40 @@ class Player(BasePlayer):
     endowment_type = models.StringField(initial="")
     
     # Comprehension check fields - using RadioSelect widget to show all options with radio buttons
+    # Note: blank=False (default) means all fields are required - users cannot proceed without answering
     comp_q1 = models.StringField(choices=[
         ('a', 'a. My Total Score increases from 0 to 35'),
         ('b', 'b. My Total Score increases from 50 to 85'),
         ('c', 'c. My Total Score increases from 50 to 65')
-    ], widget=widgets.RadioSelect, label="", blank=True)
+    ], widget=widgets.RadioSelect, label="")
     
     comp_q2 = models.StringField(choices=[
         ('a', 'a. My Total Score decreases from 40 to 30'),
         ('b', 'b. My Total Score decreases from 30 to 20'),
         ('c', 'c. My Total Score does not change')
-    ], widget=widgets.RadioSelect, label="", blank=True)
+    ], widget=widgets.RadioSelect, label="")
     
     comp_q3 = models.StringField(choices=[
         ('a', 'a. They directly affect the Total Score'),
         ('b', 'b. They do not directly affect the Total Score, but they can increase the money holdings when they are bought'),
         ('c', 'c. They do not directly affect the Total Score, but they can increase the money holdings when sold and can increase satisfaction points from goods when used to purchase goods')
-    ], widget=widgets.RadioSelect, label="", blank=True)
+    ], widget=widgets.RadioSelect, label="")
     
     comp_q4 = models.StringField(choices=[
         ('a', 'a. Correct'),
         ('b', 'b. Incorrect')
-    ], widget=widgets.RadioSelect, label="", blank=True)
+    ], widget=widgets.RadioSelect, label="")
     
     comp_q5 = models.StringField(choices=[
         ('a', 'a. I will receive the bonus of £1.90 if I have the highest Score Change in my group in any of the trading rounds'),  # Must match C.bonus_payment
         ('b', 'b. I will receive the base payout of £2.50 even if I do not complete the survey at the end'),  # Must match C.base_payment
         ('c', 'c. All participants who complete the full study receive £2.50, and the player with highest Score Change in her group in the randomly selected round gets an additional £1.90')  # Must match C.base_payment and C.bonus_payment
-    ], widget=widgets.RadioSelect, label="", blank=True)
+    ], widget=widgets.RadioSelect, label="")
     
     comp_q6 = models.StringField(choices=[
         ('a', 'a. Correct. For each unused carbon credit in the experiment, 1 kg CO₂ will be compensated through reforestation projects in Germany, helping to reduce real-world carbon emissions.'),
         ('b', 'b. Incorrect. Unused carbon credits in the experiment have no effect on real-world emissions')
-    ], widget=widgets.RadioSelect, label="", blank=True)  # Only for destruction framing
+    ], widget=widgets.RadioSelect, label="")  # Only for destruction framing
     comp_attempts = models.IntegerField(initial=0)
     comp_correct_count = models.IntegerField(initial=0)
     comp_passed = models.BooleanField(initial=False)
@@ -312,7 +313,9 @@ class ComprehensionCheck(Page):
         correct_count = 0
         total_questions = len(correct_answers)
         for field_name, correct_answer in correct_answers.items():
-            if getattr(player, field_name) == correct_answer:
+            # Use field_maybe_none() to safely handle None values
+            player_answer = player.field_maybe_none(field_name)
+            if player_answer == correct_answer:
                 correct_count += 1
         
         # Store results
@@ -418,7 +421,8 @@ class ComprehensionFeedback(Page):
         # Prepare data for template
         questions = []
         for field_name, data in questions_data.items():
-            user_answer = getattr(player, field_name, '')
+            # Use field_maybe_none() to safely handle None values (though fields are now required)
+            user_answer = player.field_maybe_none(field_name) or ''
             is_correct = user_answer == data['correct']
             
             questions.append({
