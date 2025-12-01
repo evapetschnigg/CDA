@@ -9,10 +9,10 @@ doc = """Continuous double auction market"""
 
 class C(BaseConstants):
     NAME_IN_URL = 'sCDA'
-    # TODO: TESTING - Change back to 6 after testing!
-    PLAYERS_PER_GROUP = 6  # Production group size
+  
+    PLAYERS_PER_GROUP = 2  # Production group size
     num_trial_rounds = 1
-    NUM_ROUNDS = 7  ## incl. trial periods
+    NUM_ROUNDS = 2  ## incl. trial periods
     base_payment = cu(2.50)  # Base payment for all participants who complete survey
     bonus_payment = cu(1.90)  # Additional payment for highest score increase winner
     FV_MIN = 30
@@ -1684,6 +1684,7 @@ class Market(Page):
             cashHolding=player.cashHolding,
             assetsHolding=player.assetsHolding,
             marketTime=group.marketTime,
+            framing=player.framing or '',
         )
 
     @staticmethod
