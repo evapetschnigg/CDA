@@ -13,8 +13,8 @@ class C(BaseConstants):
     PLAYERS_PER_GROUP = 6  # Production group size
     num_trial_rounds = 1
     NUM_ROUNDS = 7  ## incl. trial periods
-    base_payment = cu(1.81)  # Base payment for all participants who complete survey
-    bonus_payment = cu(1.81)  # Additional payment for highest score increase winner
+    base_payment = cu(2.50)  # Base payment for all participants who complete survey
+    bonus_payment = cu(1.90)  # Additional payment for highest score increase winner
     FV_MIN = 30
     FV_MAX = 85
     num_assets_MIN = 10
@@ -284,47 +284,10 @@ class Player(BasePlayer):
     goods_utility = models.FloatField(initial=0)
     overall_utility = models.FloatField(initial=0)
     utilityChangePercent = models.FloatField(initial=0) # utility change as percentage
-    consent = models.BooleanField(choices=((True, 'I consent'), (False, 'I do not consent')), initial=False)
     
-    # Comprehension check questions
-    comp_q1 = models.StringField(choices=[
-        ('a', 'a. My Total Score increases from 0 to 35'),
-        ('b', 'b. My Total Score increases from 50 to 85'),
-        ('c', 'c. My Total Score increases from 50 to 65')
-    ], widget=widgets.RadioSelect, label="")
-    
-    comp_q2 = models.StringField(choices=[
-        ('a', 'a. My Total Score decreases from 40 to 30'),
-        ('b', 'b. My Total Score decreases from 30 to 20'),
-        ('c', 'c. My Total Score does not change')
-    ], widget=widgets.RadioSelect, label="")
-    
-    comp_q3 = models.StringField(choices=[
-        ('a', 'a. They directly affect the Total Score'),
-        ('b', 'b. They do not directly affect the Total Score, but they can increase the money holdings when they are bought'),
-        ('c', 'c. They do not directly affect the Total Score, but they can increase the money holdings when sold and can increase satisfaction points from goods when used to purchase goods')
-    ], widget=widgets.RadioSelect, label="")
-    
-    comp_q4 = models.StringField(choices=[
-        ('a', 'a. Correct'),
-        ('b', 'b. Incorrect')
-    ], widget=widgets.RadioSelect, label="")
-    
-    comp_q5 = models.StringField(choices=[
-        ('a', 'a. I will receive the bonus of €1.81 if I have the highest Score Change in my group in any of the trading rounds'),
-        ('b', 'b. I will receive the base payout of €1.81 even if I do not complete the survey at the end'),
-        ('c', 'c. All participants who complete the full study receive €1.81, and the player with highest Score Change in her group in the randomly selected round gets an additional €1.81')
-    ], widget=widgets.RadioSelect, label="")
-    
-    comp_q6 = models.StringField(choices=[
-        ('a', 'a. Correct. For each unused carbon credit in the experiment, 1 kg of CO₂ will be compensated through reforestation projects in Germany, helping to reduce real-world carbon emissions.'),
-        ('b', 'b. Incorrect. Unused carbon credits in the experiment have no effect on real-world emissions')
-    ], widget=widgets.RadioSelect, label="", blank=True)
-    
-    # Comprehension check performance tracking
-    comp_correct_count = models.IntegerField(initial=0)  # Number of correct answers (0-5 or 0-6 for destruction group)
-    comp_passed = models.BooleanField(initial=False)     # True if all questions correct
-    comp_attempts = models.IntegerField(initial=0)       # Number of attempts needed to pass comprehension check
+    # Note: Comprehension check fields (comp_q1-6, comp_attempts, comp_correct_count, comp_passed)
+    # and consent field are only in the preparation app, not here 
+    # are only in the preparation app, not here
     
     # Survey Demographics
     age = models.IntegerField(choices=[(i, str(i)) for i in range(18, 101)], initial=0, label="")
@@ -345,28 +308,28 @@ class Player(BasePlayer):
         ('other', 'Other degree')
     ], widget=widgets.RadioSelect, label="")
     income = models.IntegerField(choices=[
-        (1, 'Under 200 €'),
-        (2, '200 € to under 300 €'),
-        (3, '300 € to under 400 €'),
-        (4, '400 € to under 500 €'),
-        (5, '500 € to under 625 €'),
-        (6, '625 € to under 750 €'),
-        (7, '750 € to under 875 €'),
-        (8, '875 € to under 1000 €'),
-        (9, '1000 € to under 1125 €'),
-        (10, '1125 € to under 1250 €'),
-        (11, '1250 € to under 1375 €'),
-        (12, '1375 € to under 1500 €'),
-        (13, '1500 € to under 1750 €'),
-        (14, '1750 € to under 2000 €'),
-        (15, '2000 € to under 2250 €'),
-        (16, '2250 € to under 2500 €'),
-        (17, '2500 € to under 2750 €'),
-        (18, '2750 € to under 3000 €'),
-        (19, '3000 € to under 4000 €'),
-        (20, '4000 € to under 5000 €'),
-        (21, '5000 € to under 7500 €'),
-        (22, '7500 € and more'),
+        (1, 'Under £200'),
+        (2, '£200 to under £300'),
+        (3, '£300 to under £400'),
+        (4, '£400 to under £500'),
+        (5, '£500 to under £625'),
+        (6, '£625 to under £750'),
+        (7, '£750 to under £875'),
+        (8, '£875 to under £1000'),
+        (9, '£1000 to under £1125'),
+        (10, '£1125 to under £1250'),
+        (11, '£1250 to under £1375'),
+        (12, '£1375 to under £1500'),
+        (13, '£1500 to under £1750'),
+        (14, '£1750 to under £2000'),
+        (15, '£2000 to under £2250'),
+        (16, '£2250 to under £2500'),
+        (17, '£2500 to under £2750'),
+        (18, '£2750 to under £3000'),
+        (19, '£3000 to under £4000'),
+        (20, '£4000 to under £5000'),
+        (21, '£5000 to under £7500'),
+        (22, '£7500 and more'),
         (23, 'Prefer not to say')
     ], initial=0, label="")
     employment = models.StringField(choices=[
@@ -827,7 +790,7 @@ def calc_period_profits(player: Player):
 def calc_final_profit(group: Group):
     # this code is run at the final results wait page after all players arrive.
     # this function randomly selects a round and determines the winner within the group.
-    # All participating players get base payment (€1.81), winner gets bonus (€1.81).
+    # All participating players get base payment (£2.50), winner gets bonus (£1.90).
     
     # Get all participating players in the group
     participating_players = [p for p in group.get_players() if p.isParticipating == 1]
@@ -1883,11 +1846,14 @@ class FinalResults(Page):
         # Get all players in the same group (for comparing Score Changes)
         group_players = [p for p in player.group.get_players() if p.isParticipating == 1]
         
-        # Check if player was tied for highest but not randomly selected as winner
+        # Get player's score change and max score change in the selected round
+        player_score_change = None
+        max_score_change = None
         was_tied_but_not_selected = False
+        
         if selected_round_index < len(trading_rounds):
             selected_round_player = trading_rounds[selected_round_index]
-            player_score = selected_round_player.utilityChangePercent
+            player_score_change = selected_round_player.utilityChangePercent
             
             # Get all group members' scores for the selected round
             all_scores = []
@@ -1898,9 +1864,9 @@ class FinalResults(Page):
                         break
             
             if all_scores:
-                max_score = max(all_scores)
+                max_score_change = max(all_scores)
                 # Player had max score but wasn't selected as winner (tied and lost random draw)
-                if player_score == max_score and not player.isWinner:
+                if player_score_change == max_score_change and not player.isWinner:
                     was_tied_but_not_selected = True
         
         # Generate period data with Score Change % and carbon credit info for destruction group
@@ -1944,6 +1910,8 @@ class FinalResults(Page):
             payoff=cu(round(player.finalPayoff, 2)),
             isWinner=player.isWinner,
             was_tied_but_not_selected=was_tied_but_not_selected,
+            player_score_change=round(player_score_change, C.decimals) if player_score_change is not None else None,
+            max_score_change=round(max_score_change, C.decimals) if max_score_change is not None else None,
             periodPayoff=periodPayoff,
             is_destruction_group=player.framing == 'destruction',
             selected_round_carbon_impact=selected_round_carbon_impact,
