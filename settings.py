@@ -23,10 +23,10 @@ SESSION_CONFIGS = [
         #),
 
         dict(
-        name='singleAsset',
+        name='PCT',
         display_name='PCT',
-        app_sequence=['singleAsset'],
-        num_demo_participants=4,
+        app_sequence=['preparation', 'Trading'],  # Preparation app runs first, then Trading
+        num_demo_participants=6,
         market_time=80,
         randomise_types=True, # KeyError : 'roleID' shows up if this is set to False
         short_selling=False,

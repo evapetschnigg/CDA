@@ -1,0 +1,43 @@
+{{ block title }}
+{{ endblock }}
+
+{{ block content }}
+<style>
+/* Hide everything - make page completely invisible */
+body {
+    background: white;
+}
+.otree-timer {
+    display: none !important;
+    visibility: hidden !important;
+}
+.otree-btn-next {
+    display: none !important;
+    visibility: hidden !important;
+}
+/* Hide all text content */
+p, h1, h2, h3, h4, h5, h6 {
+    display: none !important;
+    visibility: hidden !important;
+}
+</style>
+
+<script>
+// Auto-submit immediately - page should flash as briefly as possible
+(function() {
+    var form = document.querySelector('form');
+    if (form) {
+        // Submit immediately without waiting
+        form.submit();
+    } else {
+        // If form not ready, wait for it
+        window.addEventListener('DOMContentLoaded', function() {
+            var form = document.querySelector('form');
+            if (form) {
+                form.submit();
+            }
+        });
+    }
+})();
+</script>
+{{ endblock }}

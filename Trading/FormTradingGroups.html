@@ -1,0 +1,67 @@
+{{ extends 'otree/WaitPage.html' }}
+
+{{ block title }}
+Please wait
+{{ endblock }}
+
+{{ block content }}
+
+<style>
+/* Hide next button - not needed for wait page */
+.otree-btn-next {
+    display: none !important;
+    visibility: hidden !important;
+}
+
+/* Hide the page timeout timer in the top right */
+.otree-timer {
+    display: none !important;
+    visibility: hidden !important;
+}
+</style>
+
+{% if player_has_cash_endowment %}
+<p>Your group has been formed! You will be redirected to the next page shortly...</p>
+<script>
+    // Auto-advance when group is formed
+    setTimeout(function() {
+        document.querySelector('form').submit();
+    }, 1000);
+</script>
+
+{% elif timeout_reached and insufficient_players %}
+<!-- This should not be shown - player should be redirected to EarlyEnd -->
+<!-- If this is shown, it means is_displayed didn't catch it - auto-advance immediately -->
+<script>
+    // Immediately submit to advance to EarlyEnd
+    (function() {
+        var form = document.querySelector('form');
+        if (form) {
+            form.submit();
+        }
+    })();
+</script>
+
+{% elif players_needed > 0 %}
+<p>Waiting for <strong>{{ players_needed }}</strong> more participant{% if players_needed > 1 %}s{% endif %} to join your group (need {{ group_size }} total)...</p>
+<p style="font-size: 0.9em; color: #666; font-style: italic; margin-top: 10px;">Please wait for others to join and do not leave this page.</p>
+
+<script>
+    // Auto-refresh every 3 seconds to check for new players
+    var refreshInterval = setInterval(function() {
+        location.reload();
+    }, 3000);
+</script>
+
+{% else %}
+<!-- Fallback - should rarely be shown, but ensure players_needed is always > 0 -->
+<p>Waiting for <strong>{{ group_size }}</strong> more participants to join your group...</p>
+<script>
+    // Auto-refresh every 3 seconds
+    setInterval(function() {
+        location.reload();
+    }, 3000);
+</script>
+{% endif %}
+
+{{ endblock }}

@@ -1,0 +1,34 @@
+{{ block global_styles }}
+    <link rel="stylesheet" href="{{ static 'style.css' }}">
+{{ endblock }}
+
+{{ block global_scripts }}
+<script src="{{ static 'prevent_back.js' }}"></script>
+{{ endblock }}
+
+{{ block title }}
+Thank you
+{{ endblock }}
+
+{{ block content }}
+
+{% if privacy_timeout %}
+<p>You did not respond in time on the privacy statement page. Since you did not provide consent, the experiment has ended. Thank you for your participation.</p>
+
+{% elif no_consent %}
+<p>You did not provide consent to participate in this experiment. The experiment has ended. Thank you for your participation.</p>
+
+{% elif timeout_inactive %}
+<p>You were inactive for too long during the comprehension check. Unfortunately, you cannot continue with this experiment. Thank you for your participation.</p>
+
+{% elif failed_comprehension %}
+<p>You were unable to answer all comprehension check questions correctly after 6 attempts. Unfortunately, you cannot continue with this experiment. Thank you for your participation.</p>
+
+{% elif insufficient_players %}
+<p>Unfortunately, there were not enough participants online that you could be put in a group with. Therefore the experiment ends here. Thank you for your participation.</p>
+
+{% else %}
+<p>Your response has been recorded. Thank you for your participation.</p>
+{% endif %}
+
+{{ endblock }}

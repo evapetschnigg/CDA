@@ -174,8 +174,8 @@ def count_participants(group: Group):
         try:
             players = group.get_players()
             for p in players:
-            if p.isParticipating == 1:
-                group.numParticipants += 1
+                if p.isParticipating == 1:
+                    group.numParticipants += 1
         except Exception as e:
             raise
     else:  # since player.isParticipating is not newly assign with a value by a click or a timeout, I take the value from the previous round
@@ -190,9 +190,9 @@ def initiate_group(group: Group):
     # this code is run at the first WaitToStart page when all participants arrived
     # this function starts substantial calculations on group level.
     try:
-    count_participants(group=group)
-    define_asset_value(group=group)
-    assign_types(group=group)
+        count_participants(group=group)
+        define_asset_value(group=group)
+        assign_types(group=group)
     except Exception as e:
         import traceback
         traceback.print_exc()
@@ -221,7 +221,6 @@ def persistent_timeout(player: 'Player', page_name: str, default_seconds: float)
         deadlines[key] = deadline
 
     remaining = deadline - now
-          f"deadline={deadline:.3f} now={now:.3f} remaining={remaining:.3f} stored_keys={list(deadlines.keys())}")
 
     if remaining < 0:
         return 0
@@ -439,7 +438,7 @@ def asset_endowment(player: Player):
         return int(base_endowment * C.supply_shock_intensity)
     else:
         # 100% of original endowment (no reduction)
-    return int(random.uniform(a=C.num_assets_MIN, b=C.num_assets_MAX))
+        return int(random.uniform(a=C.num_assets_MIN, b=C.num_assets_MAX))
 
 
 def short_allowed(player: Player):
@@ -1546,7 +1545,7 @@ class BidAsks(ExtraModel):
 
 # PAGES
 class EarlyEnd(Page):
-    """EarlyEnd for singleAsset app - only shows for FormTradingGroups timeout"""
+    """EarlyEnd for Trading app - only shows for FormTradingGroups timeout"""
     # No timeout - players can stay here and click link to return to Prolific
 
     @staticmethod
@@ -1642,8 +1641,8 @@ class PreMarket(Page):
                 formatted_values = [str(v) for v in other_players_cash_values[:-1]]
                 cash_values_display = ", ".join(formatted_values) + f", and {other_players_cash_values[-1]}"
             
-        return dict(
-            round=player.round_number - C.num_trial_rounds,
+            return dict(
+                round=player.round_number - C.num_trial_rounds,
                 is_heterogeneous=True,
                 has_other_players=has_other_players,
                 cash_values_display=cash_values_display,
@@ -1771,7 +1770,7 @@ class ResultsWaitPage(WaitPage):
             calc_period_profits(player=p)
         
         # Calculate final profit and determine winners at group level (only in final round)
-            if group.round_number == C.NUM_ROUNDS:
+        if group.round_number == C.NUM_ROUNDS:
             calc_final_profit(group=group)
 
 
@@ -2043,7 +2042,7 @@ class FormTradingGroups(WaitPage):
     Wait page that forms groups as players arrive using oTree's built-in group_by_arrival_time.
     Players who reach this page should all be eligible (failed players are on EarlyEnd).
     """
-    template_name = 'singleAsset/FormTradingGroups.html'
+    template_name = 'Trading/FormTradingGroups.html'
     group_by_arrival_time = True  # Works after a filtering app (preparation app filters out failures)
     
     @staticmethod
@@ -2177,7 +2176,11 @@ class FormTradingGroups(WaitPage):
                 for p in players:
                     p.participant.vars['waiting_for_group'] = False
             else:
+                # No treatment found for first player - this shouldn't happen
+                pass
         else:
+            # Group size mismatch - this shouldn't happen if group_by_arrival_time works correctly
+            pass
     
     @staticmethod
     def get_timeout_seconds(player: Player):
@@ -2489,7 +2492,7 @@ class TreatmentAssignment(Page):
                     initiate_player(player=player)
 
 # Page sequence - preparation pages (Welcome, Privacy, Instructions, Comprehension) are now in preparation app
-# FormTradingGroups is the first page in singleAsset app (after preparation app completes)
+# FormTradingGroups is the first page in Trading app (after preparation app completes)
 page_sequence = [
     # Form groups of 6 after comprehension check is passed (round 1 only)
     # Note: Players arrive here from preparation app with comp_passed=True and waiting_for_group=True
