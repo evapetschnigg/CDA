@@ -10,9 +10,9 @@ doc = """Continuous double auction market"""
 class C(BaseConstants):
     NAME_IN_URL = 'sCDA'
   
-    PLAYERS_PER_GROUP = 2  # Production group size
+    PLAYERS_PER_GROUP = 6  # Production group size
     num_trial_rounds = 1
-    NUM_ROUNDS = 2  ## incl. trial periods
+    NUM_ROUNDS = 7  ## incl. trial periods
     base_payment = cu(2.50)  # Base payment for all participants who complete survey
     bonus_payment = cu(1.90)  # Additional payment for highest score increase winner
     FV_MIN = 30
@@ -1834,6 +1834,9 @@ class FinalResults(Page):
 
     @staticmethod
     def vars_for_template(player: Player):
+        # Mark participant as finished when they reach FinalResults page
+        # Set this in vars_for_template since before_next_page isn't called on the last page
+        player.participant.finished = True
         # Get trading rounds for selected round lookup
         trading_rounds = [p for p in player.in_all_rounds() if p.round_number > C.num_trial_rounds]
         selected_round_index = player.selectedRound - 1  # Convert to 0-based index
