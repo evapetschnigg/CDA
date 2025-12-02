@@ -1,26 +1,8 @@
 from os import environ
 
 SESSION_CONFIGS = [
-    #dict(
-        #name='sPartitions',
-        #display_name='single asset: Aggregation mechanisms for crowd predictions on partitions',
-        #app_sequence=['singleAssetInfo'],
-        #num_demo_participants=4,
-        #market_time=300,
-        #randomise_types=True,
-        #short_selling=True,
-        #margin_buying=True,
-        #),
-    #dict(
-        #name='nPartitions',
-        #display_name='n assets: Aggregation mechanisms for crowd predictions with multiple assets on partitions',
-        #app_sequence=['nAssetsInfo'],
-        #num_demo_participants=4,
-        #market_time=210,
-        #randomise_types=True,
-        #short_selling=True,
-        #margin_buying=True,
-        #),
+
+
 
         dict(
         name='PCT',
@@ -33,16 +15,7 @@ SESSION_CONFIGS = [
         margin_buying=False,
         ),
 
-    #dict(
-        #name='nAssets',
-        #display_name='n assets: Continuous double auction',
-        #app_sequence=['nAssets'],
-        #num_demo_participants=5,
-        #market_time=210,
-        #randomise_types=True,
-        #short_selling=True,
-        #margin_buying=True,
-        #),
+
 ]
 
 # if you set a property in SESSION_CONFIG_DEFAULTS, it will be inherited by all configs
@@ -54,7 +27,8 @@ SESSION_CONFIG_DEFAULTS = dict(
     real_world_currency_per_point=1.00, participation_fee=0.00, doc=""
 )
 
-PARTICIPANT_FIELDS = ['roleID', 'isObserver', 'isParticipating', 'informed', 'treatment', 'framing', 'endowment_type', 'good_preference', 'finished']
+PARTICIPANT_FIELDS = ['roleID', 'isObserver', 'isParticipating', 'treatment', 'framing', 'endowment_type', 'good_preference', 'finished']
+
 SESSION_FIELDS = ['numParticipants']
 
 # ISO-639 code
