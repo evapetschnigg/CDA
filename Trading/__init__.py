@@ -10,9 +10,9 @@ doc = """Continuous double auction market"""
 class C(BaseConstants):
     NAME_IN_URL = 'sCDA'
   
-    PLAYERS_PER_GROUP = 6  # Production group size
+    PLAYERS_PER_GROUP = 2  # Production group size
     num_trial_rounds = 1
-    NUM_ROUNDS = 7  ## incl. trial periods
+    NUM_ROUNDS = 2  ## incl. trial periods
     base_payment = cu(2.50)  # Base payment for all participants who complete survey
     bonus_payment = cu(1.90)  # Additional payment for highest score increase winner
     FV_MIN = 30
@@ -813,8 +813,9 @@ def calc_final_profit(group: Group):
         return
     
     # Randomly select a round (same for all players in the group)
-    selected_round_index = random.randint(0, len(trading_rounds) - 1)
-    selected_round_number = trading_rounds[selected_round_index].round_number
+    # Use random.choice() for more reliable random selection
+    selected_round_player = random.choice(trading_rounds)
+    selected_round_number = selected_round_player.round_number
     
     # Store selected round for all players
     for p in participating_players:
@@ -854,12 +855,14 @@ def calc_final_profit(group: Group):
     for p, score_change in player_scores:
         # Everyone gets base payment
         p.finalPayoff = C.base_payment
+        p.payoff = C.base_payment  # Also set oTree's standard payoff field for admin/payments display
         p.isWinner = False
         
         # Only the selected winner gets bonus
         if p == winner:
             p.isWinner = True
             p.finalPayoff = C.base_payment + C.bonus_payment
+            p.payoff = C.base_payment + C.bonus_payment  # Also set oTree's standard payoff field
 
 
 def custom_export(players):
@@ -1664,6 +1667,9 @@ class WaitingMarket(WaitPage):
         # Only called when all participating players (group 1) have arrived
         group.marketStartTime = round(float(time.time()), C.decimals)
         group.marketTime = get_max_time(group=group)
+        # Initialize best bid/ask fields at start of each round (needed for BidAsks data export)
+        group.bestBid = None
+        group.bestAsk = None
 
 
 class Market(Page):
