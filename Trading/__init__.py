@@ -22,7 +22,7 @@ class C(BaseConstants):
     cash_MIN_heterogeneous = 5
     cash_homogeneous = 25  # Fixed cash endowment for homogeneous groups
     decimals = 2
-    marketTime = 210  # needed to initialize variables but exchanged by session_config
+    marketTime = 80  # needed to initialize variables but exchanged by session_config
     supply_shock_intensity = 1  # 0.8 = 20% reduction, 1.0 = no shock, 0.5 = 50% reduction
     
     # Carbon credit destruction constants
@@ -90,14 +90,12 @@ def vars_for_admin_report(subsession):
 class Group(BaseGroup):
     marketTime = models.FloatField(initial=C.marketTime)
     marketStartTime = models.FloatField()
-    marketEndTime = models.FloatField()
     randomisedTypes = models.BooleanField()
     numAssets = models.IntegerField(initial=0)
     numParticipants = models.IntegerField(initial=0)
     numActiveParticipants = models.IntegerField(initial=0)
     assetNames = models.LongStringField()
     aggAssetsValue = models.FloatField()
-    assetValue = models.FloatField()
     # Treatment fields
     treatment = models.StringField(initial="")
     framing = models.StringField(initial="")  # 'baseline', 'environmental', 'destruction'
@@ -158,13 +156,6 @@ def assign_types(group: Group):
             p.roleID = p.participant.vars['roleID']
 
 
-def define_asset_value(group: Group):
-    # this code is run at the first WaitToStart page, within the initiate_group() function, when all participants arrived
-    # this function determines the BBV and shares the information to the players table.
-    asset_value = round(random.uniform(a=C.FV_MIN, b=C.FV_MAX), C.decimals)
-    group.assetValue = asset_value
-
-
 def count_participants(group: Group):
     # this code is run at the first WaitToStart page, within the initiate_group() function, when all participants arrived
     # this function determines the number of actual participants.
@@ -191,7 +182,6 @@ def initiate_group(group: Group):
     # this function starts substantial calculations on group level.
     try:
         count_participants(group=group)
-        define_asset_value(group=group)
         assign_types(group=group)
     except Exception as e:
         import traceback
@@ -233,13 +223,10 @@ class Player(BasePlayer):
     roleID = models.StringField()
     allowShort = models.BooleanField(initial=True)
     allowLong = models.BooleanField(initial=True)
-    assetValue = models.FloatField()
     initialCash = models.FloatField(initial=0, decimal=C.decimals)
     initialAssets = models.IntegerField(initial=0)
-    initialEndowment = models.FloatField(initial=0, decimal=C.decimals)
     cashHolding = models.FloatField(initial=0, decimal=C.decimals)
     assetsHolding = models.IntegerField(initial=0)
-    endEndowment = models.FloatField(initial=0, decimal=C.decimals)
     # Treatment fields
     treatment = models.StringField(initial="")
     framing = models.StringField(initial="")
@@ -272,15 +259,11 @@ class Player(BasePlayer):
     cancelledVolume = models.IntegerField(initial=0, min=0)
     cashOffered = models.FloatField(initial=0, min=0, decimal=C.decimals)
     assetsOffered = models.IntegerField(initial=0, min=0)
-    tradingProfit = models.FloatField(initial=0) # this does not make too much sense with the utility from goods anymore --> change to abosolute utility change
-    wealthChange = models.FloatField(initial=0) # change this to relative utility change 
     finalPayoff = models.CurrencyField(initial=0)
     selectedRound = models.IntegerField(initial=1)
     isWinner = models.BooleanField(initial=False)  # True if player won the bonus (highest Score Change in selected round)
     goodA_qty = models.IntegerField(initial=0)
     goodB_qty = models.IntegerField(initial=0)
-    goodA_utility_table = models.StringField()
-    goodB_utility_table = models.StringField()
     goods_utility = models.FloatField(initial=0)
     overall_utility = models.FloatField(initial=0)
     utilityChangePercent = models.FloatField(initial=0) # utility change as percentage
@@ -616,10 +599,6 @@ def initiate_player(player: Player):
         player.capShort = asset_short_limit(player=player)
         player.goodA_qty = 0
         player.goodB_qty = 0
-        # Utility tables no longer used - we use constant marginal utility based on preference
-        # Keep fields empty to avoid issues, but they're not used
-        player.goodA_utility_table = ''
-        player.goodB_utility_table = ''
         player.goods_utility = calculate_goods_utility(player)
         player.overall_utility = player.goods_utility + player.cashHolding
 
@@ -1103,7 +1082,6 @@ def cancel_limit(player: Player, data):
     # we need to update Limit table entry
     offers = [o for o in Limit.filter(group=group) if o.offerID == offer_id]
     if not offers or len(offers) != 1:
-        print('Error: too few or too many buy/sell offers found while withdrawing.')
         return
     offers[0].isActive = False
     is_bid = offers[0].isBid
@@ -1112,8 +1090,6 @@ def cancel_limit(player: Player, data):
     price = offers[0].price
     transacted_volume = offers[0].transactedVolume
     offer_time = offers[0].offerTime
-    if price != float(data['limitPrice']) or is_bid != bool(data['isBid'] == 1):
-        print('Odd request when player', maker_id, 'cancelled an order', data)
     order_id = player.subsession.orderID + 1
     player.subsession.orderID += 1
     while len(Order.filter(group=group, offerID=order_id)) > 0:  # to prevent duplicates in orderID
@@ -1232,8 +1208,9 @@ def transaction(player: Player, data):
         return
     limit_entry = Limit.filter(group=group, offerID=offer_id)
     if len(limit_entry) > 1:
-        print('Limit entry is not well-defined: multiple entries with the same ID')
-    limit_entry = limit_entry[0]
+        limit_entry = limit_entry[0]  # Use first entry if duplicates exist
+    else:
+        limit_entry = limit_entry[0]
     transaction_volume = int(data['transactionVolume'])
     is_bid = limit_entry.isBid
     price = float(limit_entry.price)
@@ -1250,8 +1227,6 @@ def transaction(player: Player, data):
             msgTime=round(float(time.time() - player.group.marketStartTime), C.decimals)
         )
         return
-    if price != float(data['transactionPrice']) or is_bid != bool(data['isBid'] == 1):
-        print('Odd request when player', maker_id, 'accepted an order', data, 'while in the order book we find', limit_entry)
     is_active = limit_entry.isActive
     if transaction_volume >= remaining_volume:
         transaction_volume = remaining_volume
@@ -1502,7 +1477,6 @@ class News(ExtraModel):
 class BidAsks(ExtraModel):
     group = models.Link(Group)
     Period = models.IntegerField()
-    assetValue = models.StringField()
     orderID = models.IntegerField()
     bestBid = models.FloatField()
     bestAsk = models.FloatField()
@@ -1545,7 +1519,6 @@ class EarlyEnd(Page):
 # Removed unused classes: Welcome, Privacy, Instructions, ComprehensionCheck, ComprehensionFeedback, ComprehensionPassed
 
 class EndOfTrialRounds(Page):
-    template_name = "_templates/endOfTrialRounds.html"
 
     @staticmethod
     def get_timeout_seconds(player: Player):
@@ -1825,7 +1798,6 @@ class SurveyAttitudes(Page):
 
 
 class FinalResults(Page):
-    template_name = "_templates/finalResults.html"
     # No timeout - players can stay here and read their results
 
     @staticmethod
@@ -1975,7 +1947,7 @@ def group_by_arrival_time_method(subsession: Subsession, waiting_players):
                 # Return None to prevent grouping (players will go to EarlyEnd)
                 return None
     
-    # Debug: Check each player's status
+    # Check each player's status
     for p in all_players:
         waiting_flag = p.participant.vars.get('waiting_for_group', False)
         comp_passed = p.participant.vars.get('comp_passed', False)
@@ -2146,9 +2118,7 @@ class FormTradingGroups(WaitPage):
                 
                 for p in players:
                     if p.isParticipating == 1:
-                        # assetValue is not used but set to prevent None errors
-                        if group.field_maybe_none('assetValue') is not None:
-                            p.assetValue = group.assetValue
+                        pass  # Player initialization handled elsewhere
                         set_player(player=p)
                         initiate_player(player=p)
                 
@@ -2455,10 +2425,6 @@ class TreatmentAssignment(Page):
                     player.allowLong = round_1_player.allowLong
                     player.capShort = round_1_player.capShort
                     player.capLong = round_1_player.capLong
-                    
-                    # assetValue is not used but set to prevent None errors
-                    if player.field_maybe_none('assetValue') is None and current_group.field_maybe_none('assetValue') is not None:
-                        player.assetValue = current_group.assetValue
                     
                     # Reset goods quantities and utility
                     player.goodA_qty = 0
