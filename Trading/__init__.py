@@ -55,7 +55,7 @@ class C(BaseConstants):
         'destruction_heterogeneous'
     ]
     ACTIVE_TREATMENTS = [
-        'baseline_homogeneous', 
+        'environmental_heterogeneous', 
     ]  # Can be modified to test specific treatments
 
 
@@ -93,9 +93,6 @@ class Group(BaseGroup):
     randomisedTypes = models.BooleanField()
     numAssets = models.IntegerField(initial=0)
     numParticipants = models.IntegerField(initial=0)
-    numActiveParticipants = models.IntegerField(initial=0)
-    assetNames = models.LongStringField()
-    aggAssetsValue = models.FloatField()
     # Treatment fields
     treatment = models.StringField(initial="")
     framing = models.StringField(initial="")  # 'baseline', 'environmental', 'destruction'

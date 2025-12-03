@@ -14,8 +14,6 @@ SESSION_CONFIGS = [
         short_selling=False,
         margin_buying=False,
         ),
-
-
 ]
 
 # if you set a property in SESSION_CONFIG_DEFAULTS, it will be inherited by all configs
@@ -40,8 +38,16 @@ REAL_WORLD_CURRENCY_CODE = 'GBP'
 USE_POINTS = False
 
 ADMIN_USERNAME = 'admin'
-# for security, best to set admin password in an environment variable
-SECRET_KEY = '776841529'
+# For security, set admin password via environment variable:
+# export OTREE_ADMIN_PASSWORD='your_secure_password_here'
+# Or set it directly below (less secure, but OK for testing)
+ADMIN_PASSWORD = environ.get('OTREE_ADMIN_PASSWORD', '')  # Empty = no password (OK for local testing)
+# For production, ALWAYS set OTREE_ADMIN_PASSWORD environment variable!
+
+# SECRET_KEY: Use environment variable for production, fallback for local testing
+# On Heroku: heroku config:set OTREE_SECRET_KEY='your_generated_key'
+# Generate with: python -c "import secrets; print(secrets.token_urlsafe(50))"
+SECRET_KEY = environ.get('OTREE_SECRET_KEY', '776841529')  # Change fallback for production!
 
 DEMO_PAGE_INTRO_HTML = """ """
 

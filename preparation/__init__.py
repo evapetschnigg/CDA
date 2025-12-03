@@ -141,6 +141,21 @@ class Privacy(Page):
         return player.round_number == 1
 
     @staticmethod
+    def vars_for_template(player: Player):
+        # Get treatment from constants (same for all players in session)
+        # Treatment is assigned in before_next_page, but we need it for template display
+        treatment_list = C.ACTIVE_TREATMENTS
+        if len(treatment_list) > 0:
+            treatment = treatment_list[0]
+            framing = treatment.split("_")[0] if "_" in treatment else treatment
+        else:
+            framing = 'baseline'  # Default fallback
+        
+        return dict(
+            framing=framing,
+        )
+
+    @staticmethod
     def before_next_page(player: Player, timeout_happened):
         if timeout_happened or not player.consent:
             # End the experiment for non-consenting participants
@@ -242,7 +257,10 @@ class ComprehensionCheck(Page):
     
     @staticmethod
     def get_timeout_seconds(player: Player):
-        return persistent_timeout(player, 'ComprehensionCheck', 240)
+        # Simple fixed timeout: participants always get 240 seconds on this page.
+        # We intentionally do NOT use persistent_timeout here, so each visit
+        # starts a fresh 240-second timer.
+        return 240
     
     @staticmethod
     def get_form_fields(player: Player):
@@ -339,7 +357,10 @@ class ComprehensionCheck(Page):
 class ComprehensionFeedback(Page):
     @staticmethod
     def get_timeout_seconds(player: Player):
-        return persistent_timeout(player, 'ComprehensionFeedback', 60)
+        # Simple fixed timeout: participants always get 60 seconds on this page.
+        # We intentionally do NOT use persistent_timeout here, so each visit
+        # starts a fresh 60-second timer.
+        return 60
     
     @staticmethod
     def is_displayed(player: Player):

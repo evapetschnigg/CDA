@@ -21,7 +21,11 @@ Privacy Statement & Informed Consent
     and business decisions change in markets.
 </p>
 <p>    
-    This study investigates trading behavior in an experimental asset market.
+    {% if framing == 'baseline' %}
+        This study investigates trading behavior in an <strong>experimental asset market</strong>.
+    {% else %}
+        This study investigates trading behavior in an <strong>experimental personal carbon market</strong>.
+    {% endif %}
 </p>
 <p>
     Participation in the study is voluntary. 
