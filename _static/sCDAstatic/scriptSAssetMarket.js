@@ -4,12 +4,35 @@
     let elTradesTable = $('#tradesTable')
     let elAssetsHolding = $('#assetsHolding')
 
+    let lastGoodsTrade = null;
+
+
+    function formatToTwoDecimals(value) {
+        if (value === undefined || value === null) {
+            return value;
+        }
+        const numeric = parseFloat(String(value).replace(/[^\d.-]/g, ''));
+        if (Number.isNaN(numeric)) {
+            return value;
+        }
+        return numeric.toFixed(2);
+    }
+
+    $(document).ready(function() {
+        const cashElement = $('#cashHolding');
+        const overallUtilityElement = $('#overall_utility');
+        cashElement.text(formatToTwoDecimals(cashElement.text()));
+        overallUtilityElement.text(formatToTwoDecimals(overallUtilityElement.text()));
+    });
+
 
     function liveRecv(data) {
+        
         // sanitise
         if (data === undefined) {
             return
         }
+        
         // javascript destructuring assignment
         let {bids, asks, trades, cashHolding, assetsHolding, highcharts_series, news} = data;
 
@@ -19,8 +42,23 @@
         // value describes the offerID and data-value the makerID
         elBidsTableBody.html(bids.map(e => `<tr id='offerID${e[2]}' value=${e[2]} data-value=${e[3]} data-custom="1"><td value=${e[1]}>${e[1]} for </td><td value=${e[0]}>${cu(e[0])}</td></tr>`).join(''))
         elAsksTableBody.html(asks.map(e => `<tr id='offerID${e[2]}' value=${e[2]} data-value=${e[3]} data-custom="0"><td value=${e[1]}>${e[1]} for </td><td value=${e[0]}>${cu(e[0])}</td></tr>`).join(''))
-        elTradesTable.html(trades.map(e => `<tr><td>${trade_desc(e[3])}&nbsp;</td><td> ${ e[1] } for&nbsp;</td><td> ${ cu(e[0]) } </td></tr>`).join(''))
-        elNewsTable.html(news.map(e => `<tr><td>${e[0]}</td></tr>`).join(''))
+        elTradesTable.html(trades.map(e => `<tr><td><span class="asset-icon"></span>${trade_desc(e[3])}&nbsp;</td><td> ${ e[1] } asset${e[1] === 1 ? '' : 's'} for&nbsp;</td><td> ${ cu(e[0]) } </td></tr>`).join(''))
+        // Display only the newest alert in Alerts box
+        if (news && news.length > 0) {
+            // Show only the most recent news message (first in the array)
+            let mostRecentNews = news[0];
+            elNewsTable.html(`<tr><td>${mostRecentNews[0]}</td></tr>`);
+        } else {
+            elNewsTable.html('<tr><td>No alerts</td></tr>');
+        }
+
+        // Add goods trade to trades table if present
+        if (data.goods_trade_good && data.goods_trade_qty) {
+            let tradeMessage = `You bought ${data.goods_trade_qty} unit${data.goods_trade_qty === 1 ? '' : 's'} of Good ${data.goods_trade_good}`;
+            let currentTrades = elTradesTable.html();
+            let newTradeRow = `<tr><td><span class="goods-icon"></span>${tradeMessage}</td><td></td><td></td></tr>`;
+            elTradesTable.html(newTradeRow + currentTrades);
+        }
 
         // Select others' Bids and Asks after this update
         $('#bidsTable tbody tr, #asksTable tbody tr').addClass('btn-outline-primary')
@@ -45,55 +83,91 @@
 
         // Updates width in Bids and Asks tables between columns
         updateTableWidth()
-
         redrawChart(highcharts_series)
+
+        // Goods market updates
+        if (data.goodA_qty !== undefined) {
+            $('#goodA_qty').text(data.goodA_qty);
+        }
+        if (data.goodB_qty !== undefined) {
+            $('#goodB_qty').text(data.goodB_qty);
+        }
+        if (data.goods_utility !== undefined) {
+            $('#goods_utility').text(data.goods_utility);
+        }
+        if (data.overall_utility !== undefined) {
+            $('#overall_utility').text(formatToTwoDecimals(data.overall_utility));
+        }
+        if (data.cashHolding !== undefined) {
+            $('#cashHolding').text(formatToTwoDecimals(data.cashHolding));
+        }
+        if (data.assetsHolding !== undefined) {
+            $('#assetsHolding').text(data.assetsHolding);
+        }
     }
 
+    //this part is for the goods market
+    function buyGood(good) {
+        // when the qty input fields are used, uncomment the following 2 lines and make qty=1 the comment
+        // let qty = good === 'A' ? $('#buyA_qty').val() : $('#buyB_qty').val();
+        //qty = parseInt(qty, 10);
 
-    // when a limit order is placed, they are first checked in the respective function and then send to the server where they are again checked
+        let qty = 1;
+        
+        // Store the trade info
+        lastGoodsTrade = { good: good, qty: qty };
+        
+        // Remove the frontend validation - let the backend handle all errors
+        liveSend({
+            operationType: 'buy_good',
+            good: good,
+            quantity: qty
+        });
+    }
+        
+    $('#buyA_btn').on('click', function() { buyGood('A'); });
+    $('#buyB_btn').on('click', function() { buyGood('B'); });
+
+    // asset market: when a limit order is placed, send to server for validation
     function sendOffer(is_bid) {
-        let errorField = (is_bid == 0) ? $('#errorAskOffer') : $('#errorBidOffer')
         let limitPrice = (is_bid == 0) ? $('#limitAskPrice').val() : $('#limitBidPrice').val()
         let limitVolume = (is_bid == 0) ? $('#limitAskVolume').val() : $('#limitBidVolume').val()
-        if (limitPrice == undefined || limitPrice <= 0 ) {
-            errorField.css("display", "inline-block")
-            return // If you care about misspecified orders in your data, you may uncomment the return, it will be pushed back by the server
+        
+        // Default to quantity 1 if volume is empty (since inputs are hidden)
+        if (!limitVolume || limitVolume === '') {
+            limitVolume = 1;
         }
-        if (! checkVolume(errorField, limitVolume)) {
-            return
-        }
+        
+        // Send to server - let backend handle all validation
         liveSend({'operationType': 'limit_order', 'isBid': is_bid, 'limitPrice': limitPrice, 'limitVolume': limitVolume})
     }
 
 
     function sendAcc(is_bid) {
-        let errorField = (is_bid == 0)? $('#errorAskMarket') : $('#errorBidMarket')
         let prevSelected = $('#offerID' + selID)
         let makerIDSelected = prevSelected.attr('data-value')
-        if (! checkSelection(errorField, is_bid, prevSelected)) {
-            return
+        
+        if (!prevSelected.length) {
+            return // No selection made
         }
-        if (makerIDSelected == my_id ) {
-            errorField.css("display", "inline-block")
-            return false // If you care about misspecified orders in your data, you may uncomment the return
-        }
+        
         let offerID = selID
         let transactionPrice = prevSelected.children('td').eq(1).attr('value')
-        let BestPrice = prevSelected.parents('tbody').children('tr').eq(0).children('td').eq(1).attr('value') // selects the first row entry's price
-        if (transactionPrice != BestPrice) { // checks whether the best available offer is requested
-            errorField.css("display", "inline-block")
-            return
-        }
         let transactionVolume = (is_bid == 0)? $('#transactionAskVolume').val() : $('#transactionBidVolume').val()
-        if (! checkVolume(errorField, transactionVolume)){
-            return
+        
+        // Default to quantity 1 if volume is empty (since inputs are hidden)
+        if (!transactionVolume || transactionVolume === '') {
+            transactionVolume = 1;
         }
-        res = [ offerID, transactionPrice, transactionVolume ]
-        if (res === undefined) {
-            errorField.css("display", "inline-block")
-            return
-        }
+        
+        // Send to server - let backend handle all validation
         liveSend({'operationType': 'market_order', 'offerID': offerID, 'isBid': is_bid, 'transactionPrice': transactionPrice, 'transactionVolume': transactionVolume})
         $('#bidsTable tbody tr, #asksTable tbody tr').removeClass('btn-primary btn-outline-primary btn-danger btn-outline-danger')
+    }
 
+    function addGoodsTrade(good, qty, price) {
+        let tradeMessage = `You bought ${qty} units of Good ${good}`;
+        let currentTrades = elTradesTable.html();
+        let newTradeRow = `<tr><td>${tradeMessage}</td><td></td><td></td></tr>`;
+        elTradesTable.html(newTradeRow + currentTrades);
     }

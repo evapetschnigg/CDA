@@ -1,0 +1,19 @@
+{{ block global_styles }}
+    <link rel="stylesheet" href="{{ static 'style.css' }}">
+{{ endblock }}
+
+{{ block global_scripts }}
+<script src="{{ static 'prevent_back.js' }}"></script>
+{{ endblock }}
+
+{{ block content }}
+
+The trial round is completed.
+Now, the payoff-relevant trading rounds begin.
+
+<br><br>
+
+{{ next_button }}
+
+{{ endblock }}
+

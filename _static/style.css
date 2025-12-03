@@ -56,3 +56,40 @@
     color: red;
     margin-bottom: 30px;
 }
+
+/* Ensure left alignment for Market Activity and Alerts boxes */
+#tradesTable, #newsTable {
+    text-align: left;
+}
+
+#tradesTable td, #newsTable td {
+    text-align: left;
+}
+
+.trades_container, .news_container {
+    text-align: left;
+}
+
+/* Remove extra bottom margin for Alerts box table */
+#newsTable {
+    margin-bottom: 0 !important;
+}
+
+/* Global timer styling - same as Market page */
+.otree-timer {
+    position: fixed !important;
+    top: 20px !important;
+    right: 20px !important;
+    background-color: #f8f9fa !important;
+    border: 1px solid #dee2e6 !important;
+    border-radius: 5px !important;
+    padding: 8px 12px !important;
+    font-size: 0.9rem !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+    z-index: 1000 !important;
+    min-width: 180px !important;
+    text-align: center !important;
+    margin: 0 !important;
+    white-space: nowrap !important;
+}
+

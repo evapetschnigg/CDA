@@ -1,0 +1,372 @@
+
+{{ block global_scripts }}
+        <script src="{{ static 'prevent_back.js' }}"></script>
+        <script src="{{ static 'script.js' }}"></script>
+        <script src="{{ static 'scriptMarket.js' }}"></script>
+        <script src="{{ static 'sCDAstatic/scriptSAssetMarket.js' }}"></script>
+        <script src="{{ static 'highcharts/highcharts.js' }}"></script>
+        <script src="{{ static 'highcharts/highcharts_accessibility.js' }}"></script>
+        <script src="{{ static 'chart.js' }}"></script>
+        <script>
+            $(document).ready(function() {
+                // Set all volume fields to 1 and ensure they're hidden
+                $('#limitBidVolume, #limitAskVolume, #transactionBidVolume, #transactionAskVolume')
+                    .val(1)
+                    .hide();
+                
+                // Set goods quantity fields to 1 and hide them
+                $('#buyA_qty, #buyB_qty')
+                    .val(1)
+                    .hide();
+            });
+        </script>
+{{ endblock }}
+
+{{ block global_styles }}
+        <link rel="stylesheet" href="{{ static 'style.css' }}">
+        <style>
+            /* Hide volume input fields */
+            #limitBidVolume, #limitAskVolume, #transactionBidVolume, #transactionAskVolume {
+                display: none !important;
+            }
+            
+            /* Hide goods quantity input fields */
+            #buyA_qty, #buyB_qty {
+                display: none !important;
+            }
+            
+            /* Hide volume labels */
+            table tr th:contains("Volume"), 
+            table tr th:contains("volume") {
+                display: none !important;
+            }
+            
+            /* Hide the entire volume row in tables */
+            table tr:has(th:contains("Volume")),
+            table tr:has(th:contains("volume")) {
+                display: none !important;
+            }
+            
+
+        </style>
+{{ endblock }}
+
+{{ block title }}
+Market Place
+{{ endblock }}
+
+{{ block content }}
+
+
+
+<style>
+/* Larger fonts and more compact layout */
+h1 { font-size: 1.4rem; margin-bottom: 3px; }
+h3 { font-size: 1.3rem; margin-bottom: 4px; }
+h4 { font-size: 1.1rem; margin-bottom: 3px; }
+h5 { font-size: 1rem; margin-bottom: 2px; }
+p { font-size: 0.9rem; margin-bottom: 1px; }
+.div_box { padding: 4px; margin-bottom: 6px; }
+.table_box { font-size: 0.85rem; }
+.btn { font-size: 1rem; padding: 4px 10px; }
+input { font-size: 1rem; }
+
+
+/* Additional layout fixes */
+
+/* Bootstrap grid layout fixes */
+.row { display: flex !important; }
+.col-md-4 { flex: 0 0 33.333333% !important; max-width: 33.333333% !important; }
+.col-md-4:not(:last-child) { margin-right: 15px; }
+
+/* Override the problematic CSS from style.css */
+.div_box { text-align: left !important; height: auto; overflow: visible; }
+
+/* Standardize all button sizes */
+.btn {
+    width: 120px !important;
+    height: 36px !important;
+    font-size: 0.9rem !important;
+    padding: 6px 12px !important;
+    margin: 5px !important;
+}
+/* Fix for nested rows in asset market */
+.market_interface_container .row { display: block; }
+.market_interface_container .col-md-6 { display: inline-block; width: 48%; vertical-align: top; }
+.market_bid, .market_ask { display: inline-block; width: 48%; vertical-align: top; }
+/* Ensure all content is visible */
+.market_interface_container { display: block; }
+.market_interface_container .row { display: block; }
+.market_interface_container .col-md-6 { display: inline-block; width: 48%; }
+.market_bid, .market_ask { display: inline-block; width: 48%; }
+/* Ensure all market interface elements are visible */
+.market_interface_container, .market_interface_container * { visibility: visible !important; }
+
+/* Make Trade History more compact */
+.trades_container { margin-bottom: 8px; }
+.trades_container h4 { margin-bottom: 5px; }
+
+        /* Make Alerts section compact */
+.news_container { margin-bottom: 10px; }
+.news_container h4 { margin-bottom: 8px; }
+
+/* Make endowment info box more compact */
+#endowmentTable th, #endowmentTable td {
+    padding: 1px 4px !important;
+    font-size: 0.9rem !important;
+}
+
+/* Reduce spacing in main containers */
+.endowment-container { margin-bottom: 8px !important; }
+.endowment-div { padding: 4px !important; }
+
+/* Reduce spacing between market sections */
+.market_interface_container .div_box { 
+    padding: 3px !important; 
+    margin-bottom: 4px !important; 
+}
+
+/* Make goods market more compact */
+.goods-market-container .div_box { 
+    padding: 3px !important; 
+    margin-bottom: 4px !important; 
+}
+
+/* Add more space after Goods Market heading */
+h3 { margin-bottom: 24px !important; }
+
+/* Reduce spacing in main table layout */
+table[style*="border-spacing: 15px"] { 
+    border-spacing: 8px !important; 
+}
+
+/* Make market containers more compact */
+div[style*="background-color: #f8f9fa"] { 
+    padding: 10px !important; 
+}
+
+/* Reduce spacing between goods sections */
+hr { margin: 12px 0 !important; }
+
+/* Make buttons more compact */
+.btn { 
+    margin: 3px !important; 
+    padding: 4px 8px !important; 
+}
+
+/* Style the existing oTree timeout to be compact and in top right */
+.otree-timer {
+    position: fixed !important;
+    top: 20px !important;
+    right: 20px !important;
+    background-color: #f8f9fa !important;
+    border: 1px solid #dee2e6 !important;
+    border-radius: 5px !important;
+    padding: 8px 12px !important;
+    font-size: 0.9rem !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+    z-index: 1000 !important;
+    min-width: 120px !important;
+    text-align: center !important;
+    margin: 0 !important;
+}
+</style>
+<noscript>
+    <div id="jsError">ERROR: this page runs only with javascript enabled</div>
+</noscript>
+
+<div id="endowmentDiv" class="endowment-container row" style="margin-bottom: 12px">
+    <div class="endowment-div col-sm div_box" style="padding: 8px; flex: 0 0 60%; display: flex; align-items: center;">
+    <table id="endowmentTable">
+    <tr style="display: none;">
+        <th>Your role</th>
+        <td id="traderRole">
+            {{ if player.isObserver }} Inactive observer {{ else }} Trader {{ endif }}
+        </td>
+    </tr>
+        {{ if not player.isObserver }}
+    <tr>
+        <th>Money holding</th>
+        <td id="cashHolding">{{ player.cashHolding }}</td>
+    </tr>
+    <tr>
+        <th>{% if player.framing == 'environmental' or player.framing == 'destruction' %}Carbon credit{% else %}Asset{% endif %} holding</th>
+        <td id="assetsHolding">{{ player.assetsHolding }}</td>
+    </tr>
+    <tr> {{ if player.allowShort }}
+        <th>Your short selling limit</th>
+        <td id="capShort">
+            {{ player.capShort }}
+        </td>
+        {{ else }} {{ endif }}
+    </tr>
+
+    <tr> {{ if player.allowLong }}
+        <th>Your credit limit</th>
+        <td id="capLong">{{ player.capLong }}</td>
+        {{ else }} {{ endif }}
+    </tr>
+    <tr>
+        <th>Good A holding</th>
+        <td id="goodA_qty">{{ player.goodA_qty }}</td>
+    </tr>
+    <tr>
+        <th>Good B holding</th>
+        <td id="goodB_qty">{{ player.goodB_qty }}</td>
+    </tr>
+    <tr>
+        <th>Satisfaction points from goods</th>
+        <td id="goods_utility">{{ player.goods_utility }}</td>
+    </tr>
+        {{ else }} {{ endif }}
+    </table>
+    </div>
+    
+    <!-- Total Score - Highlighted Box -->
+    <div class="col-sm" style="flex: 1; margin-left: 10px;">
+        <div class="div_box" style="background-color: #e8f5e8; border: 2px solid #28a745; padding: 12px; text-align: center;">
+            <h3 style="margin-bottom: 8px; color: #155724; font-size: 1.1rem;">Total Score</h3>
+            <div id="overall_utility" style="font-size: 2rem; font-weight: bold; color: #155724;">{{ player.overall_utility }}</div>
+            <p style="margin-top: 4px; font-size: 0.8rem; color: #6c757d;">Money holding + Satisfaction points from goods</p>
+        </div>
+    </div>
+</div>
+
+<table style="width: 100%; margin-bottom: 12px; border-collapse: separate; border-spacing: 12px;">
+    <tr>
+        <!-- Goods Market (left, 1/3 width) -->
+        <td style="width: 33.33%; vertical-align: top;">
+            <div style="background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 5px; padding: 6px; margin-bottom: 0;">
+                <h3 style="margin-top: -5px; margin-bottom: 8px; color: #495057; text-align: center;">Goods Market</h3>
+                
+                <!-- Good A Section -->
+                <h4 style="margin-top: 12px; margin-bottom: 6px; text-align: center; border-bottom: 2px solid #6c757d; padding-bottom: 2px; background-color: #e9ecef; padding: 4px 8px; border-radius: 4px;">Good A</h4>
+                <div>
+                    <table style="width: 100%; font-size: 0.875rem;">
+                        <tr>
+                            <th style="text-align: left; font-weight: normal;">Money price</th>
+                            <td style="text-align: right; font-weight: normal;">{{ goodA_money_price }}</td>
+                        </tr>
+                        <tr>
+                            <th style="text-align: left; font-weight: normal;">{% if player.framing == 'environmental' or player.framing == 'destruction' %}Carbon price{% else %}Asset price{% endif %}</th>
+                            <td style="text-align: right; font-weight: normal;">{{ goodA_carbon_price }}</td>
+                        </tr>
+                        <tr>
+                            <th style="text-align: left; font-weight: normal;">Satisfaction points</th>
+                            <td style="text-align: right; font-weight: normal;">{{ goodA_marginal_utility }}</td>
+                        </tr>
+                    </table>
+                </div>
+                <div style="text-align: center;">
+                    <button type="button" id="buyA_btn" class="btn btn-success" style="margin-top: 3px; margin-bottom: 40px;">Buy Good A</button>
+                </div>
+                
+                <!-- Good B Section -->
+                <h4 style="margin-top: 44px; margin-bottom: 6px; text-align: center; border-bottom: 2px solid #6c757d; padding-bottom: 2px; background-color: #e9ecef; padding: 4px 8px; border-radius: 4px;">Good B</h4>
+                <div>
+                    <table style="width: 100%; font-size: 0.875rem;">
+                        <tr>
+                            <th style="text-align: left; font-weight: normal;">Money price</th>
+                            <td style="text-align: right; font-weight: normal;">{{ goodB_money_price }}</td>
+                        </tr>
+                        <tr>
+                            <th style="text-align: left; font-weight: normal;">{% if player.framing == 'environmental' or player.framing == 'destruction' %}Carbon price{% else %}Asset price{% endif %}</th>
+                            <td style="text-align: right; font-weight: normal;">{{ goodB_carbon_price }}</td>
+                        </tr>
+                        <tr>
+                            <th style="text-align: left; font-weight: normal;">Satisfaction points</th>
+                            <td style="text-align: right; font-weight: normal;">{{ goodB_marginal_utility }}</td>
+                        </tr>
+                    </table>
+                </div>
+                <div style="text-align: center;">
+                    <button type="button" id="buyB_btn" class="btn btn-success" style="margin-top: 3px;">Buy Good B</button>
+                </div>
+            </div>
+        </td>
+        <!-- Asset Market + Trade History Container (center + right, 2/3 width) -->
+        <td colspan="2" style="width: 66.66%; vertical-align: top;">
+            <div style="background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 5px; padding: 6px; margin-bottom: 0;">
+                <h3 style="margin-top: -5px; margin-bottom: 8px; color: #495057; text-align: center;">{% if player.framing == 'environmental' or player.framing == 'destruction' %}Carbon Market{% else %}Asset Market{% endif %}</h3>
+                <table style="width: 100%; border-collapse: separate; border-spacing: 6px;">
+                    <tr>
+                        <td style="width: 50%; vertical-align: top;">
+                            <div class="market_interface_container">
+                    <div class="row">
+                        <div class="col-12">
+                            <h4 style="margin-top: -2px; margin-bottom: 6px; text-align: center; border-bottom: 2px solid #6c757d; padding-bottom: 2px; background-color: #e9ecef; padding: 4px 8px; border-radius: 4px;">Make Offers</h4>
+                        </div>
+                        <div class="col-md-6">
+                            <p style="font-size: 0.875rem;">I offer to buy at this price (mu):</p>
+                            <input type="number" class="form-control small-numbers" inputmode="numeric" id="limitBidPrice" min="0" style="width: 120px; margin-bottom: 10px;">
+                            <input type="number" class="form-control small-numbers" inputmode="numeric" id="limitBidVolume" min="1" value="1" style="display: none;">
+
+                            <button type="button" onclick="sendOffer(is_bid=1)" id="bidOffer" class="otree-btn-next btn btn-secondary">Place bid</button>
+                        </div>
+                        <div class="col-md-6">
+                            <p style="font-size: 0.875rem;">I offer to sell at this price (mu):</p>
+                            <input type="number" class="form-control small-numbers" inputmode="numeric" id="limitAskPrice" min="0" style="width: 120px; margin-bottom: 10px;">
+                            <input type="number" class="form-control small-numbers" inputmode="numeric" id="limitAskVolume" min="1" value="1" style="display: none;">
+
+                            <button type="button" onclick="sendOffer(is_bid=0)" id="SendOffer" class="otree-btn-next btn btn-secondary">Place ask</button>
+                        </div>
+                    </div>
+                    
+                <div class="market_table row" style="margin-top: 20px;">
+                    <div class="col-12">
+                            <h4 style="margin-top: -2px; margin-bottom: 6px; text-align: center; border-bottom: 2px solid #6c757d; padding-bottom: 2px; background-color: #e9ecef; padding: 4px 8px; border-radius: 4px;">Current Offers</h4>
+                        <!--<p style="text-align: center">Please, select the offer you wish to accept</p>-->
+                    </div>
+                    <div class="market_bid col-sm">
+                        <h5 style="text-align: center; border-bottom: 1px solid #6c757d; padding-bottom: 2px; background-color: #f8f9fa; padding: 4px; border-radius: 2px; margin-bottom: 6px;">Bids</h5>
+                        <input type="number" class="form-control small-numbers" inputmode="numeric" id="transactionBidVolume" min="1" style="display: inline-block; width: 80px; margin-bottom: 10px;">
+                        <table id="bidsTable" class="table_box" style="font-size: 0.875rem;"><thead><tr><th style="font-weight: normal;">Volume</th><th style="font-weight: normal;">Price</th></tr></thead><tbody></tbody></table>
+                        <button type="button" onclick="sendAcc(is_bid=1)" id="bidAccept" class="otree-btn-next btn btn-primary">Sell</button>
+                        <button type="button" onclick="cancelLimit(is_bid=1)" id="cancelBidLimit" class="btn btn-outline-danger">Cancel</button>                      
+                    </div>
+                    <div class="market_ask col-sm">
+                        <h5 style="text-align: center; border-bottom: 1px solid #6c757d; padding-bottom: 2px; background-color: #f8f9fa; padding: 4px; border-radius: 2px; margin-bottom: 6px;">Asks</h5>
+                        <input type="number" class="form-control small-numbers" inputmode="numeric" id="transactionAskVolume" min="1" style="display: inline-block; width: 80px; margin-bottom: 10px;">
+                        <table id="asksTable" class="table_box" style="font-size: 0.875rem;"><thead><tr><th style="font-weight: normal;">Volume</th><th style="font-weight: normal;">Price</th></tr></thead><tbody></tbody></table>
+                        <button type="button" onclick="sendAcc(is_bid=0)" id="askAccept" class="otree-btn-next btn btn-primary">Buy</button>
+                        <button type="button" onclick="cancelLimit(is_bid=0)" id="cancelAskLimit" class="btn btn-outline-danger">Cancel</button>
+                    </div>
+                </div>
+                    </td>
+                    
+                    <!-- Trade History Graph (right side) -->
+                    <td style="width: 50%; vertical-align: top;">
+                        <div id="highchart" style="height: 300px; min-height: 300px;">
+                        </div>
+                    </td>
+                </tr>
+                </table>
+            </div>
+        </td>
+</tr>
+</table>
+
+
+<!-- Alerts box spanning full width at bottom -->
+<div class="row" style="margin-top: 10px;">
+    <div class="col-12">
+        <div class="news_container div_box alert-warning" style="padding: 4px; margin-bottom: 2px;">
+            <h4 style="margin-bottom: 2px;">Latest Alert</h4>
+            <table id="newsTable" class="table_box" style="margin-bottom: 0;">
+                <thead>
+                    <tr>
+                        <th>Latest Alert</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="otree-form-errors alert-info" id="newsBox" style="display: none; text-align: left; margin-top: 35px">
+    <p id="news" style="color: green"></p>
+    <button type="button" id="newsError" class="btn btn-outline-info">I understood</button>
+</div>
+
+{{ endblock }}

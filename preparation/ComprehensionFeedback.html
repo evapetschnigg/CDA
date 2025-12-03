@@ -1,0 +1,76 @@
+{{ block global_styles }}
+    <link rel="stylesheet" href="{{ static 'style.css' }}">
+{{ endblock }}
+
+{{ block global_scripts }}
+<script src="{{ static 'prevent_back.js' }}"></script>
+{{ endblock }}
+
+{{ block title }}
+Comprehension Check Results
+{{ endblock }}
+
+{{ block content }}
+
+<style>
+.question-correct {
+    background-color: #f0f8f0;
+}
+.question-incorrect {
+    background-color: #fff5f5;
+}
+.answer-correct {
+    color: green;
+}
+.answer-incorrect {
+    color: red;
+}
+</style>
+
+<!-- Feedback for incorrect answers -->
+<p>
+You answered <strong>{{ correct_count }}</strong> out of <strong>{{ total_questions }}</strong> questions correctly.<br>
+Please review your answers below. You will need to answer all questions correctly before you can proceed.
+</p>
+
+{% if attempts >= max_attempts %}
+<div style="padding: 15px; background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 5px; margin-bottom: 20px;">
+    <strong>Note:</strong> This is your final attempt. Please answer all questions correctly to proceed.
+</div>
+{% endif %}
+
+<div style="margin-bottom: 30px;">
+    
+    {% for question in questions %}
+    <div class="{% if question.is_correct %}question-correct{% else %}question-incorrect{% endif %}" style="margin-bottom: 25px; padding: 15px; border: 1px solid #ddd; border-radius: 5px;">
+        <h5 style="margin-bottom: 10px;">{{ question.question }}</h5>
+        
+        <div style="margin-bottom: 8px;">
+            <strong>Your answer:</strong> 
+            <span class="{% if question.is_correct %}answer-correct{% else %}answer-incorrect{% endif %}" style="font-weight: bold;">
+                {{ question.user_answer_text }}
+            </span>
+            {% if question.is_correct %}
+                <span class="answer-correct" style="margin-left: 10px;">✓ Correct</span>
+            {% else %}
+                <span class="answer-incorrect" style="margin-left: 10px;">✗ Incorrect</span>
+            {% endif %}
+        </div>
+        
+        {% if not question.is_correct %}
+        <div style="margin-bottom: 8px;">
+            <strong>Correct answer:</strong> 
+            <span class="answer-correct" style="font-weight: bold;">{{ question.correct_text }}</span>
+        </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+
+<div style="text-align: center; margin-top: 30px;">
+    <p>Click the next button to try the comprehension check again.</p>
+</div>
+
+{{ next_button }}
+
+{{ endblock }}

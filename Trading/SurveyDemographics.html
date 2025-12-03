@@ -1,0 +1,43 @@
+{{ block global_styles }}
+    <link rel="stylesheet" href="{{ static 'style.css' }}">
+{{ endblock }}
+
+{{ block global_scripts }}
+<script src="{{ static 'prevent_back.js' }}"></script>
+{{ endblock }}
+
+{{ block title }}
+Survey (2/2)
+{{ endblock }}
+
+{{ block content }}
+
+
+<div style="margin-bottom: 30px;">
+    <h4 style="margin-bottom: 0px;">1. How old are you?</h4>
+    <div style="margin-top: 0px;">{{ formfield 'age' }}</div>
+</div>
+
+<div style="margin-bottom: 30px;">
+    <h4 style="margin-bottom: 0px;">2. What is your gender?</h4>
+    <div style="margin-top: 0px;">{{ formfield 'gender' }}</div>
+</div>
+
+<div style="margin-bottom: 30px;">
+    <h4 style="margin-bottom: 0px;">3. What is the highest level of education you have completed?</h4>
+    <div style="margin-top: 0px;">{{ formfield 'education' }}</div>
+</div>
+
+<div style="margin-bottom: 30px;">
+    <h4 style="margin-bottom: 0px;">4. What is the total monthly net income of your household? This includes the combined income of all household members after taxes and social security contributions have been deducted.</h4>
+    <div style="margin-top: 0px;">{{ formfield 'income' }}</div>
+</div>
+
+<div style="margin-bottom: 30px;">
+    <h4 style="margin-bottom: 0px;">5. What is your current employment or activity status?</h4>
+    <div style="margin-top: 0px;">{{ formfield 'employment' }}</div>
+</div>
+
+{{ next_button }}
+
+{{ endblock }}

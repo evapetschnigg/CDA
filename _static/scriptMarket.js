@@ -97,20 +97,19 @@
     }
 
 
-    // Sends the command to withdraw an own order after some basic checks. These checks are repeated on the server but you may want to limit the amount of misspecified requests.
+    // Sends the command to withdraw an order - let backend handle all validation
     function cancelLimit(is_bid) {
-        let errorField = (is_bid == 0)? $('#errorAskCancel') : $('#errorBidCancel')
         let prevSelected = $('#offerID' + selID)
         let makerIDSelected = prevSelected.attr('data-value')
-        if (! checkSelection(errorField, is_bid, prevSelected)) {
-            return
+        
+        if (!prevSelected.length) {
+            return // No selection made
         }
-        if (makerIDSelected != my_id ) {  // checks whether the participant selected an own order to withdraw
-            errorField.css("display", "inline-block")
-            return false // If you care about misspecified orders in your data, you may uncomment the return
-        }
+        
         let offerID = selID
         let limitPrice = prevSelected.children('td').eq(1).attr('value')
+        
+        // Send to server - let backend handle all validation
         liveSend({'operationType': 'cancel_limit', 'offerID': offerID, 'makerID': makerIDSelected, 'limitPrice': limitPrice, 'isBid': is_bid})
     }
 

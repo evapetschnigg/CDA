@@ -1,0 +1,38 @@
+{{ block title }}
+    Thank you
+{{ endblock }}
+
+{{ block global_styles }}
+        <link rel="stylesheet" href="{{ static 'styleResults.css' }}">
+{{ endblock }}
+
+{{ block global_scripts }}
+<script src="{{ static 'prevent_back.js' }}"></script>
+{{ endblock }}
+
+{{ block content }}
+
+    <p>You have completed the study. Thank you for your participation!</p>
+
+    <div style="background-color: #e8f4f8; border: 2px solid #4a90a4; border-radius: 8px; padding: 15px 20px; margin: 20px 0;">
+        {% if isWinner %}
+            <p style="margin: 0; font-size: 16px;">Trading round nr. {{ player.selectedRound }} was randomly selected. With <strong style="font-size: 18px; color: #2c5f6f;">{{ player_score_change }}%</strong> you had the highest Score Change in your group in this round, so you receive the base payment of <strong style="font-size: 18px; color: #2c5f6f;">£2.50</strong> plus a bonus of <strong style="font-size: 18px; color: #2c5f6f;">£1.90</strong>, for a total of <strong style="font-size: 18px; color: #2c5f6f;">{{ payoff }}</strong>.<br><br>{% if selected_round_carbon_impact %} You left {{ selected_round_carbon_impact.unused_credits }} carbon credits unused in this round, resulting in <strong style="font-size: 18px; color: #2c5f6f;">{{ selected_round_carbon_impact.co2_retired }} kg of CO₂</strong> being removed from the atmosphere through CO₂ compensation certificates purchased from ForTomorrow — roughly equivalent to avoiding the emissions from {{ selected_round_carbon_impact.km_saved }} km of car driving.{% endif %}</p>
+        {% elif was_tied_but_not_selected %}
+            <p style="margin: 0; font-size: 16px;">Trading round nr. {{ player.selectedRound }} was randomly selected. With <strong style="font-size: 18px; color: #2c5f6f;">{{ player_score_change }}%</strong> you achieved one of the highest Score Changes in your group in this round, but another participant with the same Score Change was randomly selected to receive the bonus. You receive the base payment of <strong style="font-size: 18px; color: #2c5f6f;">£2.50</strong>.<br><br>{% if selected_round_carbon_impact %} You left {{ selected_round_carbon_impact.unused_credits }} carbon credits unused in this round, resulting in <strong style="font-size: 18px; color: #2c5f6f;">{{ selected_round_carbon_impact.co2_retired }} kg of CO₂</strong> being removed from the atmosphere through CO₂ compensation certificates purchased from ForTomorrow — roughly equivalent to avoiding the emissions from {{ selected_round_carbon_impact.km_saved }} km of car driving.{% endif %}</p>
+        {% else %}
+            <p style="margin: 0; font-size: 16px;">Trading round nr. {{ player.selectedRound }} was randomly selected. You achieved a Score Change of <strong style="font-size: 18px; color: #2c5f6f;">{{ player_score_change }}%</strong>, but another participant in your group achieved a higher Score Change of <strong style="font-size: 18px; color: #2c5f6f;">{{ max_score_change }}%</strong>, so you receive the base payment of <strong style="font-size: 18px; color: #2c5f6f;">£2.50</strong>.<br><br>{% if selected_round_carbon_impact %} You left {{ selected_round_carbon_impact.unused_credits }} carbon credits unused in this round, resulting in <strong style="font-size: 18px; color: #2c5f6f;">{{ selected_round_carbon_impact.co2_retired }} kg of CO₂</strong> being removed from the atmosphere through CO₂ compensation certificates purchased from ForTomorrow — roughly equivalent to avoiding the emissions from {{ selected_round_carbon_impact.km_saved }} km of car driving.{% endif %}</p>
+        {% endif %}
+    </div>
+
+
+<br>
+
+
+<p>You can now go back to Prolific by clicking here.</p>
+<p>If you have any questions about this study, please contact the experimenter at <a href="mailto:eva-maria.petschnigg@tum.de">eva-maria.petschnigg@tum.de</a>.</p>
+
+
+
+{{ endblock }}
+
+

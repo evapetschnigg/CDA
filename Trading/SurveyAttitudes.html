@@ -1,0 +1,84 @@
+{{ block global_styles }}
+    <link rel="stylesheet" href="{{ static 'style.css' }}">
+{{ endblock }}
+
+{{ block global_scripts }}
+<script src="{{ static 'prevent_back.js' }}"></script>
+{{ endblock }}
+
+{{ block title }}
+Survey (1/2)
+{{ endblock }}
+
+{{ block content }}
+
+<p>Please read the following text and then answer the questions below.</p>
+
+<div style="background-color: #f8f9fa; border: 1px solid #e9ecef; border-radius: 5px; padding: 20px; margin: 20px 0; line-height: 1.6; font-size: 18px;">
+<p><strong>Personal Carbon Trading (PCT)</strong> is a policy designed to reduce a country's carbon dioxide emissions by capping total individual emissions. In such a scheme, every person receives an equal number of carbon credits each year (their allowance) that can be used to purchase emissions-producing goods and services such as petrol, electricity, heating oil, or flights.</p>
+
+<p>People who want to consume more emissions-producing goods than their allowance permits can buy extra credits from those with a smaller environmental footprint. High emitters pay for additional carbon credits, while low emitters can benefit financially by selling any spare credits. Overall, total individual emissions stay the same, and in a real PCT scheme, the number of carbon credits allocated to each person would typically be reduced gradually over time to progressively lower total emissions.</p>
+
+{% if framing == 'baseline' %}
+<p>In the task you just completed, the tradable assets can be thought of as carbon credits. By relabelling the 'asset market' you participated in as a 'carbon market,' the exercise resembles a simplified version of Personal Carbon Trading: both money and carbon credits (= assets) are needed to purchase emissions-producing goods. Credits are distributed evenly at the beginning of each round and can be traded between participants.</p>
+{% else %}
+<p>In the task you just completed, you engaged in a simplified Personal Carbon Trading scheme yourself.</p>
+{% endif %}
+</div>
+
+<style>
+/* Target the radio button containers specifically */
+.form-check {
+    display: inline-block !important;
+    margin-right: 20px !important;
+    margin-bottom: 10px !important;
+}
+
+/* Alternative approach - target the form field containers */
+div[id*="pct_effectiveness"] .form-check,
+div[id*="pct_fairness"] .form-check,
+div[id*="pct_support"] .form-check,
+div[id*="climate_concern"] .form-check,
+div[id*="climate_responsibility"] .form-check,
+div[id*="co2_certificate_trust"] .form-check {
+    display: inline-block !important;
+    margin-right: 20px !important;
+    margin-bottom: 10px !important;
+}
+</style>
+
+<div style="margin-bottom: 30px;">
+    <h4 style="margin-bottom: 0px;">1. To what extent do you agree with the following statement: <br> A Personal Carbon Trading scheme would be effective in reducing emissions.</h4>
+    <div style="margin-top: 0px;">{{ formfield 'pct_effectiveness' }}</div>
+</div>
+
+<div style="margin-bottom: 30px;">
+    <h4 style="margin-bottom: 0px;">2. To what extent do you agree with the following statement: <br> A Personal Carbon Trading scheme is fair.</h4>
+    <div style="margin-top: 0px;">{{ formfield 'pct_fairness' }}</div>
+</div>
+
+<div style="margin-bottom: 30px;">
+    <h4 style="margin-bottom: 0px;">3. Would you support or oppose the introduction of a Personal Carbon Trading scheme?</h4>
+    <div style="margin-top: 0px;">{{ formfield 'pct_support' }}</div>
+</div>
+
+<div style="margin-bottom: 30px;">
+    <h4 style="margin-bottom: 0px;">4. How concerned, if at all, are you about climate change?</h4>
+    <div style="margin-top: 0px;">{{ formfield 'climate_concern' }}</div>
+</div>
+
+<div style="margin-bottom: 30px;">
+    <h4 style="margin-bottom: 0px;">5. To what extent do you agree with the following statement: <br> I feel jointly responsible for climate change.</h4>
+    <div style="margin-top: 0px;">{{ formfield 'climate_responsibility' }}</div>
+</div>
+
+{% if framing == 'destruction' %}
+<div style="margin-bottom: 30px;">
+    <h4 style="margin-bottom: 0px;">6. Do you trust those responsible for this study that they will indeed purchase CO₂ compensation certificates from ForTomorrow as described in the instructions?</h4>
+    <div style="margin-top: 0px;">{{ formfield 'co2_certificate_trust' }}</div>
+</div>
+{% endif %}
+
+{{ next_button }}
+
+{{ endblock }}

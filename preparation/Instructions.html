@@ -1,0 +1,187 @@
+{{ block global_styles }}
+    <link rel="stylesheet" href="{{ static 'style.css' }}">
+{{ endblock }}
+
+{{ block global_scripts }}
+<script src="{{ static 'prevent_back.js' }}"></script>
+{{ endblock }}
+
+{{ block title }}
+    Instructions
+{{ endblock }}
+
+{{ block content }}
+
+<h3>Aim of the Study</h3>
+<p>
+The study investigates trading behavior in an <strong>experimental {% if framing == 'environmental' or framing == 'destruction' %}personal carbon market{% else %}asset market{% endif %}</strong>.
+</p>
+
+<h3>Structure</h3>
+<p>The study consists of:</p>
+<ul>
+  <li><strong>Comprehension check</strong></li>
+  <li><strong>Trial round</strong> (1 practice trading period)</li>
+  <li><strong>Main part</strong> (6 trading rounds of 80 seconds each)</li>
+  <li><strong>Final survey</strong></li>
+</ul>
+<p>Total time: <strong>about 25 minutes</strong>.</p>
+
+<h3>The Marketplace</h3>
+<p>
+  You will interact with <strong>5 other participants</strong> through a market interface (see screenshot below).
+</p>
+<p>The layout is the same in all rounds, including the trial.</p>
+<ul>
+  <li>You stay with the <strong>same group</strong> throughout the study.</li>
+  <li>At the start of each round, you receive a <strong>new endowment</strong> of money and {% if framing == 'environmental' or framing == 'destruction' %}carbon credits{% else %}assets{% endif %}.</li>
+  {% if framing == 'environmental' or framing == 'destruction' %}<li>Carbon credits represent the right to emit CO₂ and are needed (together with money) to buy goods.</li>{% endif %}
+  <li>Your goal is to <strong>maximize your Total Score</strong> by trading {% if framing == 'environmental' or framing == 'destruction' %}carbon credits{% else %}assets{% endif %} and buying goods.</li>
+</ul>
+
+{% if framing == 'baseline' %}
+<img src="{% static 'images/marketplace_baseline_screenshot.png' %}" alt="Screenshot of the Market Place interface" style="max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 5px; margin: 20px auto; display: block;">
+{% else %}
+<img src="{% static 'images/marketplace_env_screenshot.png' %}" alt="Screenshot of the Market Place interface" style="max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 5px; margin: 20px auto; display: block;">
+{% endif %}
+
+<h3>Endowment</h3>
+<p>Before each round begins, you will see your money and {% if framing == 'environmental' or framing == 'destruction' %}carbon credit{% else %}asset{% endif %} endowment.</p>
+<ul>
+  <li>All participants receive the <strong>same number of {% if framing == 'environmental' or framing == 'destruction' %}carbon credits{% else %}assets{% endif %}</strong> .</li>
+  <li>{% if endowment_type == 'homogeneous' %}Money endowments are the same for everyone.{% else %}Money endowments differ and are <strong>assigned randomly</strong>.{% endif %}</li>
+  <li>Everyone starts the round with zero goods.</li>
+  <li>Your current holdings appear in the white box on the market screen.</li>
+  <li>Holdings <strong>do not carry over between rounds</strong>.</li>
+</ul>
+
+<h3>Goods Market</h3>
+<p>In the goods market you can buy two types of goods: <strong>Good A</strong> and <strong>Good B</strong>.</p>
+<ul>
+  <li>Goods cost <strong>money and {% if framing == 'environmental' or framing == 'destruction' %}carbon credits{% else %}assets{% endif %}</strong>.</li>
+  <li>Buying a good gives you <strong>satisfaction points</strong>, which increase your Total Score.</li>
+  <li>Prices (in money and {% if framing == 'environmental' or framing == 'destruction' %}carbon credits{% else %}assets{% endif %}) are the same for everyone, but <strong>satisfaction points differ across participants</strong>. You see your own points on-screen.</li>
+  <li>You may <strong>buy any number of goods</strong> as long as you can afford them.</li>
+  <li>Goods cannot be sold.</li>
+</ul>
+
+<h3>{% if framing == 'environmental' or framing == 'destruction' %}Carbon{% else %}Asset{% endif %} Market</h3>
+<p>In the {% if framing == 'environmental' or framing == 'destruction' %}carbon market{% else %}asset market{% endif %} you may <strong>buy</strong> {% if framing == 'environmental' or framing == 'destruction' %}carbon credits{% else %}assets{% endif %} from or <strong>sell</strong> them to other participants.</p>
+
+<p><strong>Placing offers</strong></p>
+<ul>
+  <li><strong>Bids (to buy):</strong> enter the price you are willing to pay for one {% if framing == 'environmental' or framing == 'destruction' %}credit{% else %}asset{% endif %}.</li>
+  <li><strong>Asks (to sell):</strong> enter the price you want to receive.</li>
+</ul>
+  <p>
+    Your active offers appear in red and can be cancelled at any time.<br>
+    You cannot accept your own offers.<br>
+    When another participants accepts your offer, your holdings update automatically.
+  </p>
+
+
+<p><strong>Accepting offers</strong></p>
+  <p>
+    All active bids and asks appear in the lower half of the market.<br>
+    Select an offer and click <strong>Buy</strong> or <strong>Sell</strong> to trade.<br>
+    Your holdings update automatically.
+  </p>
+
+
+<p><strong>Trade history graph</strong></p>
+  <p>Shows the timing and prices of all {% if framing == 'environmental' or framing == 'destruction' %}carbon credit{% else %}asset{% endif %} trades made within your group during the round.</p>
+
+
+{% if framing == 'baseline' %}
+<img src="{% static 'images/assetmarket_screenshot.png' %}" alt="Screenshot of the Asset Market interface" style="width: 60%; height: auto; border: 1px solid #ddd; border-radius: 5px; margin: 20px auto; display: block;">
+{% else %}
+<img src="{% static 'images/carbonmarket_screenshot.png' %}" alt="Screenshot of the Carbon Market interface" style="width: 60%; height: auto; border: 1px solid #ddd; border-radius: 5px; margin: 20px auto; display: block;">
+{% endif %}
+
+<h3>Alerts</h3>
+<p>
+  If you attempt an action that is not allowed—such as trying to cancel another participant’s bid—the yellow <strong>Latest Alert</strong> box at the bottom of the screen will explain why. <br>
+  This system ensures the market works properly and prevents invalid or non-beneficial trades. 
+</p>
+
+<h3>Total Score</h3>
+<p>
+  Your goal is to maximize your Total Score as this will affect your payout.
+</p>
+<div style="text-align: center; font-family: 'Times New Roman', serif; font-size: 18px; margin: 20px 0; padding: 20px; font-style: italic; background-color: #f0f4f8; border-left: 4px solid #5a7a8a; border-radius: 5px;">
+  <strong>Total Score = Money holding + Satisfaction points from goods</strong>
+</div>
+
+<p><em>Example:</em><br> Imagine you start a round with 10 {% if framing == 'environmental' or framing == 'destruction' %}carbon credits{% else %}assets{% endif %}, 100 monetary units (mu) and 0 goods.<br>
+This gives you an initial <strong>Total Score of 100</strong>. <br>
+You can increase your Total Score by buying goods or selling {% if framing == 'environmental' or framing == 'destruction' %}carbon credits{% else %}assets{% endif %}:</p>
+<ul>
+<li>If you buy Good A (price: 5 mu and 1 {% if framing == 'environmental' or framing == 'destruction' %}carbon credit{% else %}asset{% endif %}, value: 12 satisfaction points),<br>
+your new Score is: 100 – 5 mu + 12 points = <strong>107</strong>.</li>
+<li>If you to sell one {% if framing == 'environmental' or framing == 'destruction' %}carbon credit{% else %}asset{% endif %} for 10 mu,<br>
+your new Score is: 100 + 10 mu = <strong>110</strong>.</li>
+</ul>
+
+<h3>{% if framing == 'environmental' or framing == 'destruction' %}Carbon Credits{% else %}Assets{% endif %}</h3>
+<p>
+{% if framing == 'environmental' or framing == 'destruction' %}Carbon credits{% else %}Assets{% endif %} <strong>do not directly count toward your Score</strong>.<br>
+However, they are valuable because you can <strong>trade them for profit</strong> or <strong>use them to buy goods</strong>.<br>
+{% if framing != 'destruction' %}
+Unused {% if framing == 'environmental' %}carbon credits{% else %}assets{% endif %} <strong>expire at the end of each round</strong>.
+{% endif %}
+</p>
+
+<ul>
+  {% if framing == 'destruction' %}
+  <li>Unused carbon credits do not carry over to the next round and reduce your group's total emissions.</li>
+  <li>To make this effect tangible, <strong>in one randomly selected round, the experimenter will purchase CO₂ compensation certificates from the non-profit organization ForTomorrow for each unused carbon credit in the experiment.</strong></li>
+  <li>Each certificate removes <strong>1 kg of CO₂</strong> from the atmosphere through reforestation projects in Germany — about as much as is emitted during a 7 km car drive.</li>
+  <li>Your decisions in this experiment therefore have a <strong>real and measurable impact</strong> on carbon emissions.</li>
+  {% endif %}
+</ul>
+
+<h3>Payout</h3>
+<p>
+  Your payout has two parts:
+</p>
+<ul>
+  <li><strong>Base payment:</strong> £2.50</li>
+  <li><strong>Bonus payment:</strong> £1.90 for the participant with the <strong>highest Score Change</strong> in a randomly selected round.</li>
+</ul>
+
+<div style="text-align: center; font-family: 'Times New Roman', serif; font-size: 18px; margin: 20px 0; padding: 20px; font-style: italic; background-color: #f0f4f8; border-left: 4px solid #5a7a8a; border-radius: 5px;">
+  <strong>Score Change (%) = (Final Score − Initial Score) / Initial Score</strong>
+</div>
+
+<p>
+  The player with the highest Score Change in the randomly selected round will receive the <strong>bonus payment of £1.90 on top of the base payment of £2.50, for a total payout of £4.40</strong>.
+ The other players will receive <strong>only the base payment of £2.50</strong>.
+</p>
+<ul>
+  <li>If there is a tie, the winner is chosen randomly among the top scorers.</li>
+  <li>The trial round is not payout-relevant.</li>
+  <li>You must complete the entire study (including the survey) in one sitting to receive payment.</li>
+</ul>
+
+
+
+<h3>Next Steps</h3>
+<p>
+  Please make sure you can work without interruption for the next <strong>20 minutes</strong>.
+</p>
+<p>
+  You will now:
+</p>
+<ul>
+  <li>Answer a a few comprehension questions on the instructions.</li>
+  <li>Complete one trial round.</li>
+  <li>Proceed to the 6 main rounds.</li>
+</ul>
+
+<br>
+
+    <div id="continue">
+      <button id="participationButton" name="isParticipating" value=1 class="btn btn-outline-info">I read and understand the instructions. Continue</button>
+    </div>
+
+{{ endblock }}

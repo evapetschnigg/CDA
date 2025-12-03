@@ -1,0 +1,53 @@
+{{ block global_styles }}
+        <link rel="stylesheet" href="{{ static 'styleResults.css' }}">
+        <link rel="stylesheet" href="{{ static 'style.css' }}">
+{{ endblock }}
+
+{{ block global_scripts }}
+<script src="{{ static 'prevent_back.js' }}"></script>
+{{ endblock }}
+
+{{ block title }}
+Results
+{{ endblock }}
+
+{{ block content }}
+
+<p>
+In this round, you have {% if utilityChangePercent >= 0 %}increased{% else %}decreased{% endif %} your Total Score from <strong>{{ initialUtility }}</strong> to <strong>{{ finalUtility }}</strong>, corresponding to a percentage change of <strong class="{% if utilityChangePercent >= 0 %}text-success{% else %}text-danger{% endif %}">{% if utilityChangePercent >= 0 %}+{% endif %}{{ utilityChangePercent }}%</strong>.
+</p>
+
+{% if carbon_impact %}
+<p>
+Carbon impact: You left <strong>{{ carbon_impact.unused_credits }}</strong> carbon credits unused. 
+As a result, 
+{% if carbon_impact.co2_retired > 0 %}
+<span class="text-success"><strong>{{ carbon_impact.co2_retired }} kg of CO₂ will be removed from the atmosphere through CO₂ compensation certificates purchased from ForTomorrow</strong></span>
+{% else %}
+{{ carbon_impact.co2_retired }} kg of CO₂ will be removed from the atmosphere through CO₂ compensation certificates purchased from ForTomorrow
+{% endif %}
+, corresponding to about <strong>{{ carbon_impact.km_saved }} km</strong> of car travel avoided.
+</p>
+{% endif %}
+
+<p>
+<b>Please note:</b> 
+{% if carbon_impact %}
+This Score Change and carbon impact will be used if this round is randomly selected at the end of the study. 
+Only one trading round (excluding the trial) will be randomly chosen. Your Score Change in that round will be compared to the other players in your group to determine whether you receive the bonus.
+{% else %}
+This Score Change will be used if this round is randomly selected at the end of the study. 
+Only one trading round (excluding the trial) will be randomly chosen. Your Score Change in that round will be compared to the other players in your group to determine whether you receive the bonus.
+{% endif %}
+</p>
+
+{% if is_last_round %}
+<p>
+You completed all the trading rounds. Click the next button to proceed to the last part of this study - the brief survey.
+</p>
+{% endif %}
+
+    {{ next_button }}
+{{ endblock }}
+
+
