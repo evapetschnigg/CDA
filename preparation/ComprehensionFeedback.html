@@ -28,15 +28,15 @@ Comprehension Check Results
 </style>
 
 <!-- Feedback for incorrect answers -->
+{% if timeout_occurred %}
+<p>
+You timed out on the comprehension check. Please review the answers you have already given and the correct answers below. You have <strong>{{ remaining_tries }}</strong> more {% if remaining_tries == 1 %}try{% else %}tries{% endif %} to get all answers right and proceed with the experiment.
+</p>
+{% else %}
 <p>
 You answered <strong>{{ correct_count }}</strong> out of <strong>{{ total_questions }}</strong> questions correctly.<br>
-Please review your answers below. You will need to answer all questions correctly before you can proceed.
+Please review the questions and correct answers below. You have <strong>{{ remaining_tries }}</strong> more {% if remaining_tries == 1 %}try{% else %}tries{% endif %} to get all answers right and proceed with the experiment.
 </p>
-
-{% if attempts >= max_attempts %}
-<div style="padding: 15px; background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 5px; margin-bottom: 20px;">
-    <strong>Note:</strong> This is your final attempt. Please answer all questions correctly to proceed.
-</div>
 {% endif %}
 
 <div style="margin-bottom: 30px;">

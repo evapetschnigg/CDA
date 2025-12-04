@@ -1514,7 +1514,6 @@ class EarlyEnd(Page):
         insufficient_players = player.participant.vars.get('insufficient_players_timeout', False)
         return dict(
             failed_comprehension=False,
-            timeout_inactive=False,
             privacy_timeout=False,
             no_consent=False,
             insufficient_players=insufficient_players,
@@ -1923,10 +1922,10 @@ def group_by_arrival_time_method(subsession: Subsession, waiting_players):
     all_players = subsession.get_players()
     
     
-    # Check for timeout: if any player has been waiting > 15 minutes and can't form a group, mark them for EarlyEnd
+    # Check for timeout: if any player has been waiting > 20 minutes and can't form a group, mark them for EarlyEnd
     session = subsession.session
     timeout_key = 'form_trading_groups_first_arrival_time'
-    timeout_duration = 900  # 15 minutes
+    timeout_duration = 1200  # 20 minutes
     
     if timeout_key in session.vars:
         elapsed = time.time() - session.vars[timeout_key]
@@ -2115,7 +2114,7 @@ class FormTradingGroups(WaitPage):
                 # count_participants() already sets group.numParticipants, so we don't need to set it again
                 # group.numParticipants = participating_count
                 
-                # Reset timeout timer for the next group - give them a fresh 15 minutes
+                # Reset timeout timer for the next group - give them a fresh 20 minutes
                 timeout_key = 'form_trading_groups_first_arrival_time'
                 session = group.subsession.session
                 if timeout_key in session.vars:
@@ -2139,8 +2138,8 @@ class FormTradingGroups(WaitPage):
     
     @staticmethod
     def get_timeout_seconds(player: Player):
-        # Timeout after 15 minutes (900 seconds) - send to EarlyEnd
-        return 900
+        # Timeout after 20 minutes (1200 seconds) - send to EarlyEnd
+        return 1200
     
     @staticmethod
     def is_displayed(player: Player):
@@ -2187,7 +2186,7 @@ class FormTradingGroups(WaitPage):
         # Use PLAYERS_PER_GROUP from constants (not hardcoded)
         required_group_size = C.PLAYERS_PER_GROUP
         timeout_key = 'form_trading_groups_first_arrival_time'  # Tracks when first eligible player arrived for timeout calculation
-        timeout_duration = 900  # 15 minutes
+        timeout_duration = 1200  # 20 minutes
         
         # Get all eligible players who are waiting (simplified - players who reach this page should be eligible)
         # Include the current player in the count

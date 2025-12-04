@@ -208,12 +208,11 @@ class EarlyEnd(Page):
     def is_displayed(player: Player):
         # Show EarlyEnd if:
         # 1. Round 1
-        # 2. Either they didn't give consent OR they failed comprehension check 6 times OR they timed out
+        # 2. Either they didn't give consent OR they failed comprehension check 6 times (includes timeouts)
         # 3. They haven't already seen it (to avoid showing multiple times)
         return (player.round_number == 1 and 
                 (not player.participant.vars.get('consent_given', True) or 
-                 player.participant.vars.get('comp_failed_6_times', False) or
-                 player.participant.vars.get('comp_timeout_inactive', False)) and
+                 player.participant.vars.get('comp_failed_6_times', False)) and
                 not player.participant.vars.get('early_end_seen', False))
     
     @staticmethod
@@ -226,14 +225,15 @@ class EarlyEnd(Page):
     @staticmethod
     def vars_for_template(player: Player):
         failed_comprehension = player.participant.vars.get('comp_failed_6_times', False)
-        timeout_inactive = player.participant.vars.get('comp_timeout_inactive', False)
         privacy_timeout = player.participant.vars.get('privacy_timeout', False)
         no_consent = not player.participant.vars.get('consent_given', True) and not privacy_timeout
+        # insufficient_players is only relevant for Trading app, but include it here to avoid template errors
+        insufficient_players = False
         return dict(
             failed_comprehension=failed_comprehension,
-            timeout_inactive=timeout_inactive,
             privacy_timeout=privacy_timeout,
             no_consent=no_consent,
+            insufficient_players=insufficient_players,
         )
 
 
@@ -284,13 +284,13 @@ class ComprehensionCheck(Page):
         # 2. Consent given  
         # 3. Not yet passed (allows retries)
         # 4. Haven't exceeded max attempts (6)
-        # 5. Haven't timed out (those go to EarlyEnd instead)
+        # 5. Haven't failed 6 times (includes timeouts and wrong answers)
         attempts = player.participant.vars.get('comp_attempts', 0)
         return (player.round_number == 1 and 
                 player.participant.vars.get('consent_given', False) and
                 not player.participant.vars.get('comp_passed', False) and
                 attempts < 6 and
-                not player.participant.vars.get('comp_timeout_inactive', False))
+                not player.participant.vars.get('comp_failed_6_times', False))
     
     @staticmethod
     def vars_for_template(player: Player):
@@ -305,22 +305,10 @@ class ComprehensionCheck(Page):
         player.participant.vars['comp_attempts'] = current_attempts + 1
         player.comp_attempts = current_attempts + 1
         
-        # If timeout happened, they didn't answer, so count as 0 correct (failed attempt)
+        # Track if timeout occurred (for feedback message only)
+        # Note: We still count their answers even if they timed out
         if timeout_happened:
-            player.comp_correct_count = 0
-            player.comp_passed = False
-            player.participant.vars['comp_correct_count'] = 0
-            player.participant.vars['comp_passed'] = False
-            
-            # If timeout happened and they didn't answer anything, mark as inactive
-            player.participant.vars['comp_timeout_inactive'] = True
-            player.isParticipating = 0
-            player.participant.vars['isParticipating'] = 0
-            
-            # Also check if they've failed 6 times (for consistency)
-            if player.comp_attempts == 6:
-                player.participant.vars['comp_failed_6_times'] = True
-            return  # Exit early, they'll see EarlyEnd
+            player.participant.vars['comp_timeout_occurred'] = True
         
         # Define correct answers
         correct_answers = {
@@ -335,7 +323,7 @@ class ComprehensionCheck(Page):
         if player.framing == 'destruction':
             correct_answers['comp_q6'] = 'a'  # Question 6: a (destruction group only)
         
-        # Count correct answers
+        # Count correct answers (same logic for timeout and non-timeout cases)
         correct_count = 0
         total_questions = len(correct_answers)
         for field_name, correct_answer in correct_answers.items():
@@ -371,14 +359,21 @@ class ComprehensionFeedback(Page):
         return 60
     
     @staticmethod
+    def before_next_page(player: Player, timeout_happened):
+        # Reset the timeout_occurred flag after showing feedback
+        # This ensures the flag only applies to the current attempt
+        if 'comp_timeout_occurred' in player.participant.vars:
+            player.participant.vars['comp_timeout_occurred'] = False
+    
+    @staticmethod
     def is_displayed(player: Player):
-        # Show feedback only for failures (not when passed)
+        # Show feedback for failures (not when passed)
+        # Exception: Don't show if they've failed 6 times (they'll see EarlyEnd instead)
         return (player.round_number == 1 and 
                 player.participant.vars.get('consent_given', False) and
                 player.participant.vars.get('comp_correct_count') is not None and
                 not player.participant.vars.get('comp_passed', False) and
-                not player.participant.vars.get('comp_failed_6_times', False) and
-                not player.participant.vars.get('comp_timeout_inactive', False))
+                not player.participant.vars.get('comp_failed_6_times', False))
     
     @staticmethod
     def vars_for_template(player: Player):
@@ -465,12 +460,21 @@ class ComprehensionFeedback(Page):
         
         total_questions = 6 if player.framing == 'destruction' else 5
         
+        # Check if they timed out on this attempt
+        timeout_occurred = player.participant.vars.get('comp_timeout_occurred', False)
+        
+        # Calculate remaining tries
+        max_attempts = 6
+        remaining_tries = max(0, max_attempts - player.comp_attempts)
+        
         return {
             'questions': questions,
             'correct_count': player.comp_correct_count,
             'total_questions': total_questions,
             'attempts': player.comp_attempts,
-            'max_attempts': 6
+            'max_attempts': max_attempts,
+            'remaining_tries': remaining_tries,
+            'timeout_occurred': timeout_occurred
         }
 
 
