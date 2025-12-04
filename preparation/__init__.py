@@ -72,6 +72,7 @@ class Player(BasePlayer):
     # Minimal fields needed for preparation pages
     isParticipating = models.BooleanField(choices=((True, 'active'), (False, 'inactive')), initial=0)
     consent = models.BooleanField(initial=False)
+    prolific_id = models.StringField(label="Prolific ID", blank=False, min_length=1)
     
     # Treatment fields (stored in participant.vars, but also in player for template access)
     treatment = models.StringField(initial="")
@@ -235,6 +236,32 @@ class EarlyEnd(Page):
             no_consent=no_consent,
             insufficient_players=insufficient_players,
         )
+
+
+class ProlificID(Page):
+    form_model = 'player'
+    form_fields = ['prolific_id']
+    
+    @staticmethod
+    def get_timeout_seconds(player: Player):
+        return persistent_timeout(player, 'ProlificID', 300)
+    
+    @staticmethod
+    def is_displayed(player: Player):
+        return player.round_number == 1 and player.participant.vars.get('consent_given', False)
+    
+    @staticmethod
+    def prolific_id_error_message(player: Player, value):
+        # Validate that Prolific ID is not empty or just whitespace
+        if not value or not value.strip():
+            return 'Please enter your Prolific ID to continue.'
+        return None
+    
+    @staticmethod
+    def before_next_page(player: Player, timeout_happened):
+        # Store prolific_id in participant.vars for access across apps
+        if not timeout_happened and player.prolific_id:
+            player.participant.vars['prolific_id'] = player.prolific_id.strip()  # Store trimmed version
 
 
 class Instructions(Page):
@@ -508,7 +535,7 @@ class ComprehensionPassed(Page):
 
 # Page sequence for preparation app
 page_sequence = [
-    Welcome, Privacy, EarlyEnd, Instructions,
+    Welcome, Privacy, EarlyEnd, ProlificID, Instructions,
     # Comprehension check loop (up to 6 attempts)
     # EarlyEnd appears after each ComprehensionFeedback to catch 6-time failures
     ComprehensionCheck, ComprehensionFeedback, ComprehensionPassed, EarlyEnd,
