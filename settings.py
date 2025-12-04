@@ -40,9 +40,10 @@ USE_POINTS = False
 
 ADMIN_USERNAME = 'admin'
 # For security, set admin password via environment variable:
-# export OTREE_ADMIN_PASSWORD='your_secure_password_here'
-# Or set it directly below (less secure, but OK for testing)
-ADMIN_PASSWORD = environ.get('OTREE_ADMIN_PASSWORD', '')  # Empty = no password (OK for local testing)
+# Heroku/oTree Hub: Set OTREE_ADMIN_PASSWORD in Config Vars
+# Local: export OTREE_ADMIN_PASSWORD='your_secure_password_here'
+# For local testing without env var, set a default password below:
+ADMIN_PASSWORD = environ.get('OTREE_ADMIN_PASSWORD', 'test123')  # Default 'test123' for local testing only
 # For production, ALWAYS set OTREE_ADMIN_PASSWORD environment variable!
 
 # SECRET_KEY: Use environment variable for production, fallback for local testing
@@ -54,4 +55,9 @@ DEMO_PAGE_INTRO_HTML = """ """
 
 INSTALLED_APPS = ['otree']
 #DEBUG = False
-#AUTH_LEVEL = DEMO
+
+# AUTH_LEVEL: Required for oTree Hub free tier (public projects)
+# DEMO = Anyone can access (required for free public projects on oTree Hub)
+# STUDY = Requires authentication (not allowed for free public projects)
+# You CAN collect real data in DEMO mode - all data is saved normally!
+AUTH_LEVEL = 'DEMO'  # Required for oTree Hub free tier

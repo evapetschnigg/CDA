@@ -4,6 +4,7 @@ from otree.api import *
 import time
 import random
 from operator import itemgetter
+from os import environ
 
 doc = """Continuous double auction market"""
 
@@ -54,9 +55,16 @@ class C(BaseConstants):
         'destruction_homogeneous', 
         'destruction_heterogeneous'
     ]
-    ACTIVE_TREATMENTS = [
-        'baseline_homogeneous', 
-    ]  # Can be modified to test specific treatments
+    # ACTIVE_TREATMENTS: Set via environment variable for production (one treatment per Heroku app)
+    # For local testing, you can modify this list directly
+    # For production: Set OTREE_ACTIVE_TREATMENT environment variable (single treatment, e.g., 'baseline_homogeneous')
+    active_treatment_env = environ.get('OTREE_ACTIVE_TREATMENT', '')
+    if active_treatment_env:
+        # Production: Use environment variable (single treatment per app)
+        ACTIVE_TREATMENTS = [active_treatment_env]
+    else:
+        # Local testing: Default to baseline_homogeneous
+        ACTIVE_TREATMENTS = ['baseline_homogeneous']
 
 
 class Subsession(BaseSubsession):
