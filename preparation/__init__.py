@@ -14,7 +14,7 @@ class C(BaseConstants):
     NUM_ROUNDS = 1  # Preparation app only runs in round 1
     
     # Payment constants (must match Trading app)
-    base_payment = cu(2.50)  # Base payment for all participants who complete survey
+    base_payment = cu(3.75)  # Base payment for all participants who complete survey
     bonus_payment = cu(1.90)  # Additional payment for highest score increase winner
     
     # Treatment definitions (must match Trading app)
@@ -105,8 +105,8 @@ class Player(BasePlayer):
     
     comp_q5 = models.StringField(choices=[
         ('a', 'a. I will receive the bonus of £1.90 if I have the highest Score Change in my group in any of the trading rounds'),  # Must match C.bonus_payment
-        ('b', 'b. I will receive the base payout of £2.50 even if I do not complete the survey at the end'),  # Must match C.base_payment
-        ('c', 'c. All participants who complete the full study receive £2.50, and the player with highest Score Change in her group in the randomly selected round gets an additional £1.90')  # Must match C.base_payment and C.bonus_payment
+        ('b', 'b. I will receive the base payout of £3.75 even if I do not complete the survey at the end'),  # Must match C.base_payment
+        ('c', 'c. All participants who complete the full study receive £3.75, and the player with highest Score Change in her group in the randomly selected round gets an additional £1.90')  # Must match C.base_payment and C.bonus_payment
     ], widget=widgets.RadioSelect, label="")
     
     comp_q6 = models.StringField(choices=[
@@ -402,11 +402,11 @@ class ComprehensionFeedback(Page):
             'comp_q5': {
                 'question': '3. Which of the following correctly describes your payout for participating in this study?',
                 'correct': 'c',
-                'correct_text': 'c. All participants who complete the full study receive £2.50, and the player with highest Score Change in her group in the randomly selected round gets an additional £1.90',  # Must match C.base_payment and C.bonus_payment
+                'correct_text': 'c. All participants who complete the full study receive £3.75, and the player with highest Score Change in her group in the randomly selected round gets an additional £1.90',  # Must match C.base_payment and C.bonus_payment
                 'options': {
                     'a': 'a. I will receive the bonus of £1.90 if I have the highest Score Change in my group in any of the trading rounds',  # Must match C.bonus_payment
-                    'b': 'b. I will receive the base payout of £2.50 even if I do not complete the survey at the end',  # Must match C.base_payment
-                    'c': 'c. All participants who complete the full study receive £2.50, and the player with highest Score Change in her group in the randomly selected round gets an additional £1.90'  # Must match C.base_payment and C.bonus_payment
+                    'b': 'b. I will receive the base payout of £3.75 even if I do not complete the survey at the end',  # Must match C.base_payment
+                    'c': 'c. All participants who complete the full study receive £3.75, and the player with highest Score Change in her group in the randomly selected round gets an additional £1.90'  # Must match C.base_payment and C.bonus_payment
                 }
             },
             'comp_q3': {

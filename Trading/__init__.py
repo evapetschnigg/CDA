@@ -14,7 +14,7 @@ class C(BaseConstants):
     PLAYERS_PER_GROUP = 6  # Production group size
     num_trial_rounds = 1
     NUM_ROUNDS = 7  ## incl. trial periods
-    base_payment = cu(2.50)  # Base payment for all participants who complete survey
+    base_payment = cu(3.75)  # Base payment for all participants who complete survey
     bonus_payment = cu(1.90)  # Additional payment for highest score increase winner
     FV_MIN = 30
     FV_MAX = 85
@@ -776,7 +776,7 @@ def calc_period_profits(player: Player):
 def calc_final_profit(group: Group):
     # this code is run at the final results wait page after all players arrive.
     # this function randomly selects a round and determines the winner within the group.
-    # All participating players get base payment (£2.50), winner gets bonus (£1.90).
+    # All participating players get base payment (£3.75), winner gets bonus (£1.90).
     
     # Get all participating players in the group
     participating_players = [p for p in group.get_players() if p.isParticipating == 1]
