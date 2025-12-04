@@ -1922,10 +1922,10 @@ def group_by_arrival_time_method(subsession: Subsession, waiting_players):
     all_players = subsession.get_players()
     
     
-    # Check for timeout: if any player has been waiting > 20 minutes and can't form a group, mark them for EarlyEnd
+    # Check for timeout: if any player has been waiting > 30 minutes and can't form a group, mark them for EarlyEnd
     session = subsession.session
     timeout_key = 'form_trading_groups_first_arrival_time'
-    timeout_duration = 1200  # 20 minutes
+    timeout_duration = 1800  # 30 minutes
     
     if timeout_key in session.vars:
         elapsed = time.time() - session.vars[timeout_key]
@@ -2114,7 +2114,7 @@ class FormTradingGroups(WaitPage):
                 # count_participants() already sets group.numParticipants, so we don't need to set it again
                 # group.numParticipants = participating_count
                 
-                # Reset timeout timer for the next group - give them a fresh 20 minutes
+                # Reset timeout timer for the next group - give them a fresh 30 minutes
                 timeout_key = 'form_trading_groups_first_arrival_time'
                 session = group.subsession.session
                 if timeout_key in session.vars:
@@ -2138,8 +2138,8 @@ class FormTradingGroups(WaitPage):
     
     @staticmethod
     def get_timeout_seconds(player: Player):
-        # Timeout after 20 minutes (1200 seconds) - send to EarlyEnd
-        return 1200
+        # Timeout after 30 minutes (1800 seconds) - send to EarlyEnd
+        return 1800
     
     @staticmethod
     def is_displayed(player: Player):
@@ -2186,7 +2186,7 @@ class FormTradingGroups(WaitPage):
         # Use PLAYERS_PER_GROUP from constants (not hardcoded)
         required_group_size = C.PLAYERS_PER_GROUP
         timeout_key = 'form_trading_groups_first_arrival_time'  # Tracks when first eligible player arrived for timeout calculation
-        timeout_duration = 1200  # 20 minutes
+        timeout_duration = 1800  # 30 minutes
         
         # Get all eligible players who are waiting (simplified - players who reach this page should be eligible)
         # Include the current player in the count
