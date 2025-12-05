@@ -11,7 +11,7 @@ doc = """Continuous double auction market"""
 class C(BaseConstants):
     NAME_IN_URL = 'sCDA'
   
-    PLAYERS_PER_GROUP = 6  # Production group size
+    PLAYERS_PER_GROUP = 2  # Production group size
     num_trial_rounds = 1
     NUM_ROUNDS = 7  ## incl. trial periods
     base_payment = cu(3.75)  # Base payment for all participants who complete survey
@@ -602,6 +602,11 @@ def initiate_player(player: Player):
         player.assetsHolding = initial_assets
         player.allowShort = short_allowed(player=player)
         player.capShort = asset_short_limit(player=player)
+        
+        # Reset locked resources (no open orders at start of round)
+        player.cashOffered = 0
+        player.assetsOffered = 0
+        
         player.goodA_qty = 0
         player.goodB_qty = 0
         player.goods_utility = calculate_goods_utility(player)
@@ -1432,15 +1437,21 @@ def buy_good(player: Player, data):
         return dict()
 
     # Check if player can afford
+    # Must account for locked resources in open bids/asks:
+    # - cashOffered: cash locked in open bids (offers to buy assets)
+    # - assetsOffered: assets locked in open asks (offers to sell assets)
     total_price = price * qty
     total_assets = asset_cost * qty
-    if player.cashHolding < total_price or player.assetsHolding < total_assets:
+    available_cash = player.cashHolding - player.cashOffered
+    available_assets = player.assetsHolding - player.assetsOffered
+    
+    if available_cash < total_price or available_assets < total_assets:
         News.create(
             player=player,
             playerID=player.id_in_group,
             group=player.group,
             Period=player.group.round_number,
-            msg='Cannot proceed: insufficient funds or assets.',
+            msg='Cannot proceed: insufficient funds or assets. Remember: your open buy/sell offers lock some of your resources. You can cancel them to free up resources.',
             msgTime=round(float(time.time() - player.group.marketStartTime), C.decimals)
         )
         return dict()
@@ -2429,6 +2440,10 @@ class TreatmentAssignment(Page):
                     player.allowLong = round_1_player.allowLong
                     player.capShort = round_1_player.capShort
                     player.capLong = round_1_player.capLong
+                    
+                    # Reset locked resources (no open orders at start of new round)
+                    player.cashOffered = 0
+                    player.assetsOffered = 0
                     
                     # Reset goods quantities and utility
                     player.goodA_qty = 0
