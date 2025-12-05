@@ -72,7 +72,7 @@ class Player(BasePlayer):
     # Minimal fields needed for preparation pages
     isParticipating = models.BooleanField(choices=((True, 'active'), (False, 'inactive')), initial=0)
     consent = models.BooleanField(initial=False)
-    prolific_id = models.StringField(label="Prolific ID", blank=False, min_length=1)
+    prolific_id = models.StringField(label="Prolific ID", blank=False)
     
     # Treatment fields (stored in participant.vars, but also in player for template access)
     treatment = models.StringField(initial="")
@@ -119,6 +119,23 @@ class Player(BasePlayer):
     comp_passed = models.BooleanField(initial=False)
 
 
+# Form validation functions (must be at module level, not inside Page classes)
+def prolific_id_error_message(player, value):
+    """Validate that Prolific ID is exactly 24 alphanumeric characters."""
+    if not value:
+        return 'Please enter your Prolific ID to continue.'
+    
+    value_clean = value.strip()
+    
+    if len(value_clean) != 24:
+        return 'Your Prolific ID must be exactly 24 characters long. You entered {0} characters. Please enter a 24-character alphanumeric string.'.format(len(value_clean))
+    
+    if not value_clean.isalnum():
+        return 'Your Prolific ID must contain only letters and numbers (no spaces or special characters). Please enter a 24-character alphanumeric string.'
+    
+    return None
+
+
 # PAGES
 class Welcome(Page):
     @staticmethod
@@ -143,7 +160,7 @@ class Privacy(Page):
     
     @staticmethod
     def get_timeout_seconds(player: Player):
-        return persistent_timeout(player, 'Privacy', 180)
+        return persistent_timeout(player, 'Privacy', 360)  # Increased from 180 to 360 seconds (6 minutes)
     
     @staticmethod
     def is_displayed(player: Player):
@@ -251,17 +268,10 @@ class ProlificID(Page):
         return player.round_number == 1 and player.participant.vars.get('consent_given', False)
     
     @staticmethod
-    def prolific_id_error_message(player: Player, value):
-        # Validate that Prolific ID is not empty or just whitespace
-        if not value or not value.strip():
-            return 'Please enter your Prolific ID to continue.'
-        return None
-    
-    @staticmethod
     def before_next_page(player: Player, timeout_happened):
-        # Store prolific_id in participant.vars for access across apps
+        # Store trimmed, uppercase version for consistency
         if not timeout_happened and player.prolific_id:
-            player.participant.vars['prolific_id'] = player.prolific_id.strip()  # Store trimmed version
+            player.participant.vars['prolific_id'] = player.prolific_id.strip().upper()
 
 
 class Instructions(Page):

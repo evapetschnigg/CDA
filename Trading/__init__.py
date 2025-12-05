@@ -11,7 +11,7 @@ doc = """Continuous double auction market"""
 class C(BaseConstants):
     NAME_IN_URL = 'sCDA'
   
-    PLAYERS_PER_GROUP = 2  # Production group size
+    PLAYERS_PER_GROUP = 6  # Production group size
     num_trial_rounds = 1
     NUM_ROUNDS = 7  ## incl. trial periods
     base_payment = cu(3.75)  # Base payment for all participants who complete survey
