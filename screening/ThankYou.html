@@ -1,0 +1,50 @@
+{{ block title }}
+Thank You
+{{ endblock }}
+
+{{ block content }}
+
+{% if can_attend %}
+<p>
+    Thank you for confirming your availability!
+</p>
+
+<p>
+    You have indicated that you can attend the scheduled session on <strong>{{ session_date }} at {{ session_time }}</strong>.
+</p>
+
+<p>
+    <strong>What happens next:</strong>
+</p>
+<ul>
+    <li>You will be added to a participant group for this time slot.</li>
+    <li>You will receive a reminder message via Prolific messaging (approximately 1 hour before the scheduled start time).</li>
+    <li>You will receive the direct link to the study via Prolific messaging when the main study becomes available (approximately 5-10 minutes before the scheduled start time).</li>
+    <li>Please be ready to click on the study link immediately when you receive the notification.</li>
+</ul>
+
+<p>
+    <strong>Important reminders:</strong>
+</p>
+<ul>
+    <li>Be punctual - log in exactly at {{ session_time }}.</li>
+    <li>The study will require your full attention for approximately 25 minutes.</li>
+    <li>If you cannot attend, please contact us at <a href="mailto:eva-maria.petschnigg@tum.de">eva-maria.petschnigg@tum.de</a> as soon as possible.</li>
+</ul>
+
+{% else %}
+<p>
+    We appreciate you taking the time to complete this prescreening study.
+</p>
+
+<p>
+    You have indicated that you cannot attend the scheduled session on {{ session_date }} at {{ session_time }}.
+</p>
+
+
+{% endif %}
+
+<p>You can now go back to Prolific by clicking here.</p>
+
+{{ endblock }}
+

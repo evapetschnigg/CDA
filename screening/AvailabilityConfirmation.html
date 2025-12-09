@@ -1,0 +1,42 @@
+{{ block title }}
+Availability Confirmation
+{{ endblock }}
+
+{{ block content }}
+
+<p>
+    We are scheduling the real-time experimental session at the following time:
+</p>
+
+<div style="background-color: #f0f0f0; padding: 20px; border-radius: 5px; margin: 20px 0; text-align: center;">
+    <p style="font-size: 1.2em; font-weight: bold; margin: 0;">
+        {{ session_date }} at {{ session_time }} {{ session_timezone }}
+    </p>
+</div>
+
+<p>
+    <strong>Important information:</strong>
+</p>
+<ul>
+    <li>You must be available to log in <strong>exactly at {{ session_time }} {{ session_timezone }}</strong> (not before, not after).</li>
+    <li>The session will last approximately <strong>25 minutes</strong> and you must be able to participate without interruption during this time.</li>
+    <li>You will trade with other participants in real-time during the experiment.</li>
+    <li><strong>Payment:</strong> You will receive a base payment of <strong>£3.75</strong> for completing the study. Additionally, the best performer in your group will receive a bonus payment of <strong>£1.90</strong>.</li>
+    <li>If we cannot find enough participants to form a group with you on the day of the scheduled session, you will receive a compensation payment of <strong>£1.50</strong> and the study will end early for you.</li>
+    <li>If you are not punctual, you may not be able to participate and may not receive payment.</li>
+</ul>
+
+<br>
+
+<p style="margin-bottom: 0px;">
+    <strong>Do you want to participate in this experimental real-time market trading study, and can you attend this scheduled session?</strong>
+</p>
+
+{{ formfields }}
+
+<div style="text-align: center; margin-top: 30px;">
+    {{ next_button }}
+</div>
+
+{{ endblock }}
+

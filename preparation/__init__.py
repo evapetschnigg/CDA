@@ -183,6 +183,10 @@ class Privacy(Page):
 
     @staticmethod
     def before_next_page(player: Player, timeout_happened):
+        # If Prolific ID was automatically captured from URL parameter, store it
+        if player.round_number == 1 and player.participant.label:
+            player.participant.vars['prolific_id'] = player.participant.label.strip().upper()
+        
         if timeout_happened or not player.consent:
             # End the experiment for non-consenting participants
             player.participant.vars['consent_given'] = False
@@ -265,7 +269,11 @@ class ProlificID(Page):
     
     @staticmethod
     def is_displayed(player: Player):
-        return player.round_number == 1 and player.participant.vars.get('consent_given', False)
+        # Only show this page if Prolific ID was not automatically captured from URL
+        # If participant.label exists (from ?participant_label={{%PROLIFIC_PID%}}), skip this page
+        return (player.round_number == 1 and 
+                player.participant.vars.get('consent_given', False) and 
+                not player.participant.label)
     
     @staticmethod
     def before_next_page(player: Player, timeout_happened):

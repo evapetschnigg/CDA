@@ -1,10 +1,7 @@
 from os import environ
 
 SESSION_CONFIGS = [
-
-
-
-        dict(
+    dict(
         name='PCT',
         display_name='PCT',
         app_sequence=['preparation', 'Trading'],  # Preparation app runs first, then Trading
@@ -13,8 +10,13 @@ SESSION_CONFIGS = [
         randomise_types=True, # KeyError : 'roleID' shows up if this is set to False
         short_selling=False,
         margin_buying=False,
-        ),
-
+    ),
+    dict(
+        name='screening',
+        display_name='Screening Study',
+        app_sequence=['screening'],
+        num_demo_participants=1,
+    ),
 ]
 
 # if you set a property in SESSION_CONFIG_DEFAULTS, it will be inherited by all configs
