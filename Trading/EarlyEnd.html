@@ -13,27 +13,45 @@ Thank you
 {{ block content }}
 
 {% if privacy_timeout %}
-<p>You did not respond in time on the privacy statement page. Since you did not provide consent, the experiment has ended. Thank you for your participation.</p>
+
+<p>You did not respond in time on the privacy statement page. Since you did not provide consent, the experiment has ended.</p>
+
+<p>Please return the study on Prolific.</p>
+
+<p><a href="https://app.prolific.com/submissions/return" target="_blank">Return study</a></p>
 
 {% elif no_consent %}
-<p>You did not provide consent to participate in this experiment. The experiment has ended. Thank you for your participation.</p>
+
+<p>You did not provide consent to participate. The experiment has ended.</p>
+
+<p>Please return the study on Prolific.</p>
+
+<p><a href="https://app.prolific.com/submissions/return" target="_blank">Return study</a></p>
 
 {% elif failed_comprehension %}
-<p>You were unable to answer all comprehension check questions correctly after 6 attempts. Unfortunately, you cannot continue with this experiment. Thank you for your participation.</p>
+
+<p>You did not pass the comprehension check. The experiment has ended.</p>
+
+<p>Please return the study on Prolific.</p>
+
+<p><a href="https://app.prolific.com/submissions/return" target="_blank">Return study</a></p>
 
 {% elif insufficient_players %}
-<p>Unfortunately, there were not enough participants online that you could be put in a group with. Therefore the experiment ends here. Thank you for your participation.</p>
+
+<p>Unfortunately, we could not match you with enough other participants.</p>
+
+<p>You will still receive the base payment.</p>
+
+<p>You can now go back to Prolific:</p>
+
+<p><a href="https://app.prolific.com/submissions/complete?cc=CHQED5N8" target="_blank">Complete study</a></p>
 
 {% else %}
+
 <p>Your response has been recorded. Thank you for your participation.</p>
-{% endif %}
 
-<p>You can now go back to Prolific by clicking 
-{% if insufficient_players %}
-<a href="https://app.prolific.com/submissions/complete?cc=CHQED5N8" target="_blank">here</a>.
-{% else %}
-<a href="https://app.prolific.com/submissions/complete?cc=CHQED5N8" target="_blank">here</a>.
+<p><a href="https://app.prolific.com/submissions/complete?cc=CFKA0324" target="_blank">Complete study</a></p>
+
 {% endif %}
-</p>
 
 {{ endblock }}

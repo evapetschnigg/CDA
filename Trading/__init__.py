@@ -267,6 +267,7 @@ class Player(BasePlayer):
     finalPayoff = models.CurrencyField(initial=0)
     selectedRound = models.IntegerField(initial=1)
     isWinner = models.BooleanField(initial=False)  # True if player won the bonus (highest Score Change in selected round)
+    insufficient_players_timeout = models.BooleanField(initial=False)  # True if player timed out on FormTradingGroups due to insufficient players
     goodA_qty = models.IntegerField(initial=0)
     goodB_qty = models.IntegerField(initial=0)
     goods_utility = models.FloatField(initial=0)
@@ -1519,6 +1520,9 @@ class EarlyEnd(Page):
         player.participant.vars['early_end_seen'] = True
         # Mark that they should not see any more pages
         player.participant.vars['no_more_pages'] = True
+        
+        # Note: Payoffs for players who timed out on FormTradingGroups are not set in oTree
+        # They are managed manually in Prolific
 
     @staticmethod
     def vars_for_template(player: Player):
@@ -1953,6 +1957,7 @@ def group_by_arrival_time_method(subsession: Subsession, waiting_players):
                 for p in eligible_before_timeout:
                     p.isParticipating = 0
                     p.participant.vars['isParticipating'] = 0
+                    p.insufficient_players_timeout = True  # Save to Player model for data export
                     p.participant.vars['insufficient_players_timeout'] = True
                     p.participant.vars['waiting_for_group'] = False
                     p.participant.vars['no_more_pages'] = True
@@ -2224,6 +2229,7 @@ class FormTradingGroups(WaitPage):
             for p in waiting:
                 p.isParticipating = 0
                 p.participant.vars['isParticipating'] = 0
+                p.insufficient_players_timeout = True  # Save to Player model for data export
                 p.participant.vars['insufficient_players_timeout'] = True
                 p.participant.vars['waiting_for_group'] = False
                 p.participant.vars['no_more_pages'] = True
@@ -2290,6 +2296,7 @@ class FormTradingGroups(WaitPage):
             if 'cash_endowment' not in player.participant.vars:
                 player.isParticipating = 0
                 player.participant.vars['isParticipating'] = 0
+                player.insufficient_players_timeout = True  # Save to Player model for data export
                 player.participant.vars['insufficient_players_timeout'] = True
                 player.participant.vars['waiting_for_group'] = False
                 player.participant.vars['no_more_pages'] = True  # Critical: prevent showing FormTradingGroups again
