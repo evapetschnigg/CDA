@@ -35,7 +35,7 @@ The study investigates trading behavior in an <strong>experimental {% if framing
 <ul>
   <li>You stay with the <strong>same group</strong> throughout the study.</li>
   <li>At the start of each round, you receive a <strong>new endowment</strong> of money and {% if framing == 'environmental' or framing == 'destruction' %}carbon credits{% else %}assets{% endif %}.</li>
-  {% if framing == 'environmental' or framing == 'destruction' %}<li>Carbon credits represent the right to emit CO₂ and are needed (together with money) to buy goods.</li>{% endif %}
+  {% if framing == 'environmental' or framing == 'destruction' %}<li>Carbon credits represent the right to emit CO₂. Both carbon credits and money are needed to buy goods.</li>{% else %}<li>Both assets and money are needed to buy goods.</li>{% endif %}
   <li>Your goal is to <strong>maximize your Total Score</strong> by trading {% if framing == 'environmental' or framing == 'destruction' %}carbon credits{% else %}assets{% endif %} and buying goods.</li>
 </ul>
 
