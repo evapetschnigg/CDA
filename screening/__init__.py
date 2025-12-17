@@ -11,9 +11,9 @@ class C(BaseConstants):
     NUM_ROUNDS = 1
     
     # Session details - UPDATE THESE FOR EACH SESSION
-    SESSION_DATE = "Wednesday, December 17, 2024"
-    SESSION_TIME = "15:00"  # 3:00 PM GMT (16:00 German time / CET)
-    SESSION_TIMEZONE = "GMT"  # German time is GMT+1 in December (CET)
+    SESSION_DATE = "Thursday, December 18, 2024"
+    SESSION_TIME = "15:00"  # 3:00 PM GMT
+    SESSION_TIMEZONE = "GMT"
 
 
 class Subsession(BaseSubsession):

@@ -27,20 +27,26 @@ Comprehension Check
     <div style="margin-top: 0px;">{{ formfield 'comp_q2' }}</div>
 </div>
 
+{# HIDDEN FOR TESTING: comp_q5 (payout question) - uncomment to restore #}
+{% comment %}
 <div style="margin-bottom: 30px;">
     <h4 style="margin-bottom: 0px;">3. Which of the following correctly describes your payout for participating in this study?</h4>
     <div style="margin-top: 0px;">{{ formfield 'comp_q5' }}</div>
 </div>
+{% endcomment %}
 
 <div style="margin-bottom: 30px;">
-    <h4 style="margin-bottom: 0px;">4. Which of the following correctly describes the role of {% if framing == 'environmental' or framing == 'destruction' %}carbon credits{% else %}assets{% endif %} in this experiment?</h4>
+    <h4 style="margin-bottom: 0px;">3. Which of the following correctly describes the role of {% if framing == 'environmental' or framing == 'destruction' %}carbon credits{% else %}assets{% endif %} in this experiment?</h4>
     <div style="margin-top: 0px;">{{ formfield 'comp_q3' }}</div>
 </div>
 
+{# HIDDEN FOR TESTING: comp_q4 (assets transfer question) - uncomment to restore #}
+{% comment %}
 <div style="margin-bottom: 30px;">
-    <h4 style="margin-bottom: 0px;">5. {% if framing == 'environmental' or framing == 'destruction' %}Carbon credits{% else %}Assets{% endif %} not used by the end of a round will be transferred to the next round.</h4>
+    <h4 style="margin-bottom: 0px;">4. {% if framing == 'environmental' or framing == 'destruction' %}Carbon credits{% else %}Assets{% endif %} not used by the end of a round will be transferred to the next round.</h4>
     <div style="margin-top: 0px;">{{ formfield 'comp_q4' }}</div>
 </div>
+{% endcomment %}
 
 {% if framing == 'destruction' %}
 <div style="margin-bottom: 30px;">

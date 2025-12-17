@@ -160,7 +160,7 @@ class Privacy(Page):
     
     @staticmethod
     def get_timeout_seconds(player: Player):
-        return persistent_timeout(player, 'Privacy', 360)  # Increased from 180 to 360 seconds (6 minutes)
+        return persistent_timeout(player, 'Privacy', 720)  # 12 minutes (720 seconds)
     
     @staticmethod
     def is_displayed(player: Player):
@@ -317,9 +317,12 @@ class ComprehensionCheck(Page):
     
     @staticmethod
     def get_form_fields(player: Player):
-        fields = ['comp_q1', 'comp_q2', 'comp_q3', 'comp_q4', 'comp_q5']
-        if player.framing == 'destruction':
-            fields.append('comp_q6')
+        # HIDDEN FOR TESTING: comp_q4 (assets transfer) and comp_q5 (payout) - uncomment to restore
+        # fields = ['comp_q1', 'comp_q2', 'comp_q3', 'comp_q4', 'comp_q5']
+        fields = ['comp_q1', 'comp_q2', 'comp_q3']  # Only 3 questions active (q4 and q5 hidden)
+        # HIDDEN FOR TESTING: comp_q6 (destruction framing) - uncomment to restore
+        # if player.framing == 'destruction':
+        #     fields.append('comp_q6')
         return fields
     
     @staticmethod
@@ -356,17 +359,18 @@ class ComprehensionCheck(Page):
             player.participant.vars['comp_timeout_occurred'] = True
         
         # Define correct answers
+        # HIDDEN FOR TESTING: comp_q4 and comp_q5 are commented out - uncomment to restore
         correct_answers = {
             'comp_q1': 'c',  # Question 1: c
             'comp_q2': 'a',  # Question 2: a
             'comp_q3': 'c',  # Question 3: c
-            'comp_q4': 'b',  # Question 4: b
-            'comp_q5': 'c'   # Question 5: c
+            # 'comp_q4': 'b',  # Question 4: b (HIDDEN)
+            # 'comp_q5': 'c'   # Question 5: c (HIDDEN)
         }
         
-        # Add comp_q6 for destruction group
-        if player.framing == 'destruction':
-            correct_answers['comp_q6'] = 'a'  # Question 6: a (destruction group only)
+        # HIDDEN FOR TESTING: comp_q6 for destruction group - uncomment to restore
+        # if player.framing == 'destruction':
+        #     correct_answers['comp_q6'] = 'a'  # Question 6: a (destruction group only)
         
         # Count correct answers (same logic for timeout and non-timeout cases)
         correct_count = 0
@@ -455,7 +459,7 @@ class ComprehensionFeedback(Page):
                 }
             },
             'comp_q3': {
-                'question': f"4. Which of the following correctly describes the role of {'carbon credits' if player.framing in ['environmental', 'destruction'] else 'assets'} in this experiment?",
+                'question': f"3. Which of the following correctly describes the role of {'carbon credits' if player.framing in ['environmental', 'destruction'] else 'assets'} in this experiment?",
                 'correct': 'c',
                 'correct_text': 'c. They do not directly affect the Total Score, but they can increase the money holdings when sold and can increase satisfaction points from goods when used to purchase goods',
                 'options': {
@@ -488,22 +492,31 @@ class ComprehensionFeedback(Page):
             }
         
         # Prepare data for template
-        questions = []
-        for field_name, data in questions_data.items():
-            # Use field_maybe_none() to safely handle None values (though fields are now required)
-            user_answer = player.field_maybe_none(field_name) or ''
-            is_correct = user_answer == data['correct']
-            
-            questions.append({
-                'question': data['question'],
-                'user_answer': user_answer,
-                'user_answer_text': data['options'].get(user_answer, 'No answer'),
-                'correct_answer': data['correct'],
-                'correct_text': data['correct_text'],
-                'is_correct': is_correct
-            })
+        # HIDDEN FOR TESTING: Only show active questions (q1, q2, q3) - adjust when restoring q4 and q5
+        active_questions = ['comp_q1', 'comp_q2', 'comp_q3']  # Only these 3 are active
+        # HIDDEN FOR TESTING: Uncomment to restore comp_q6 for destruction group
+        # if player.framing == 'destruction':
+        #     active_questions.append('comp_q6')
         
-        total_questions = 6 if player.framing == 'destruction' else 5
+        questions = []
+        for field_name in active_questions:
+            if field_name in questions_data:
+                data = questions_data[field_name]
+                # Use field_maybe_none() to safely handle None values (though fields are now required)
+                user_answer = player.field_maybe_none(field_name) or ''
+                is_correct = user_answer == data['correct']
+                
+                questions.append({
+                    'question': data['question'],
+                    'user_answer': user_answer,
+                    'user_answer_text': data['options'].get(user_answer, 'No answer'),
+                    'correct_answer': data['correct'],
+                    'correct_text': data['correct_text'],
+                    'is_correct': is_correct
+                })
+        
+        # HIDDEN FOR TESTING: Changed from 5/6 to 3 (or 4 for destruction) - adjust when restoring questions
+        total_questions = len(active_questions)  # Now 3 (or 4 if destruction with q6)
         
         # Check if they timed out on this attempt
         timeout_occurred = player.participant.vars.get('comp_timeout_occurred', False)
