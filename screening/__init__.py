@@ -11,7 +11,7 @@ class C(BaseConstants):
     NUM_ROUNDS = 1
     
     # Session details - UPDATE THESE FOR EACH SESSION
-    SESSION_DATE = "Thursday, December 18, 2024"
+    SESSION_DATE = "Thursday, December 18, 2025"
     SESSION_TIME = "15:00"  # 3:00 PM GMT
     SESSION_TIMEZONE = "GMT"
 
