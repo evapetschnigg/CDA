@@ -79,7 +79,14 @@ def vars_for_admin_report(subsession):
     # this function defines the values sent to the admin report page
     groups = subsession.get_groups()
     period = subsession.round_number
-    payoffs = sorted([p.payoff for p in subsession.get_players()])
+    # Only process active players (those who have actually started) to avoid processing empty player slots
+    # For admin report, we want players who have consented (started) or have been grouped (have cash_endowment)
+    # Note: waiting_for_group is not needed here as it's only True while waiting, False once grouped
+    all_players_raw = subsession.get_players()
+    active_players = [p for p in all_players_raw 
+                     if p.participant.vars.get('consent_given', False) or 
+                        'cash_endowment' in p.participant.vars]
+    payoffs = sorted([p.payoff for p in active_players])
     market_times = sorted([g.marketTime for g in groups])
     highcharts_series = []
     trades = [{'x': tx.transactionTime, 'y': tx.price, 'name': 'Trades'} for tx in Transaction.filter() if tx.Period == period and tx.group in groups]
@@ -1933,8 +1940,14 @@ def group_by_arrival_time_method(subsession: Subsession, waiting_players):
     if subsession.round_number != 1:
         return None  # Use default grouping for other rounds
     
-    # Get ALL players in the subsession (not just waiting_players) because we're using 2-app approach
-    all_players = subsession.get_players()
+    # Get only ACTIVE players (those who have actually started) to avoid processing empty player slots
+    # This prevents CPU overload when session is opened for more participants than actually join
+    all_players_raw = subsession.get_players()
+    # Filter to only players who have actually started (given consent or reached Privacy page)
+    all_players = [p for p in all_players_raw 
+                   if p.participant.vars.get('consent_given', False) or 
+                      p.participant.vars.get('waiting_for_group', False) or
+                      'cash_endowment' in p.participant.vars]
     
     
     # Check for timeout: if any player has been waiting > 25 minutes and can't form a group, mark them for EarlyEnd
@@ -1966,14 +1979,6 @@ def group_by_arrival_time_method(subsession: Subsession, waiting_players):
                     del session.vars[timeout_key]
                 # Return None to prevent grouping (players will go to EarlyEnd)
                 return None
-    
-    # Check each player's status
-    for p in all_players:
-        waiting_flag = p.participant.vars.get('waiting_for_group', False)
-        comp_passed = p.participant.vars.get('comp_passed', False)
-        is_participating = p.isParticipating == 1
-        has_cash = 'cash_endowment' in p.participant.vars
-        no_more_pages = p.participant.vars.get('no_more_pages', False)
     
     # Filter to only eligible players who have passed comprehension and are waiting
     # Players who reach this page should have comp_passed=True, but double-check
@@ -2207,10 +2212,15 @@ class FormTradingGroups(WaitPage):
         # Get all eligible players who are waiting (simplified - players who reach this page should be eligible)
         # Include the current player in the count
         # Only count players who are actually waiting (have waiting_for_group=True and no cash_endowment)
-        waiting = [p for p in subsession.get_players() 
-                  if not p.participant.vars.get('no_more_pages', False) and
-                     p.participant.vars.get('waiting_for_group', False) and
-                     'cash_endowment' not in p.participant.vars]
+        # Filter to only active players to avoid processing empty player slots (main CPU optimization)
+        all_players_raw = subsession.get_players()
+        # Combined filter: Only process active players (consent_given) who are actually waiting
+        # This avoids processing 180 empty slots when only 12 people joined
+        waiting = [p for p in all_players_raw 
+                  if p.participant.vars.get('consent_given', False) and  # Must have started (active player)
+                     not p.participant.vars.get('no_more_pages', False) and  # Not on EarlyEnd
+                     p.participant.vars.get('waiting_for_group', False) and  # Must be waiting for group
+                     'cash_endowment' not in p.participant.vars]  # Not already grouped
         
         
         # Set first arrival time if this is the first eligible player

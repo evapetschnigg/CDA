@@ -48,20 +48,20 @@ Please wait
 <p>Please wait for others to join and do not leave this page.</p>
 
 <script>
-    // Auto-refresh every 3 seconds to check for new players
+    // Auto-refresh every 5 seconds to check for new players (reduced from 3s to prevent CPU overload)
     var refreshInterval = setInterval(function() {
         location.reload();
-    }, 3000);
+    }, 5000);
 </script>
 
 {% else %}
 <!-- Fallback - should rarely be shown, but ensure players_needed is always > 0 -->
 <p>Waiting for <strong>{{ group_size }}</strong> more participants to join your group...</p>
 <script>
-    // Auto-refresh every 3 seconds
+    // Auto-refresh every 5 seconds (reduced from 3s to prevent CPU overload)
     setInterval(function() {
         location.reload();
-    }, 3000);
+    }, 5000);
 </script>
 {% endif %}
 
