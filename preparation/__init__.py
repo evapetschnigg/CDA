@@ -144,6 +144,13 @@ class Welcome(Page):
     
     @staticmethod
     def before_next_page(player: Player, timeout_happened):
+        # If Prolific ID was automatically captured from URL parameter, store it
+        if player.round_number == 1 and player.participant.label:
+            prolific_id = player.participant.label.strip().upper()
+            player.participant.vars['prolific_id'] = prolific_id
+            # Also store in player.prolific_id for consistency with manual entry
+            player.prolific_id = prolific_id
+        
         # Set everyone to participating by default
         # Privacy page will handle setting isParticipating=0 if needed (timeout/no consent)
         player.isParticipating = 1
@@ -183,9 +190,8 @@ class Privacy(Page):
 
     @staticmethod
     def before_next_page(player: Player, timeout_happened):
-        # If Prolific ID was automatically captured from URL parameter, store it
-        if player.round_number == 1 and player.participant.label:
-            player.participant.vars['prolific_id'] = player.participant.label.strip().upper()
+        # Prolific ID capture is now handled in Welcome page (earlier in sequence)
+        # This ensures it's captured as soon as possible
         
         if timeout_happened or not player.consent:
             # End the experiment for non-consenting participants
@@ -263,9 +269,7 @@ class ProlificID(Page):
     form_model = 'player'
     form_fields = ['prolific_id']
     
-    @staticmethod
-    def get_timeout_seconds(player: Player):
-        return persistent_timeout(player, 'ProlificID', 300)
+    # No timeout - participants must enter Prolific ID to proceed (required field)
     
     @staticmethod
     def is_displayed(player: Player):
@@ -278,7 +282,8 @@ class ProlificID(Page):
     @staticmethod
     def before_next_page(player: Player, timeout_happened):
         # Store trimmed, uppercase version for consistency
-        if not timeout_happened and player.prolific_id:
+        # No timeout on this page, so timeout_happened should always be False
+        if player.prolific_id:
             player.participant.vars['prolific_id'] = player.prolific_id.strip().upper()
 
 
