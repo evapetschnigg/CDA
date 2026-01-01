@@ -299,7 +299,7 @@ class Instructions(Page):
         
         return dict(
             numTrials=C.num_trial_rounds,
-            numRounds=7 - C.num_trial_rounds,  # Hardcoded to match Trading NUM_ROUNDS
+            numRounds=4,  # 4 trading rounds (NUM_ROUNDS = 5, minus 1 trial round)
             framing=framing,
             endowment_type=endowment_type,  # Needed for template to show correct instructions
         )

@@ -13,7 +13,7 @@ class C(BaseConstants):
   
     PLAYERS_PER_GROUP = 6  # Production group size
     num_trial_rounds = 1
-    NUM_ROUNDS = 7  ## incl. trial periods
+    NUM_ROUNDS = 5  # 4 trading rounds + 1 trial round
     base_payment = cu(3.75)  # Base payment for all participants who complete survey
     bonus_payment = cu(1.90)  # Additional payment for highest score increase winner
     FV_MIN = 30
