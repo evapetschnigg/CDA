@@ -77,6 +77,17 @@ class Subsession(BaseSubsession):
         pass
 def vars_for_admin_report(subsession):
     # this function defines the values sent to the admin report page
+    # Can be disabled via environment variable if CPU is high (set DISABLE_ADMIN_REPORT=1)
+    from os import environ
+    if environ.get('DISABLE_ADMIN_REPORT', '0') == '1':
+        # Return minimal data to reduce CPU load
+        return dict(
+            marketTimes=[],
+            payoffs=[],
+            series=[],
+            disabled=True,
+        )
+    
     groups = subsession.get_groups()
     period = subsession.round_number
     # Only process active players (those who have actually started) to avoid processing empty player slots
