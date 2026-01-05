@@ -17,6 +17,13 @@ SESSION_CONFIGS = [
         app_sequence=['screening'],
         num_demo_participants=1,
     ),
+
+    dict(
+    name='stress_test_jan2_setup',
+    display_name='Stress Test Jan 2 Setup',
+    app_sequence=['preparation', 'Trading'],
+    num_demo_participants=78,
+),
 ]
 
 # if you set a property in SESSION_CONFIG_DEFAULTS, it will be inherited by all configs
