@@ -146,7 +146,7 @@ class Group(BaseGroup):
 def random_types(group: Group):
     # this code is run at the first WaitToStart page when all participants arrived
     # this function returns a binary variable to the group table whether roles should be randomised between periods.
-    return group.session.config['randomise_types']
+    return group.session.config.get('randomise_types', True)  # Default to True if not specified
 
 
 def assign_types(group: Group):
@@ -702,6 +702,7 @@ def live_method(player: Player, data):
     group = player.group
     period = group.round_number
     players = group.get_players()
+    result = None  # Initialize result to avoid NameError
     if key == 'limit_order':
         limit_order(player, data)
     elif key == 'cancel_limit':

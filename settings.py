@@ -19,11 +19,15 @@ SESSION_CONFIGS = [
     ),
 
     dict(
-    name='stress_test_jan2_setup',
-    display_name='Stress Test Jan 2 Setup',
-    app_sequence=['preparation', 'Trading'],
-    num_demo_participants=78,
-),
+        name='stress_test_jan2_setup',
+        display_name='Stress Test Jan 2 Setup',
+        app_sequence=['preparation', 'Trading'],
+        num_demo_participants=78,
+        market_time=80,
+        randomise_types=True,
+        short_selling=False,
+        margin_buying=False,
+    ),
 ]
 
 # if you set a property in SESSION_CONFIG_DEFAULTS, it will be inherited by all configs
