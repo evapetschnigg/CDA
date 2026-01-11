@@ -65,6 +65,7 @@ class StressTestBot:
         self.error_message = None
         self.completed_pages = []
         self.round_stats = {}  # Track stats per round: {round_num: {'goods': X, 'bids': Y, 'asks': Z, 'acceptances': W}}
+        self.rounds_processed = set()  # Track which rounds have already been processed to avoid duplicate execution
         
     def setup_browser(self):
         """Initialize the browser session with optimized resource settings."""
@@ -239,13 +240,25 @@ class StressTestBot:
         return False
     
     def _check_for_error_message(self):
-        """Check if there's an error message on the page."""
+        """Check if there's an error message on the page (in newsTable)."""
         try:
+            # Check newsTable for error messages
+            try:
+                news_table = self.driver.find_element(By.ID, 'newsTable')
+                news_text = news_table.text.strip()
+                if news_text and news_text.lower() not in ['no alerts', '']:
+                    # Check if it's an error message (contains words like "cannot", "error", "insufficient", etc.)
+                    error_keywords = ['cannot', 'error', 'insufficient', 'misspecified', 'not available', 'better offer']
+                    if any(keyword in news_text.lower() for keyword in error_keywords):
+                        logger.warning(f"Bot {self.participant_id}: Error message detected: {news_text}")
+                        return True
+            except NoSuchElementException:
+                pass
+            
+            # Also check for alert-danger elements
             error_selectors = [
                 (By.CSS_SELECTOR, '.alert-danger'),
                 (By.CSS_SELECTOR, '.error'),
-                (By.CLASS_NAME, 'error'),
-                (By.XPATH, '//*[contains(@class, "error")]'),
             ]
             for by, selector in error_selectors:
                 try:
@@ -885,299 +898,372 @@ class StressTestBot:
                 except:
                     pass
     
+    def _post_bid(self, round_num, max_retries=10):
+        """Post a bid: enter value 0.5-3.0, click post bid button. Retry if fails."""
+        bid_price = round(random.uniform(0.5, 3.0), 2)
+        for attempt in range(max_retries):
+            try:
+                # Find input field and enter price
+                input_field = WebDriverWait(self.driver, 3).until(
+                    EC.presence_of_element_located((By.ID, 'limitBidPrice'))
+                )
+                input_field.clear()
+                time.sleep(0.1)
+                input_field.send_keys(str(bid_price))
+                time.sleep(0.2)
+                
+                # Click post bid button
+                button = WebDriverWait(self.driver, 3).until(
+                    EC.element_to_be_clickable((By.ID, 'bidOffer'))
+                )
+                self.driver.execute_script("arguments[0].scrollIntoView(true);", button)
+                time.sleep(0.1)
+                button.click()
+                
+                # Wait longer for server response
+                time.sleep(1.2)
+                
+                # Check for error message
+                if self._check_for_error_message():
+                    logger.debug(f"Bot {self.participant_id}: Round {round_num} - Bid rejected by server (attempt {attempt+1}), retrying...")
+                    time.sleep(0.5)
+                    continue
+                
+                # Verify bid appears in table (wait a bit more for update)
+                time.sleep(0.3)
+                my_id = self.driver.execute_script("return typeof js_vars !== 'undefined' ? js_vars.id_in_group : null;")
+                bids_rows = self.driver.find_elements(By.CSS_SELECTOR, '#bidsTable tbody tr')
+                for row in bids_rows:
+                    try:
+                        row_id = row.get_attribute('data-value')
+                        if row_id and str(row_id) == str(my_id):
+                            # Our bid appears in the table - success!
+                            logger.info(f"Bot {self.participant_id}: Round {round_num} - Posted bid at {bid_price:.2f}")
+                            return True
+                    except:
+                        continue
+                
+                # Bid doesn't appear yet, might need more time
+                logger.debug(f"Bot {self.participant_id}: Round {round_num} - Bid not yet visible (attempt {attempt+1}), retrying...")
+                time.sleep(0.5)
+            except Exception as e:
+                logger.debug(f"Bot {self.participant_id}: Error posting bid (attempt {attempt+1}): {e}")
+                time.sleep(0.5)
+        return False
+    
+    def _post_ask(self, round_num, max_retries=10):
+        """Post an ask: enter value 3.0-5.0, click post ask button. Retry if fails."""
+        ask_price = round(random.uniform(3.0, 5.0), 2)
+        for attempt in range(max_retries):
+            try:
+                # Find input field and enter price
+                input_field = WebDriverWait(self.driver, 3).until(
+                    EC.presence_of_element_located((By.ID, 'limitAskPrice'))
+                )
+                input_field.clear()
+                time.sleep(0.1)
+                input_field.send_keys(str(ask_price))
+                time.sleep(0.2)
+                
+                # Click post ask button
+                button = WebDriverWait(self.driver, 3).until(
+                    EC.element_to_be_clickable((By.ID, 'SendOffer'))
+                )
+                self.driver.execute_script("arguments[0].scrollIntoView(true);", button)
+                time.sleep(0.1)
+                button.click()
+                
+                # Wait longer for server response
+                time.sleep(1.2)
+                
+                # Check for error message
+                if self._check_for_error_message():
+                    logger.debug(f"Bot {self.participant_id}: Round {round_num} - Ask rejected by server (attempt {attempt+1}), retrying...")
+                    time.sleep(0.5)
+                    continue
+                
+                # Verify ask appears in table (wait a bit more for update)
+                time.sleep(0.3)
+                my_id = self.driver.execute_script("return typeof js_vars !== 'undefined' ? js_vars.id_in_group : null;")
+                asks_rows = self.driver.find_elements(By.CSS_SELECTOR, '#asksTable tbody tr')
+                for row in asks_rows:
+                    try:
+                        row_id = row.get_attribute('data-value')
+                        if row_id and str(row_id) == str(my_id):
+                            # Our ask appears in the table - success!
+                            logger.info(f"Bot {self.participant_id}: Round {round_num} - Posted ask at {ask_price:.2f}")
+                            return True
+                    except:
+                        continue
+                
+                # Ask doesn't appear yet, might need more time
+                logger.debug(f"Bot {self.participant_id}: Round {round_num} - Ask not yet visible (attempt {attempt+1}), retrying...")
+                time.sleep(0.5)
+            except Exception as e:
+                logger.debug(f"Bot {self.participant_id}: Error posting ask (attempt {attempt+1}): {e}")
+                time.sleep(0.5)
+        return False
+    
+    def _accept_order(self, round_num, max_retries=3):
+        """Accept a bid or ask: use JavaScript directly to select and accept the topmost order. Max 3 retries."""
+        for attempt in range(max_retries):
+            try:
+                # Wait for table to update
+                time.sleep(0.3)
+                
+                # Get current resources (all bots have both cash and assets)
+                cash, assets = self._get_current_resources()
+                
+                # Use JavaScript to get the first order and accept it directly via liveSend
+                # Randomly choose between asks and bids (50/50) since all bots have both cash and assets
+                prefer_bid = random.choice([True, False])
+                
+                # Build JavaScript code with random choice
+                js_code = f"""
+                    var targetRow = null;
+                    var isBid = null;
+                    var my_id = typeof js_vars !== 'undefined' ? js_vars.id_in_group : null;
+                    var preferBid = {str(prefer_bid).lower()};
+                    
+                    // Randomly try bids first or asks first (50/50)
+                    if (preferBid) {{
+                        // Try bids first (selling)
+                        var bidsRows = document.querySelectorAll('#bidsTable tbody tr');
+                        for (var i = 0; i < bidsRows.length; i++) {{
+                            var row = bidsRows[i];
+                            var row_id = row.getAttribute('data-value');
+                            if (row_id && parseInt(row_id) !== parseInt(my_id)) {{
+                                targetRow = row;
+                                isBid = 1;
+                                break;
+                            }}
+                        }}
+                        // If no bid, try asks
+                        if (!targetRow) {{
+                            var asksRows = document.querySelectorAll('#asksTable tbody tr');
+                            for (var i = 0; i < asksRows.length; i++) {{
+                                var row = asksRows[i];
+                                var row_id = row.getAttribute('data-value');
+                                if (row_id && parseInt(row_id) !== parseInt(my_id)) {{
+                                    targetRow = row;
+                                    isBid = 0;
+                                    break;
+                                }}
+                            }}
+                        }}
+                    }} else {{
+                        // Try asks first (buying)
+                        var asksRows = document.querySelectorAll('#asksTable tbody tr');
+                        for (var i = 0; i < asksRows.length; i++) {{
+                            var row = asksRows[i];
+                            var row_id = row.getAttribute('data-value');
+                            if (row_id && parseInt(row_id) !== parseInt(my_id)) {{
+                                targetRow = row;
+                                isBid = 0;
+                                break;
+                            }}
+                        }}
+                        // If no ask, try bids
+                        if (!targetRow) {{
+                            var bidsRows = document.querySelectorAll('#bidsTable tbody tr');
+                            for (var i = 0; i < bidsRows.length; i++) {{
+                                var row = bidsRows[i];
+                                var row_id = row.getAttribute('data-value');
+                                if (row_id && parseInt(row_id) !== parseInt(my_id)) {{
+                                    targetRow = row;
+                                    isBid = 1;
+                                    break;
+                                }}
+                            }}
+                        }}
+                    }}
+                    
+                    if (!targetRow) {{
+                        return {{success: false, reason: 'no_other_orders'}};
+                    }}
+                    
+                    // Get offerID and price from the row
+                    var offerID = targetRow.getAttribute('value');
+                    var priceCell = targetRow.querySelector('td:last-child');
+                    var price = priceCell ? priceCell.getAttribute('value') : null;
+                    
+                    if (!offerID || !price) {{
+                        return {{success: false, reason: 'missing_data'}};
+                    }}
+                    
+                    // Call liveSend directly with the order data
+                    if (typeof liveSend !== 'undefined') {{
+                        liveSend({{
+                            'operationType': 'market_order',
+                            'offerID': parseInt(offerID),
+                            'isBid': isBid,
+                            'transactionPrice': parseFloat(price),
+                            'transactionVolume': 1
+                        }});
+                    }} else {{
+                        return {{success: false, reason: 'liveSend_not_found'}};
+                    }}
+                    
+                    return {{success: true, offerID: offerID, price: price, isBid: isBid}};
+                """
+                
+                result = self.driver.execute_script(js_code)
+                
+                if not result or not result.get('success'):
+                    reason = result.get('reason', 'unknown') if result else 'unknown'
+                    logger.warning(f"Bot {self.participant_id}: Round {round_num} - No order available (attempt {attempt+1}): {reason}")
+                    time.sleep(0.5)
+                    continue
+                
+                order_type = 'bid' if result.get('isBid') == 1 else 'ask'
+                logger.info(f"Bot {self.participant_id}: Round {round_num} - Attempting to accept {order_type} (offerID={result.get('offerID')}, attempt {attempt+1})")
+                
+                # Wait for server response and check if it worked
+                time.sleep(2.0)  # Wait longer for server response
+                
+                # Check for errors
+                if self._check_for_error_message():
+                    logger.warning(f"Bot {self.participant_id}: Round {round_num} - Accept failed (attempt {attempt+1}), retrying...")
+                    time.sleep(0.5)
+                    continue
+                
+                # Success! (if no error message, assume it worked)
+                logger.info(f"Bot {self.participant_id}: Round {round_num} - Accepted {order_type} (offerID={result.get('offerID')})")
+                return True  # STOP after first successful acceptance - only 1 per round!
+                
+            except Exception as e:
+                logger.warning(f"Bot {self.participant_id}: Error accepting order (attempt {attempt+1}): {e}")
+                time.sleep(0.5)
+        
+        # Failed after max_retries - return False so bot can proceed to goods buying
+        logger.warning(f"Bot {self.participant_id}: Round {round_num} - Could not accept order after {max_retries} attempts, will proceed to goods buying")
+        return False
+    
     def _play_market_round(self, round_num):
-        """
-        Play a single market round with two phases:
-        Phase 1 (first 40 seconds): Trading (post bids/asks, accept orders)
-        Phase 2 (after 40 seconds): Buying goods
-        """
+        """Play a market round: post bid, post ask, accept order, then buy goods."""
+        # Prevent duplicate execution for the same round (can happen with page refreshes)
+        if round_num in self.rounds_processed:
+            logger.debug(f"Bot {self.participant_id}: Round {round_num} already processed, skipping")
+            return
+        
         try:
             start_market = time.time()
-            max_market_time = 210  # Market timeout in seconds (from config)
-            
-            # Track trading actions (reset for each round)
+            max_market_time = 210
             goods_bought = 0
             bids_posted = 0
             asks_posted = 0
             orders_accepted = 0
             
-            # Initialize round stats
-            self.round_stats[round_num] = {
-                'goods': 0,
-                'bids': 0,
-                'asks': 0,
-                'acceptances': 0
-            }
+            # Initialize stats if not already set
+            if round_num not in self.round_stats:
+                self.round_stats[round_num] = {'goods': 0, 'bids': 0, 'asks': 0, 'acceptances': 0}
             
-            # Reset price generation flags for this round
-            self._bid_price_generated = None
-            self._ask_price_generated = None
+            logger.info(f"Bot {self.participant_id}: Round {round_num} - Starting market trading")
             
-            # Calculate staggered start times ONCE at the start
-            bid_start_delay = random.uniform(2, 5)   # Bids: 2-5s from market start
-            ask_start_delay = random.uniform(4, 8)   # Asks: 4-8s from market start (after some bids exist)
-            accept_start_delay = random.uniform(6, 12)  # Accept: 6-12s from market start (after bids/asks exist)
+            # Wait a bit for market to initialize
+            time.sleep(2)
             
-            # ============================================================
-            # PHASE 1: TRADING FIRST (first 40 seconds) - Post bids/asks and accept orders
-            # ============================================================
-            logger.info(f"Bot {self.participant_id}: Round {round_num} - Phase 1: Trading (bids/asks/accept, first 40 seconds)")
-            
-            # PHASE 1: Trading loop (first 40 seconds) - Post bids/asks and accept orders
-            while (time.time() - start_market) < 40:
-                try:
-                    # Check if page has advanced (market ended naturally)
-                    current_url = self.driver.current_url
-                    if 'Market' not in current_url:
-                        logger.info(f"Bot {self.participant_id}: Market ended naturally during Phase 1 (round {round_num})")
-                        break
-                    
-                    time_since_market_start = time.time() - start_market
-                    
-                    # POST A BID (once during trading phase, keep trying until successful)
-                    if bids_posted == 0 and time_since_market_start >= bid_start_delay:
-                        cash, assets = self._get_current_resources()
-                        if cash >= 1:
-                            # Generate a reasonable bid price (1.0 to 5.0 mu) - only once per round
-                            if self._bid_price_generated is None:
-                                self._bid_price_generated = round(random.uniform(1.0, 5.0), 2)
-                            bid_price = self._bid_price_generated
-                            
-                            try:
-                                # Find the bid price input field
-                                bid_price_input = WebDriverWait(self.driver, 5).until(
-                                    EC.presence_of_element_located((By.ID, 'limitBidPrice'))
-                                )
-                                
-                                # Clear and type the price directly
-                                bid_price_input.clear()
-                                time.sleep(0.2)
-                                bid_price_input.send_keys(str(bid_price))
-                                time.sleep(0.3)  # Give time for value to be set
-                                
-                                # Click the "Place bid" button
-                                bid_button = WebDriverWait(self.driver, 5).until(
-                                    EC.element_to_be_clickable((By.ID, 'bidOffer'))
-                                )
-                                self.driver.execute_script("arguments[0].scrollIntoView(true);", bid_button)
-                                time.sleep(0.2)
-                                bid_button.click()
-                                
-                                time.sleep(1.0)  # Wait for server response
-                                if not self._check_for_error_message():
-                                    bids_posted += 1
-                                    logger.info(f"Bot {self.participant_id}: Round {round_num} - Posted bid at {bid_price:.2f} mu")
-                                else:
-                                    logger.debug(f"Bot {self.participant_id}: Round {round_num} - Bid failed, will retry next iteration")
-                            except Exception as e:
-                                logger.debug(f"Bot {self.participant_id}: Error posting bid: {e}")
-                    
-                    # POST AN ASK (once during trading phase, keep trying until successful)
-                    if asks_posted == 0 and time_since_market_start >= ask_start_delay:
-                        cash, assets = self._get_current_resources()
-                        if assets >= 1:
-                            # Generate a reasonable ask price (1.0 to 5.0 mu) - only once per round
-                            if self._ask_price_generated is None:
-                                self._ask_price_generated = round(random.uniform(1.0, 5.0), 2)
-                            ask_price = self._ask_price_generated
-                            
-                            try:
-                                # Find the ask price input field
-                                ask_price_input = WebDriverWait(self.driver, 5).until(
-                                    EC.presence_of_element_located((By.ID, 'limitAskPrice'))
-                                )
-                                
-                                # Clear and type the price directly
-                                ask_price_input.clear()
-                                time.sleep(0.2)
-                                ask_price_input.send_keys(str(ask_price))
-                                time.sleep(0.3)  # Give time for value to be set
-                                
-                                # Click the "Place ask" button
-                                ask_button = WebDriverWait(self.driver, 5).until(
-                                    EC.element_to_be_clickable((By.ID, 'SendOffer'))
-                                )
-                                self.driver.execute_script("arguments[0].scrollIntoView(true);", ask_button)
-                                time.sleep(0.2)
-                                ask_button.click()
-                                
-                                time.sleep(1.0)  # Wait for server response
-                                if not self._check_for_error_message():
-                                    asks_posted += 1
-                                    logger.info(f"Bot {self.participant_id}: Round {round_num} - Posted ask at {ask_price:.2f} mu")
-                                else:
-                                    logger.debug(f"Bot {self.participant_id}: Round {round_num} - Ask failed, will retry next iteration")
-                            except Exception as e:
-                                logger.debug(f"Bot {self.participant_id}: Error posting ask: {e}")
-                    
-                    # ACCEPT AN ORDER (aggressive - try multiple times after delay)
-                    if time_since_market_start >= accept_start_delay and orders_accepted == 0:
-                        cash, assets = self._get_current_resources()
-                        
-                        # Try to accept an order (up to 5 attempts in this loop iteration)
-                        for accept_attempt in range(5):
-                            if orders_accepted > 0:
-                                break
-                            
-                            try:
-                                # Find orders in the tables - only select the TOP (best) offers
-                                bids_rows = self.driver.find_elements(By.CSS_SELECTOR, '#bidsTable tbody tr')
-                                asks_rows = self.driver.find_elements(By.CSS_SELECTOR, '#asksTable tbody tr')
-                                
-                                # Get my_id from JavaScript to filter out own orders
-                                my_id = self.driver.execute_script("return typeof js_vars !== 'undefined' ? js_vars.id_in_group : null;")
-                                
-                                # Find the TOP (first) row that's not our own - these are the best offers
-                                target_row = None
-                                is_bid = None
-                                
-                                if cash >= 1 and len(asks_rows) > 0:
-                                    # Accept the TOP (first) ask from another player - this is the best offer
-                                    # Check top offers only (first row is best)
-                                    for row in asks_rows:
-                                        try:
-                                            row_id = row.get_attribute('data-value')
-                                            if row_id and str(row_id) != str(my_id):
-                                                target_row = row  # Take first available (top/best offer)
-                                                is_bid = 0  # is_bid=0 means accepting an ask
-                                                break  # Always take the first (top) offer
-                                        except:
-                                            continue
-                                
-                                if target_row is None and assets >= 1 and len(bids_rows) > 0:
-                                    # Accept the TOP (first) bid from another player - this is the best offer
-                                    # Check top offers only (first row is best)
-                                    for row in bids_rows:
-                                        try:
-                                            row_id = row.get_attribute('data-value')
-                                            if row_id and str(row_id) != str(my_id):
-                                                target_row = row  # Take first available (top/best offer)
-                                                is_bid = 1  # is_bid=1 means accepting a bid
-                                                break  # Always take the first (top) offer
-                                        except:
-                                            continue
-                                
-                                if target_row is not None:
-                                    # Select the row by clicking it
-                                    self.driver.execute_script("arguments[0].scrollIntoView(true);", target_row)
-                                    time.sleep(0.2)
-                                    target_row.click()
-                                    time.sleep(0.3)
-                                    
-                                    # Click the accept button
-                                    if is_bid == 0:
-                                        # Accept ask (Buy button)
-                                        accept_button = WebDriverWait(self.driver, 2).until(
-                                            EC.element_to_be_clickable((By.ID, 'askAccept'))
-                                        )
-                                    else:
-                                        # Accept bid (Sell button)
-                                        accept_button = WebDriverWait(self.driver, 2).until(
-                                            EC.element_to_be_clickable((By.ID, 'bidAccept'))
-                                        )
-                                    
-                                    self.driver.execute_script("arguments[0].scrollIntoView(true);", accept_button)
-                                    time.sleep(0.2)
-                                    accept_button.click()
-                                    
-                                    time.sleep(0.8)
-                                    if not self._check_for_error_message():
-                                        orders_accepted += 1
-                                        logger.info(f"Bot {self.participant_id}: Round {round_num} - Accepted {'ask' if is_bid == 0 else 'bid'}")
-                                        break
-                                    else:
-                                        time.sleep(0.3)  # Quick retry
-                                else:
-                                    if accept_attempt < 4:
-                                        time.sleep(0.5)  # Wait a bit and retry
-                                    else:
-                                        break  # No orders available after multiple attempts
-                            except Exception as e:
-                                if accept_attempt < 4:
-                                    logger.debug(f"Bot {self.participant_id}: Error accepting order (attempt {accept_attempt + 1}): {e}")
-                                    time.sleep(0.3)
-                                else:
-                                    break
-                    
-                    time.sleep(0.3)  # Reduced wait to allow more trading actions
-                    
-                except Exception as e:
-                    logger.warning(f"Bot {self.participant_id}: Error in Phase 1 market loop: {e}")
-                    time.sleep(1)
-            
-            elapsed_phase1 = time.time() - start_market
-            logger.info(f"Bot {self.participant_id}: Round {round_num} - Phase 1 complete: Bids={bids_posted}, Asks={asks_posted}, Acceptances={orders_accepted} at {elapsed_phase1:.1f}s")
-            
-            # ============================================================
-            # PHASE 2: BUY GOODS (after 40 seconds, remaining time)
-            # ============================================================
-            logger.info(f"Bot {self.participant_id}: Round {round_num} - Phase 2: Buying goods (after 40s trading phase)")
-            
-            # PHASE 2: Goods buying loop (after 40s until market ends)
-            while time.time() - start_market < max_market_time:
-                try:
-                    current_url = self.driver.current_url
-                    if 'Market' not in current_url:
-                        logger.info(f"Bot {self.participant_id}: Market ended naturally during Phase 2 (round {round_num})")
-                        break
-                    
-                    # Buy goods - as many as possible during remaining time
-                    cash, assets = self._get_current_resources()
-                    can_afford_a = cash >= 3 and assets >= 1
-                    can_afford_b = cash >= 2 and assets >= 2
-                    
-                    if not (can_afford_a or can_afford_b):
-                        time.sleep(0.2)  # Check more frequently
-                        continue
-                    
-                    # Prefer Good A if we can afford both (usually better value), otherwise choose what we can afford
-                    if can_afford_a and can_afford_b:
-                        good_choice = 'A' if random.random() < 0.6 else 'B'  # Slight preference for A
-                    elif can_afford_a:
-                        good_choice = 'A'
+            # PHASE 1: Post bid, post ask, then accept order immediately after both are posted (max 60 seconds)
+            phase1_end = start_market + 60  # Max 60 seconds for Phase 1, leaving 20 seconds for goods buying
+            while time.time() < phase1_end:
+                # Check if market ended
+                if 'Market' not in self.driver.current_url:
+                    break
+                
+                # Post bid (once, keep retrying)
+                if bids_posted == 0:
+                    if self._post_bid(round_num, max_retries=5):
+                        bids_posted = 1
+                    time.sleep(0.2)  # Reduced wait
+                
+                # Post ask (once, keep retrying, wait a bit after bid)
+                if asks_posted == 0 and bids_posted == 1 and time.time() - start_market >= 1.5:  # Reduced wait
+                    if self._post_ask(round_num, max_retries=5):
+                        asks_posted = 1
+                    time.sleep(0.2)  # Reduced wait
+                
+                # Accept order IMMEDIATELY after both bid and ask are posted - try 3 times, then proceed to goods
+                if bids_posted == 1 and asks_posted == 1 and orders_accepted == 0:
+                    # Try to accept an order - only 3 retries, then proceed to goods buying
+                    if self._accept_order(round_num, max_retries=3):
+                        orders_accepted = 1
+                        logger.info(f"Bot {self.participant_id}: Round {round_num} - Successfully accepted order, moving to goods buying")
+                        break  # Once accepted, move to Phase 2 immediately
                     else:
-                        good_choice = 'B'
+                        # After 3 failed attempts, proceed to goods buying anyway
+                        logger.info(f"Bot {self.participant_id}: Round {round_num} - Could not accept order after 3 attempts, proceeding to goods buying")
+                        break
+                
+                # If we've accepted, break to move to Phase 2
+                if orders_accepted == 1:
+                    break
+                
+                time.sleep(0.1)  # Reduced wait
+            
+            logger.info(f"Bot {self.participant_id}: Round {round_num} - Phase 1 complete: Bids={bids_posted}, Asks={asks_posted}, Acceptances={orders_accepted}")
+            
+            # PHASE 2: Buy goods (remaining time, start immediately after acceptance) - stop after 5 goods
+            # Start buying goods immediately after acceptance, or at latest at 60 seconds
+            logger.info(f"Bot {self.participant_id}: Round {round_num} - Starting Phase 2: Buying goods")
+            while time.time() - start_market < max_market_time and goods_bought < 5:  # Stop after buying 5 goods
+                # Check if market ended
+                if 'Market' not in self.driver.current_url:
+                    logger.info(f"Bot {self.participant_id}: Round {round_num} - Market ended, stopping goods buying")
+                    break
+                
+                # Alternate between Good A and Good B
+                good_choice = 'A' if (goods_bought % 2 == 0) else 'B'
+                
+                # Click buy button directly - no affordability check
+                try:
+                    button_id = f'buy{good_choice}_btn'
+                    logger.info(f"Bot {self.participant_id}: Round {round_num} - Attempting to buy Good {good_choice} (attempt {goods_bought + 1})")
                     
-                    try:
-                        # Click the appropriate buy button
-                        if good_choice == 'A':
-                            buy_button = WebDriverWait(self.driver, 5).until(
-                                EC.element_to_be_clickable((By.ID, 'buyA_btn'))
-                            )
-                        else:
-                            buy_button = WebDriverWait(self.driver, 5).until(
-                                EC.element_to_be_clickable((By.ID, 'buyB_btn'))
-                            )
-                        
-                        self.driver.execute_script("arguments[0].scrollIntoView(true);", buy_button)
-                        time.sleep(0.2)
-                        buy_button.click()
-                        
-                        time.sleep(0.6)  # Wait for server response
-                        if not self._check_for_error_message():
-                            goods_bought += 1
-                            logger.info(f"Bot {self.participant_id}: Round {round_num} - Bought Good {good_choice} (total: {goods_bought})")
-                        time.sleep(0.3)  # Small wait between purchases
-                    except Exception as e:
-                        logger.debug(f"Bot {self.participant_id}: Error buying good {good_choice}: {e}")
-                        time.sleep(0.3)
+                    buy_button = WebDriverWait(self.driver, 3).until(
+                        EC.element_to_be_clickable((By.ID, button_id))
+                    )
+                    self.driver.execute_script("arguments[0].scrollIntoView(true);", buy_button)
+                    time.sleep(0.1)
+                    buy_button.click()
+                    time.sleep(0.6)  # Wait for server response
+                    
+                    if not self._check_for_error_message():
+                        goods_bought += 1
+                        logger.info(f"Bot {self.participant_id}: Round {round_num} - Bought Good {good_choice} (total: {goods_bought})")
+                        # Update stats immediately (using max to prevent overwriting)
+                        if round_num not in self.round_stats:
+                            self.round_stats[round_num] = {'goods': 0, 'bids': 0, 'asks': 0, 'acceptances': 0}
+                        self.round_stats[round_num]['goods'] = max(self.round_stats[round_num]['goods'], goods_bought)
+                        # Stop after buying 5 goods
+                        if goods_bought >= 5:
+                            logger.info(f"Bot {self.participant_id}: Round {round_num} - Reached 5 goods, stopping goods buying")
+                            break
+                    else:
+                        logger.warning(f"Bot {self.participant_id}: Round {round_num} - Good {good_choice} purchase failed (error message detected)")
+                    time.sleep(0.2)  # Wait between purchase attempts
                 except Exception as e:
-                    logger.warning(f"Bot {self.participant_id}: Error buying good in Phase 2: {e}")
-                    time.sleep(0.5)
+                    logger.warning(f"Bot {self.participant_id}: Error buying good {good_choice}: {e}")
+                    time.sleep(0.3)  # Wait before retry
             
-            # Update round stats
-            self.round_stats[round_num] = {
-                'goods': goods_bought,
-                'bids': bids_posted,
-                'asks': asks_posted,
-                'acceptances': orders_accepted
-            }
+            # Update stats (only if higher than previous to avoid overwriting with lower values)
+            if round_num not in self.round_stats:
+                self.round_stats[round_num] = {'goods': 0, 'bids': 0, 'asks': 0, 'acceptances': 0}
             
-            logger.info(f"Bot {self.participant_id}: Round {round_num} trading complete - Goods: {goods_bought}, Bids: {bids_posted}, Asks: {asks_posted}, Acceptances: {orders_accepted}")
+            # Only update if values are higher (to prevent overwriting with 0 from duplicate calls)
+            self.round_stats[round_num]['goods'] = max(self.round_stats[round_num]['goods'], goods_bought)
+            self.round_stats[round_num]['bids'] = max(self.round_stats[round_num]['bids'], bids_posted)
+            self.round_stats[round_num]['asks'] = max(self.round_stats[round_num]['asks'], asks_posted)
+            self.round_stats[round_num]['acceptances'] = max(self.round_stats[round_num]['acceptances'], orders_accepted)
+            
+            # Mark round as processed
+            self.rounds_processed.add(round_num)
+            
+            logger.info(f"Bot {self.participant_id}: Round {round_num} complete - Goods: {goods_bought}, Bids: {bids_posted}, Asks: {asks_posted}, Acceptances: {orders_accepted}")
             
         except Exception as e:
             logger.error(f"Bot {self.participant_id}: Error in _play_market_round (round {round_num}): {e}")
-            # Continue anyway - market may have ended
+            # Mark as processed even on error to prevent infinite retry loops
+            self.rounds_processed.add(round_num)
 
 
 def run_stress_test(session_url, num_participants, headless=False, stagger_delay=2):
