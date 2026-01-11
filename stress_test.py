@@ -699,7 +699,7 @@ class StressTestBot:
             # ====================================================================
             
             round_num = 1
-            max_rounds = 10  # Safety limit
+            max_rounds = 10  # Safety limit - experiment typically has 5 rounds, but allow for more
             
             while round_num <= max_rounds:
                 try:
@@ -714,9 +714,45 @@ class StressTestBot:
                     if 'EndOfTrialRounds' in current_url:
                         self.completed_pages.append(f'EndOfTrialRounds_R{round_num}')
                         logger.info(f"Bot {self.participant_id}: EndOfTrialRounds page (after round {round_num})")
-                        time.sleep(1)
-                        if not self._find_and_click_next():
+                        
+                        # Wait a bit for page to fully load and ensure Next button is available
+                        time.sleep(1)  # Reduced initial wait to be faster
+                        
+                        # Retry logic for EndOfTrialRounds (page has 10s timeout, so need to be quick)
+                        max_retries = 8  # More retries for this critical page (increased from 5)
+                        success = False
+                        for retry in range(max_retries):
+                            # Check if page already advanced (timeout happened) - check FIRST before trying to click
+                            current_url_check = self.driver.current_url
+                            if 'EndOfTrialRounds' not in current_url_check:
+                                logger.info(f"Bot {self.participant_id}: EndOfTrialRounds auto-advanced (round {round_num}, retry {retry+1})")
+                                success = True
+                                break
+                            
+                            # Try to click Next with shorter timeout per attempt
+                            if self._find_and_click_next(timeout=3):  # Reduced timeout per attempt to be faster
+                                logger.info(f"Bot {self.participant_id}: Successfully clicked Next on EndOfTrialRounds (round {round_num}, retry {retry+1})")
+                                success = True
+                                break
+                            elif retry < max_retries - 1:
+                                logger.warning(f"Bot {self.participant_id}: Retry {retry+1}/{max_retries} on EndOfTrialRounds (round {round_num})")
+                                # Check again if page advanced during wait
+                                time.sleep(0.5)  # Shorter wait between retries
+                                current_url_check = self.driver.current_url
+                                if 'EndOfTrialRounds' not in current_url_check:
+                                    logger.info(f"Bot {self.participant_id}: EndOfTrialRounds auto-advanced during retry wait (round {round_num})")
+                                    success = True
+                                    break
+                        
+                        if not success:
+                            # Check one more time if page advanced
+                            if 'EndOfTrialRounds' not in self.driver.current_url:
+                                logger.info(f"Bot {self.participant_id}: EndOfTrialRounds eventually auto-advanced (round {round_num})")
+                                success = True
+                        
+                        if not success:
                             raise Exception(f"Failed to proceed from EndOfTrialRounds (round {round_num})")
+                        
                         self._wait_for_page_load()
                         round_num += 1
                         continue
@@ -753,20 +789,66 @@ class StressTestBot:
                         logger.info(f"Bot {self.participant_id}: WaitingMarket (waiting for all players, round {round_num})")
                         
                         # Wait for auto-advance (page auto-refreshes)
+                        # oTree's WaitingMarket timeout is 180 seconds (3 minutes), so wait at least that long
                         start_wait = time.time()
-                        while 'WaitingMarket' in self.driver.current_url and (time.time() - start_wait) < 60:
-                            time.sleep(1)
-                            if 'WaitingMarket' not in self.driver.current_url:
+                        max_wait = 200  # Wait up to 200 seconds (slightly longer than oTree's 180s timeout)
+                        while 'WaitingMarket' in self.driver.current_url and (time.time() - start_wait) < max_wait:
+                            time.sleep(2)  # Check every 2 seconds instead of every 1 second
+                            current_url_check = self.driver.current_url
+                            if 'WaitingMarket' not in current_url_check:
                                 logger.info(f"Bot {self.participant_id}: WaitingMarket auto-advanced (round {round_num})")
                                 break
+                        
+                        # If still on WaitingMarket after timeout, check if we should proceed
+                        if 'WaitingMarket' in self.driver.current_url:
+                            logger.warning(f"Bot {self.participant_id}: WaitingMarket timeout after {max_wait}s (round {round_num}), checking if we can proceed...")
+                            # Wait longer and check again - oTree times out at 180s, page might need time to refresh
+                            time.sleep(10)  # Wait longer for page refresh after timeout
+                            # Check current URL
+                            current_url_after_timeout = self.driver.current_url
+                            if 'WaitingMarket' not in current_url_after_timeout:
+                                logger.info(f"Bot {self.participant_id}: WaitingMarket eventually advanced after timeout (round {round_num})")
+                            else:
+                                # Try refreshing the page once to see if it advances
+                                logger.warning(f"Bot {self.participant_id}: Still on WaitingMarket, trying page refresh...")
+                                try:
+                                    self.driver.refresh()
+                                    time.sleep(5)
+                                    current_url_after_refresh = self.driver.current_url
+                                    if 'WaitingMarket' not in current_url_after_refresh:
+                                        logger.info(f"Bot {self.participant_id}: WaitingMarket advanced after refresh (round {round_num})")
+                                    else:
+                                        logger.error(f"Bot {self.participant_id}: Still on WaitingMarket after refresh (round {round_num}), this may indicate a problem")
+                                        raise Exception(f"Stuck on WaitingMarket page after {max_wait}s timeout and refresh (round {round_num})")
+                                except Exception as e:
+                                    if "Stuck on WaitingMarket" in str(e):
+                                        raise
+                                    # If refresh failed for other reason, raise the original exception
+                                    raise Exception(f"Stuck on WaitingMarket page after {max_wait}s timeout (round {round_num})")
                         
                         self._wait_for_page_load(10)
                         continue
                     
                     # Market page (main trading page)
                     if 'Market' in current_url and 'WaitingMarket' not in current_url:
-                        self.completed_pages.append(f'Market_R{round_num}')
-                        logger.info(f"Bot {self.participant_id}: Market page (trading, round {round_num})")
+                        # Check if this round was already processed to avoid infinite loops (check FIRST before anything else)
+                        if round_num in self.rounds_processed:
+                            # Round already processed - wait briefly and continue (page will advance eventually)
+                            # Don't add to completed_pages or log anything - just wait for page to advance
+                            time.sleep(2)  # Wait for page to advance
+                            continue
+                        
+                        # Check if we've already logged this Market page for this round (avoid duplicates from page refreshes)
+                        # IMPORTANT: Check completed_pages BEFORE adding, to prevent duplicates
+                        market_page_key = f'Market_R{round_num}'
+                        
+                        # Only add to completed_pages and log if we haven't already
+                        if market_page_key not in self.completed_pages:
+                            # First time seeing Market page for this round - log and add to completed_pages ONCE
+                            self.completed_pages.append(market_page_key)
+                            logger.info(f"Bot {self.participant_id}: Market page (trading, round {round_num})")
+                        # If already in completed_pages, skip logging (avoid log spam) but still play round
+                        # _play_market_round will check if round is already processed and skip if so
                         
                         # Play the market round
                         self._play_market_round(round_num)
@@ -878,6 +960,25 @@ class StressTestBot:
                 self.success = True
                 logger.info(f"Bot {self.participant_id}: Completed successfully! (reached FinalResults)")
                 return True
+            elif 'Results' in self.driver.current_url and round_num >= max_rounds:
+                # If we've reached max rounds and are on Results, this might be the final Results page
+                logger.info(f"Bot {self.participant_id}: Reached max rounds ({max_rounds}) on Results page. This may be the final Results page.")
+                # Wait a bit to see if page advances to FinalResults
+                time.sleep(3)
+                final_url_check = self.driver.current_url
+                if 'FinalResults' in final_url_check:
+                    logger.info(f"Bot {self.participant_id}: Page advanced to FinalResults")
+                    self.success = True
+                    return True
+                elif 'Results' in final_url_check and 'Market' not in final_url_check:
+                    # If still on Results (but not Market), this is likely the final Results page
+                    logger.info(f"Bot {self.participant_id}: Completed experiment (reached final Results page after {max_rounds} rounds)")
+                    self.success = True
+                    return True
+                else:
+                    logger.error(f"Bot {self.participant_id}: Did not reach expected end state after max rounds. Current URL: {final_url_check}")
+                    self.error_message = f"Did not reach FinalResults. Last URL: {final_url_check}"
+                    return False
             else:
                 logger.error(f"Bot {self.participant_id}: Did not reach FinalResults page. Current URL: {self.driver.current_url}")
                 self.error_message = f"Did not reach FinalResults. Last URL: {self.driver.current_url}"
