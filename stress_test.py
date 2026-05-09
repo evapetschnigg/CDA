@@ -121,6 +121,7 @@ class StressTestBot:
             chrome_options.add_experimental_option("prefs", prefs)
             
             # Set page load strategy to eager (don't wait for all resources)
+            
             chrome_options.page_load_strategy = 'eager'
             
             self.driver = webdriver.Chrome(options=chrome_options)
@@ -1264,7 +1265,7 @@ class StressTestBot:
             # Wait a bit for market to initialize
             time.sleep(2)
             
-            # PHASE 1: Post bid, post ask, then accept order immediately after both are posted (max 60 seconds)
+            # PHASE 1: Post bid, post ask, then accept order immediately after both are posted (max 70 seconds)
             phase1_end = start_market + 60  # Max 60 seconds for Phase 1, leaving 20 seconds for goods buying
             while time.time() < phase1_end:
                 # Check if market ended
