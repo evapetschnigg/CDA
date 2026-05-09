@@ -13,7 +13,7 @@ class C(BaseConstants):
   
     PLAYERS_PER_GROUP = 6  # Production group size
     num_trial_rounds = 1
-    NUM_ROUNDS = 7  ## incl. trial periods
+    NUM_ROUNDS = 5  # 4 trading rounds + 1 trial round
     base_payment = cu(3.75)  # Base payment for all participants who complete survey
     bonus_payment = cu(1.90)  # Additional payment for highest score increase winner
     FV_MIN = 30
@@ -77,6 +77,17 @@ class Subsession(BaseSubsession):
         pass
 def vars_for_admin_report(subsession):
     # this function defines the values sent to the admin report page
+    # Can be disabled via environment variable if CPU is high (set DISABLE_ADMIN_REPORT=1)
+    from os import environ
+    if environ.get('DISABLE_ADMIN_REPORT', '0') == '1':
+        # Return minimal data to reduce CPU load
+        return dict(
+            marketTimes=[],
+            payoffs=[],
+            series=[],
+            disabled=True,
+        )
+    
     groups = subsession.get_groups()
     period = subsession.round_number
     # Only process active players (those who have actually started) to avoid processing empty player slots
@@ -135,7 +146,7 @@ class Group(BaseGroup):
 def random_types(group: Group):
     # this code is run at the first WaitToStart page when all participants arrived
     # this function returns a binary variable to the group table whether roles should be randomised between periods.
-    return group.session.config['randomise_types']
+    return group.session.config.get('randomise_types', True)  # Default to True if not specified
 
 
 def assign_types(group: Group):
@@ -691,6 +702,7 @@ def live_method(player: Player, data):
     group = player.group
     period = group.round_number
     players = group.get_players()
+    result = None  # Initialize result to avoid NameError
     if key == 'limit_order':
         limit_order(player, data)
     elif key == 'cancel_limit':
