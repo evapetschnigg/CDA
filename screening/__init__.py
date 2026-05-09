@@ -10,7 +10,7 @@ class C(BaseConstants):
     PLAYERS_PER_GROUP = None  # No groups needed for screening
     NUM_ROUNDS = 1
     
-    # Session details - UPDATE THESE FOR EACH SESSION
+    # Session details (update for each session)
     SESSION_DATE = "Friday, January 2, 2026"
     SESSION_TIME = "14:00"  # 2:00 PM GMT
     SESSION_TIMEZONE = "GMT"

@@ -1,4 +1,4 @@
-# type: ignore # my linter is Pyright/Pylance and it's flaggin correct otree code as errors, so I'm ignoring it
+# type: ignore  # Pyright/Pylance may flag valid oTree patterns in this file.
 
 from otree.api import *
 import time
@@ -52,11 +52,11 @@ class C(BaseConstants):
         'baseline_heterogeneous', 
         'environmental_homogeneous', 
         'environmental_heterogeneous', 
-        'destruction_homogeneous', 
-        'destruction_heterogeneous'
+        'destruction_homogeneous',  # not used in final data collection
+        'destruction_heterogeneous'  # not used in final data collection
     ]
     # ACTIVE_TREATMENTS: Set via environment variable for production (one treatment per Heroku app)
-    # For local testing, you can modify this list directly
+    # For local testing, this list can be modified directly
     # For production: Set OTREE_ACTIVE_TREATMENT environment variable (single treatment, e.g., 'baseline_homogeneous')
     active_treatment_env = environ.get('OTREE_ACTIVE_TREATMENT', '')
     if active_treatment_env:
@@ -192,7 +192,7 @@ def count_participants(group: Group):
                     group.numParticipants += 1
         except Exception as e:
             raise
-    else:  # since player.isParticipating is not newly assign with a value by a click or a timeout, I take the value from the previous round
+    else:  # Carry participation status over from the previous round.
         for p in group.get_players():
             pr = p.in_round(group.round_number - 1)
             p.isParticipating = pr.isParticipating
@@ -241,8 +241,8 @@ def persistent_timeout(player: 'Player', page_name: str, default_seconds: float)
 
 
 class Player(BasePlayer):
-    isParticipating = models.BooleanField(choices=((True, 'active'), (False, 'inactive')), initial=0)  ## describes whether this participant is participating in this round, i.e., whether they pressed the 'next' button.
-    isObserver = models.BooleanField(choices=((True, 'active'), (False, 'inactive')), initial=0)  ## describes a participant role as active trader or observer
+    isParticipating = models.BooleanField(choices=((True, 'active'), (False, 'inactive')), initial=0)  # Indicates whether the participant is active in this round.
+    isObserver = models.BooleanField(choices=((True, 'active'), (False, 'inactive')), initial=0)  # Indicates whether the participant is assigned as observer.
     roleID = models.StringField()
     allowShort = models.BooleanField(initial=True)
     allowLong = models.BooleanField(initial=True)

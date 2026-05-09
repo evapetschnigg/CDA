@@ -1,4 +1,4 @@
-# type: ignore # my linter is Pyright/Pylance and it's flaggin correct otree code as errors, so I'm ignoring it
+# type: ignore  # Pyright/Pylance may flag valid oTree patterns in this file.
 
 from otree.api import *
 from otree.api import widgets
@@ -23,11 +23,11 @@ class C(BaseConstants):
         'baseline_heterogeneous', 
         'environmental_homogeneous', 
         'environmental_heterogeneous', 
-        'destruction_homogeneous', 
-        'destruction_heterogeneous'
+        'destruction_homogeneous',  # not used in final data collection
+        'destruction_heterogeneous'  # not used in final data collection
     ]
     # ACTIVE_TREATMENTS: Set via environment variable for production (one treatment per oTree Hub project)
-    # For local testing, you can modify this list directly
+    # For local testing, this list can be modified directly
     # For production: Set OTREE_ACTIVE_TREATMENT environment variable (single treatment, e.g., 'baseline_homogeneous')
     active_treatment_env = environ.get('OTREE_ACTIVE_TREATMENT', '')
     if active_treatment_env:
@@ -322,10 +322,10 @@ class ComprehensionCheck(Page):
     
     @staticmethod
     def get_form_fields(player: Player):
-        # HIDDEN FOR TESTING: comp_q4 (assets transfer) and comp_q5 (payout) - uncomment to restore
+        # Hidden in final data collection: comp_q4 (assets transfer) and comp_q5 (payout) - uncomment to restore
         # fields = ['comp_q1', 'comp_q2', 'comp_q3', 'comp_q4', 'comp_q5']
         fields = ['comp_q1', 'comp_q2', 'comp_q3']  # Only 3 questions active (q4 and q5 hidden)
-        # HIDDEN FOR TESTING: comp_q6 (destruction framing) - uncomment to restore
+        # Hidden in final data collection: comp_q6 (destruction framing) - uncomment to restore
         # if player.framing == 'destruction':
         #     fields.append('comp_q6')
         return fields
@@ -364,18 +364,17 @@ class ComprehensionCheck(Page):
             player.participant.vars['comp_timeout_occurred'] = True
         
         # Define correct answers
-        # HIDDEN FOR TESTING: comp_q4 and comp_q5 are commented out - uncomment to restore
         correct_answers = {
             'comp_q1': 'c',  # Question 1: c
             'comp_q2': 'a',  # Question 2: a
             'comp_q3': 'c',  # Question 3: c
-            # 'comp_q4': 'b',  # Question 4: b (HIDDEN)
-            # 'comp_q5': 'c'   # Question 5: c (HIDDEN)
+            # 'comp_q4': 'b',
+            # 'comp_q5': 'c'
         }
         
-        # HIDDEN FOR TESTING: comp_q6 for destruction group - uncomment to restore
+        # Optional destruction-specific answer key:
         # if player.framing == 'destruction':
-        #     correct_answers['comp_q6'] = 'a'  # Question 6: a (destruction group only)
+        #     correct_answers['comp_q6'] = 'a'
         
         # Count correct answers (same logic for timeout and non-timeout cases)
         correct_count = 0
@@ -497,9 +496,9 @@ class ComprehensionFeedback(Page):
             }
         
         # Prepare data for template
-        # HIDDEN FOR TESTING: Only show active questions (q1, q2, q3) - adjust when restoring q4 and q5
+        # Hidden for final data collection: Only show active questions (q1, q2, q3) - adjust when restoring q4 and q5
         active_questions = ['comp_q1', 'comp_q2', 'comp_q3']  # Only these 3 are active
-        # HIDDEN FOR TESTING: Uncomment to restore comp_q6 for destruction group
+        # Hidden for final data collection: Uncomment to restore comp_q6 for destruction group
         # if player.framing == 'destruction':
         #     active_questions.append('comp_q6')
         
@@ -520,7 +519,7 @@ class ComprehensionFeedback(Page):
                     'is_correct': is_correct
                 })
         
-        # HIDDEN FOR TESTING: Changed from 5/6 to 3 (or 4 for destruction) - adjust when restoring questions
+        # Hidden for final data collection: Changed from 5/6 to 3 (or 4 for destruction) - adjust when restoring questions
         total_questions = len(active_questions)  # Now 3 (or 4 if destruction with q6)
         
         # Check if they timed out on this attempt
